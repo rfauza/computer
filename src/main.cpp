@@ -18,13 +18,15 @@
 #include "devices/Adder_Subtractor.hpp"
 #include "utilities/utilities.hpp"
 
-
-
-
-
 int main()
 {
-    test_all_components(1,4);
+    Register device = Register(4);
+    
+    test_component(&device, "100000");
+    test_component(&device, "100010");
+    test_component(&device, "010001");
+    test_component(&device, "010010");
+    test_component(&device, "000001");
     
     return 0;
 }

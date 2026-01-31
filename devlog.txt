@@ -1,24 +1,25 @@
 Total: 14h
 
 ToDo: 
-- retest all components with varying input sizes
-- XOR to take multi bit
-- add comparator flags to adder/subtractor
+- add comparator flag outputs to adder/subtractor, then put the flag registers in cpu
 
-Jan 31 2026
+
+Jan 31 2026 : 1.5h - total: 0h
 .5h multi-input XOR
 .5h all-component tester utility, testing all components after the changes
+.5h adding gitignore, updating git to remove .o and executables
+1h >> and <<, register
 
-Jan 30 2026
+Jan 30 2026 : 3h - total: 14h
 1.5 Bus, changed components to take numbits so can have multi-bit logic gates and include addr in name
 .5 struggling with copilot breaking all the code again. ALWAY BACK IT UP (use git)
 1h fixed adder subtractor
 
-Jan 29 2026
+Jan 29 2026 : 4h - total: 11h
 2h Full_Adder_Subtractor, binary instructions
 2h Adder_Subtractor
 
-Jan 28 2026
+Jan 28 2026 : 7h - total: 7h
 5h Logic Gates and Components Class
 1h Half and Full Adder
 1h Flip Flop and Memory Bit

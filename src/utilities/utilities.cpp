@@ -4,6 +4,55 @@
 #include <iostream>
 #include <vector>
 
+void test_component(Component* device, const std::string& binary_input)
+{
+    uint16_t num_inputs = device->get_num_inputs();
+    uint16_t num_outputs = device->get_num_outputs();
+    
+    if (binary_input.length() != num_inputs)
+    {
+        std::cout << "Error: input length " << binary_input.length() 
+                  << " doesn't match component inputs " << num_inputs << std::endl;
+        return;
+    }
+    
+    // Create signal generators for each input
+    std::vector<Signal_Generator*> sig_gens;
+    for (uint16_t i = 0; i < num_inputs; i++)
+    {
+        sig_gens.push_back(new Signal_Generator());
+        sig_gens[i]->connect_output(device, 0, i);
+    }
+    
+    // Set input values (LSB first, so index 0 is leftmost character)
+    for (uint16_t i = 0; i < num_inputs; i++)
+    {
+        if (binary_input[i] == '1')
+            sig_gens[i]->go_high();
+        else
+            sig_gens[i]->go_low();
+        sig_gens[i]->update();
+    }
+    
+    // Update device
+    device->update();
+    
+    // Print results
+    std::cout << "Input:  " << binary_input << std::endl;
+    std::cout << "Output: ";
+    for (uint16_t i = 0; i < num_outputs; i++)
+    {
+        std::cout << device->get_output(i);
+    }
+    std::cout << std::endl << std::endl;
+    
+    // Cleanup
+    for (Signal_Generator* sg : sig_gens)
+    {
+        delete sg;
+    }
+}
+
 void test_truth_table(Component* component, int start_index)
 {
     int num_inputs = component->get_num_inputs();

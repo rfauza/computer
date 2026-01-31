@@ -3,12 +3,23 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 #include "../components/Component.hpp"
 #include "../device_components/Flip_Flop.hpp"
 #include "../device_components/Memory_Bit.hpp"
 
 class Adder_Subtractor;
 
+/**
+ * @brief Tests a component with a specific binary input string
+ * 
+ * Creates signal generators for each input, sets them according to the binary string,
+ * updates the device, and prints the output.
+ * 
+ * @param device Pointer to the component to test
+ * @param binary_input Binary string where each character is '0' or '1' (LSB first)
+ */
+void test_component(Component* device, const std::string& binary_input);
 
 /**
  * @brief Tests a component with all combinations of input bits in truth table order
