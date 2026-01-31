@@ -1,0 +1,8 @@
+use clang to compile linked .h files into object files
+cl -c test.cpp
+compile main linking object files
+cl main.cpp -L test.obj
+
+Windows Subsystem Linux - run linux on windows without overhead of virtual machine or dual boot
+on powershell run $wsl --install
+then run with $wsl

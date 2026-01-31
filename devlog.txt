@@ -1,0 +1,14 @@
+Total: 11h
+
+Jan 30 2026
+1.5 Bus, changed components to take numbits so can have multi-bit logic gates and include addr in name
+.5 struggling with copilot breaking all the code again. ALWAY BACK IT UP (use git)
+
+Jan 29 2026
+2h Full_Adder_Subtractor, binary instructions
+2h Adder_Subtractor
+
+Jan 28 2026
+5h Logic Gates and Components Class
+1h Half and Full Adder
+1h Flip Flop and Memory Bit

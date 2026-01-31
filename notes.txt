@@ -1,0 +1,94 @@
+
+windows powershell to call up linux terminal
+> wsl -d Ubuntu
+
+
+Minecraft 4-bit ISA:
+(here A, B and C are not registers but respective section of program memory)
+(the addresses in A, B and C are RAM addresses, so it'll have PM and RAM, both size 16)
+0000 halt
+0001 store litA->C (save literal in 3rd nibble of PM to addr in 2nd nibble of PM)
+0010 A+B->C
+0011 A+litB->C
+0100 A+B->C
+0101 A+litB->C
+0110 A==B Goto C
+0111 A==B litGoto C
+1000 A>B Goto C
+1001 A>B litGoto C
+1010 A<B Goto C
+1011 A<B litGoto C
+1100 A*B->C
+1101 A*litB->C
+1110 >>
+1111 <<
+
+Binary Instructions (4-bit):
+0000 halt
+0001 add
+0010 subtract
+0011 multiply
+0100 mov_lit
+0101 mov_mem
+0110 >>
+0111 <<
+1000 >
+1001 <
+1010 =
+1011 >>
+1100 <<
+1101 &&
+1110 ||
+1111 !
+
+
+Binary Instructions:
+00000 no-op
+00001 mov_mem (to register or addr)
+00010 mov_lit (to register or addr) 
+00011 store (register to register or addr) (so jump if store to PC)
+00100 Unsigned add
+00101 Unsigned subtract
+00110 Unsigned compare ?
+00111 Unsigned multiply
+01000 Signed add
+01001 Signed subtract
+01010 Signed compare ?
+01011 Signed multiply
+01100 > ?
+01101 < ?
+01110 == ?
+01111 >>
+10000 <<
+10001 &&
+10010 ||
+10011 !
+10100 XOR
+100000 store to Graphics driver line (addr, data)
+100001 store to Graphics driver block (in last line)
+100001 store to Graphics driver data (in last block)
+
+Registers:
+A
+B
+C
+PC (program counter)
+SP
+ZF (zero flag, show A==B) (8-bit NOR)
+SF (sign flag, shows A-B<0 => A<B)
+OF (overflow flag, show 
+
+Assembly	        Logic	    What it checks in the Flags Register
+JE (Jump Equal)	      ==	            Is ZF = 1?
+JNE (Jump Not Equal)  !=	            Is ZF = 0?
+JL (Jump Less)	      < 	            Does SF != OF?
+JG (Jump Greater)	  >	                Is ZF = 0 and SF = OF?
+
+Assembly Instructions:
+jump
+jgt
+jlt
+jeq
+jneq
+call
+return
