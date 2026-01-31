@@ -17,8 +17,8 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     // Set up aliases to Component's inputs and outputs
     data_input = inputs;
     data_output = outputs;
-    subtract_enable = &inputs[2 * num_bits];      // Pointer to array element
-    output_enable = &inputs[2 * num_bits + 1];
+    subtract_enable = nullptr;
+    output_enable = nullptr;
     
     // Initialize AND gates pointer
     output_AND_gates = nullptr;
@@ -68,21 +68,23 @@ bool Adder_Subtractor::connect_input(const bool* const upstream_output_p, uint16
     else if (input_index == 2 * num_bits)
     {
         // Subtract enable: route to all FAS input 3, and first FAS input 2 (carry-in)
+        subtract_enable = inputs[input_index];
         bool result = true;
         for (uint16_t i = 0; i < num_bits; ++i)
         {
-            result &= adder_subtractors[i].connect_input(*subtract_enable, 3);
+            result &= adder_subtractors[i].connect_input(subtract_enable, 3);
         }
-        result &= adder_subtractors[0].connect_input(*subtract_enable, 2);
+        result &= adder_subtractors[0].connect_input(subtract_enable, 2);
         return result;
     }
     else if (input_index == 2 * num_bits + 1)
     {
         // Output enable: route to all AND gate input 1
+        output_enable = inputs[input_index];
         bool result = true;
         for (uint16_t i = 0; i < num_bits; ++i)
         {
-            result &= output_AND_gates[i].connect_input(*output_enable, 1);
+            result &= output_AND_gates[i].connect_input(output_enable, 1);
         }
         return result;
     }

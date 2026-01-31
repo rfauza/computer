@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-void test_truth_table(Component* component)
+void test_truth_table(Component* component, int start_index)
 {
     int num_inputs = component->get_num_inputs();
     
@@ -16,8 +16,8 @@ void test_truth_table(Component* component)
         sig_gen->connect_output(component, 0, i);
     }
     
-    // Iterate through all 2^num_inputs combinations
-    for (int i = 0; i < (1 << num_inputs); ++i)
+    // Iterate through all 2^num_inputs combinations, starting from start_index
+    for (int i = start_index; i < (1 << num_inputs); ++i)
     {
         std::cout << "=== Inputs ";
         

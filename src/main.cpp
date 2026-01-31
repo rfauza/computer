@@ -21,9 +21,9 @@
 
 int main()
 {
-    Adder device(3);
+    Adder_Subtractor device(3);
     
-    test_truth_table(&device);
+    test_truth_table(&device, 0b11000000);
     
     return 0;
 }

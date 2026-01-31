@@ -5,9 +5,9 @@
 XOR_Gate::XOR_Gate(uint16_t num_bits_param)
     : buffer_A(num_bits_param), 
       buffer_B(num_bits_param),
-      and_gate1(num_bits_param),
-      and_gate2(num_bits_param),
-      output_or_gate(num_bits_param),
+      and_gate1(2),
+      and_gate2(2),
+      output_or_gate(2),
       input_inverter_A(num_bits_param),
       input_inverter_B(num_bits_param)
 {

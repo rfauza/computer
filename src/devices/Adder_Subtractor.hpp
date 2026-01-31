@@ -16,6 +16,6 @@ private:
     
     bool** data_input; // Alias to Component inputs[0..num_bits-1]
     bool* data_output; // Alias to Component outputs[0..num_bits-1]
-    bool** subtract_enable; // Pointer to inputs[2*num_bits]
-    bool** output_enable; // Pointer to inputs[2*num_bits+1] (not yet implemented)
+    bool* subtract_enable; // Pointer to inputs[2*num_bits]
+    bool* output_enable; // Pointer to inputs[2*num_bits+1] (not yet implemented)
 };

@@ -4,7 +4,7 @@
 class NOR_Gate : public Component
 {
 public:
-    NOR_Gate(uint16_t num_bits = 1);
+    NOR_Gate(uint16_t num_bits = 2);
     ~NOR_Gate() override;
     void evaluate() override;
 };
