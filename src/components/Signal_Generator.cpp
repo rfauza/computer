@@ -3,14 +3,13 @@
 #include <sstream>
 #include <iomanip>
 
-Signal_Generator::Signal_Generator(uint16_t num_bits_param)
+Signal_Generator::Signal_Generator()
 {
-    num_bits = num_bits_param;
     std::ostringstream oss;
     oss << "Signal_Generator 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     num_inputs = 0;
-    num_outputs = num_bits;
+    num_outputs = 1;
     initialize_IO_arrays();
 }
 
@@ -26,14 +25,14 @@ void Signal_Generator::evaluate()
 
 void Signal_Generator::go_high()
 {
-    for (uint16_t i = 0; i < num_bits; ++i) {
+    for (uint16_t i = 0; i < num_outputs; ++i) {
         outputs[i] = true;
     }
 }
 
 void Signal_Generator::go_low()
 {
-    for (uint16_t i = 0; i < num_bits; ++i) {
+    for (uint16_t i = 0; i < num_outputs; ++i) {
         outputs[i] = false;
     }
 }

@@ -16,7 +16,7 @@ Adder::Adder(uint16_t num_bits) : Device(num_bits)
     adders = new Full_Adder[num_bits];
     
     // Create signal generator for carry-in (0)
-    carry_in_signal = new Signal_Generator(1);
+    carry_in_signal = new Signal_Generator();
     carry_in_signal->go_low();
     
     // Connect carry_in to first adder

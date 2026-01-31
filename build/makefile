@@ -1,5 +1,6 @@
 SHELL := /bin/sh
 
+# C++ compiler and flags
 CXX := g++
 CXXFLAGS := -O2 -Wall -g -fsanitize=address -fno-omit-frame-pointer
 DEPFLAGS := -MMD -MP -MF $(dir $@)$(basename $(notdir $<)).d

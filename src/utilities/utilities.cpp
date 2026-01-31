@@ -291,3 +291,16 @@ void test_adder_subtractor(Adder_Subtractor& device, int start_index)
         delete sig_gen;
     }
 }
+
+
+
+void test_all_components(uint16_t min_inputs, uint16_t max_inputs)
+{
+    test_component_type<AND_Gate>(min_inputs, max_inputs);
+    test_component_type<OR_Gate>(min_inputs, max_inputs);
+    test_component_type<NAND_Gate>(min_inputs, max_inputs);
+    test_component_type<NOR_Gate>(min_inputs, max_inputs);
+    test_component_type<XOR_Gate>(min_inputs, max_inputs);
+    test_component_type<Buffer>(min_inputs, max_inputs);
+    test_component_type<Inverter>(min_inputs, max_inputs);
+}

@@ -6,8 +6,9 @@
 *.exe
 *.out
 main
-bin/*
-build/*
+bin/
+build/
+!build/makefile
 
 # Dependency files
 *.d

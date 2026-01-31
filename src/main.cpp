@@ -19,11 +19,12 @@
 #include "utilities/utilities.hpp"
 
 
+
+
+
 int main()
 {
-    Adder_Subtractor device(3);
-    
-    test_adder_subtractor(device);
+    test_all_components(1,4);
     
     return 0;
 }

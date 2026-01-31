@@ -108,6 +108,13 @@ public:
      * @param name The new name for this component
      */
     void set_component_name(const std::string& name);
+    
+    /**
+     * @brief Gets the name identifier for this component
+     * 
+     * @return The component's name
+     */
+    const std::string& get_component_name() const { return component_name; }
 
 protected:
     /**
@@ -138,11 +145,6 @@ protected:
      * @brief Number of outputs for this component
      */
     uint16_t num_outputs = 0;
-    
-    /**
-     * @brief Number of bits for multi-bit components
-     */
-    uint16_t num_bits = 1;
     
     /**
      * @brief Array of pointers to input boolean signals from upstream components

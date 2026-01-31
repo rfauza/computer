@@ -3,14 +3,13 @@
 #include <sstream>
 #include <iomanip>
 
-Buffer::Buffer(uint16_t num_bits_param)
+Buffer::Buffer(uint16_t num_inputs_param)
 {
-    num_bits = num_bits_param;
+    num_inputs = num_inputs_param;
     std::ostringstream oss;
     oss << "Buffer 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
-    num_inputs = num_bits;
-    num_outputs = num_bits;
+    num_outputs = num_inputs;
     initialize_IO_arrays();
 }
 
@@ -21,7 +20,7 @@ Buffer::~Buffer()
 void Buffer::evaluate()
 {
     // Pass through: Output[i] = Input[i]
-    for (uint16_t i = 0; i < num_bits; ++i) {
+    for (uint16_t i = 0; i < num_inputs; ++i) {
         if (inputs[i] == nullptr) {
             std::cerr << "Error: " << component_name << " - input[" << i << "] not connected" << std::endl;
             return;

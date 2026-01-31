@@ -2,6 +2,7 @@
 #define UTILITIES_HPP
 
 #include <vector>
+#include <iostream>
 #include "../components/Component.hpp"
 #include "../device_components/Flip_Flop.hpp"
 #include "../device_components/Memory_Bit.hpp"
@@ -50,6 +51,40 @@ void flip_flop_tester(Flip_Flop& device);
  * @param device Reference to the Memory_Bit to test
  */
 void memory_bit_tester(Memory_Bit& device);
+
+/**
+ * @brief Tests a component type with a range of input sizes
+ * 
+ * Template function that instantiates a component of the given type with
+ * input sizes from min_inputs to max_inputs, and runs test_truth_table() on each instance.
+ * 
+ * @tparam T The component type to test (e.g., AND_Gate, OR_Gate, XOR_Gate)
+ * @param min_inputs Minimum number of inputs to test (default 1)
+ * @param max_inputs Maximum number of inputs to test (default 4)
+ */
+template<typename T>
+void test_component_type(uint16_t min_inputs = 1, uint16_t max_inputs = 4)
+{
+    for (uint16_t inputs = min_inputs; inputs <= max_inputs; ++inputs)
+    {
+        Component* comp = new T(inputs);
+        std::cout << "\n=== " << comp->get_component_name() << " with " << inputs << " input(s) ===" << std::endl;
+        test_truth_table(comp);
+        delete comp;
+    }
+}
+
+/**
+ * @brief Tests all logic component types with a range of input sizes
+ * 
+ * Calls test_component_type() for each standard logic component type:
+ * AND_Gate, OR_Gate, NAND_Gate, NOR_Gate, XOR_Gate, Buffer, and Inverter.
+ * Each component is tested with input sizes from min_inputs to max_inputs.
+ * 
+ * @param min_inputs Minimum number of inputs to test (default 1)
+ * @param max_inputs Maximum number of inputs to test (default 4)
+ */
+void test_all_components(uint16_t min_inputs = 1, uint16_t max_inputs = 4);
 
 #endif
 

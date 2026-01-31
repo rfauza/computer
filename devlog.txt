@@ -1,8 +1,13 @@
-Total: 11h
+Total: 14h
 
 ToDo: 
+- retest all components with varying input sizes
 - XOR to take multi bit
 - add comparator flags to adder/subtractor
+
+Jan 31 2026
+.5h multi-input XOR
+.5h all-component tester utility, testing all components after the changes
 
 Jan 30 2026
 1.5 Bus, changed components to take numbits so can have multi-bit logic gates and include addr in name

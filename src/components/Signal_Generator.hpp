@@ -4,7 +4,7 @@
 class Signal_Generator : public Component
 {
 public:
-    Signal_Generator(uint16_t num_bits = 1);
+    Signal_Generator();
     ~Signal_Generator() override;
     void evaluate() override;
     

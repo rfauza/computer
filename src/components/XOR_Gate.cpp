@@ -2,49 +2,74 @@
 #include <sstream>
 #include <iomanip>
 
-XOR_Gate::XOR_Gate(uint16_t num_bits_param)
-    : buffer_A(num_bits_param), 
-      buffer_B(num_bits_param),
-      and_gate1(2),
-      and_gate2(2),
-      output_or_gate(2),
-      input_inverter_A(num_bits_param),
-      input_inverter_B(num_bits_param)
+XOR_Gate::XOR_Gate(uint16_t num_inputs_param)
 {
-    num_bits = num_bits_param;
+    num_inputs = num_inputs_param;
     std::ostringstream oss;
     oss << "XOR_Gate 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
-    num_inputs = 2 * num_bits;
-    num_outputs = num_bits;
+    num_outputs = 1;
     
     // Allocate inputs
     inputs = new bool*[num_inputs];
     for (uint16_t i = 0; i < num_inputs; ++i)
         inputs[i] = nullptr;
     
-    // Allocate outputs as bool array (not bool* array)
+    // Allocate outputs as bool array
     outputs = new bool[num_outputs];
     
-    // create inverted input signals
-    buffer_A.connect_output(&input_inverter_A, 0, 0);
-    buffer_B.connect_output(&input_inverter_B, 0, 0);
+    // Create buffers and inverters for each input
+    // Create one num_inputs-input AND gate per input
+    // Each AND will be: input[i] AND NOT(all other inputs)
+    for (uint16_t i = 0; i < num_inputs; ++i)
+    {
+        input_buffers.push_back(new Buffer(1));
+        input_inverters.push_back(new Inverter(1));
+        and_gates.push_back(new AND_Gate(num_inputs));
+    }
     
-    // connect AND 1 (A & !B)
-    buffer_A.connect_output(&and_gate1, 0, 0);
-    input_inverter_B.connect_output(&and_gate1, 0, 1);
+    // Create multi-input OR gate
+    output_or_gate = new OR_Gate(num_inputs);
     
-    // connect AND 2 (!A & B)
-    input_inverter_A.connect_output(&and_gate2, 0, 0);
-    buffer_B.connect_output(&and_gate2, 0, 1);
+    // Connect each buffer output to its corresponding inverter
+    for (uint16_t i = 0; i < num_inputs; ++i)
+    {
+        input_buffers[i]->connect_output(input_inverters[i], 0, 0);
+    }
     
-    // connect AND 3
-    and_gate1.connect_output(&output_or_gate, 0, 0);
-    and_gate2.connect_output(&output_or_gate, 0, 1);
+    // Wire each AND gate: input[i] & !input[0] & !input[1] & ... (excluding i)
+    for (uint16_t i = 0; i < num_inputs; ++i)
+    {
+        uint16_t and_input_idx = 0;
+        for (uint16_t j = 0; j < num_inputs; ++j)
+        {
+            if (i == j)
+            {
+                // Use the buffer (non-inverted input)
+                input_buffers[j]->connect_output(and_gates[i], 0, and_input_idx);
+            }
+            else
+            {
+                // Use the inverter (inverted input)
+                input_inverters[j]->connect_output(and_gates[i], 0, and_input_idx);
+            }
+            and_input_idx++;
+        }
+        
+        // Connect this AND gate to the output OR
+        and_gates[i]->connect_output(output_or_gate, 0, i);
+    }
 };
 
 XOR_Gate::~XOR_Gate()
 {
+    for (auto buffer : input_buffers)
+        delete buffer;
+    for (auto inverter : input_inverters)
+        delete inverter;
+    for (auto and_gate : and_gates)
+        delete and_gate;
+    delete output_or_gate;
 }
 
 bool XOR_Gate::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -53,28 +78,33 @@ bool XOR_Gate::connect_input(const bool* const upstream_output_p, uint16_t input
     if (!Component::connect_input(upstream_output_p, input_index))
         return false;
     
+    if (input_index >= num_inputs)
+        return false;
+    
     // Wire the appropriate buffer with the actual signal
-    if (input_index < num_bits)
-        return buffer_A.connect_input(inputs[input_index], input_index);
-    else
-        return buffer_B.connect_input(inputs[input_index], input_index - num_bits);
+    return input_buffers[input_index]->connect_input(inputs[input_index], 0);
 }
 
 void XOR_Gate::evaluate()
 {
     // Evaluate all internal components in topological order
-    buffer_A.evaluate();
-    buffer_B.evaluate();
-    input_inverter_A.evaluate();
-    input_inverter_B.evaluate();
-    and_gate1.evaluate();
-    and_gate2.evaluate();
-    output_or_gate.evaluate();
+    // First evaluate all buffers
+    for (auto buffer : input_buffers)
+        buffer->evaluate();
+    
+    // Then evaluate all inverters
+    for (auto inverter : input_inverters)
+        inverter->evaluate();
+    
+    // Then evaluate all AND gates
+    for (auto and_gate : and_gates)
+        and_gate->evaluate();
+    
+    // Finally evaluate the output OR gate
+    output_or_gate->evaluate();
     
     // Copy OR gate output to our output
-    for (uint16_t i = 0; i < num_bits; ++i) {
-        outputs[i] = output_or_gate.get_output(i);
-    }
+    outputs[0] = output_or_gate->get_output(0);
 }
 
 void XOR_Gate::update()
