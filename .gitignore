@@ -1,0 +1,28 @@
+# Object files
+*.o
+*.obj
+
+# Executables
+*.exe
+*.out
+main
+bin/*
+build/*
+
+# Dependency files
+*.d
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.a
+*.lib
+
+# OS files
+.DS_Store
+Thumbs.db
