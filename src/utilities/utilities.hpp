@@ -35,4 +35,21 @@ void test_adder_subtractor(Adder_Subtractor& device, int start_index = 0);
  * @brief Tests a Flip_Flop component with specific state transitions
  * 
  * Tests the flip-flop through multiple Set/Reset combinations to verify
- * state mem
+ * state memory and transitions.
+ * 
+ * @param device Reference to the Flip_Flop to test
+ */
+void flip_flop_tester(Flip_Flop& device);
+
+/**
+ * @brief Tests a Memory_Bit component with a specific sequence of write/read operations
+ * 
+ * Tests the memory bit through a sequence of data writes and reads to verify
+ * proper storage and retrieval.
+ * 
+ * @param device Reference to the Memory_Bit to test
+ */
+void memory_bit_tester(Memory_Bit& device);
+
+#endif
+

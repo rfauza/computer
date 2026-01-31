@@ -1,5 +1,6 @@
 #include "utilities.hpp"
 #include "../components/Signal_Generator.hpp"
+#include "../devices/Adder_Subtractor.hpp"
 #include <iostream>
 #include <vector>
 
@@ -180,5 +181,113 @@ void memory_bit_tester(Memory_Bit& device)
             device.print_io();
             std::cout << std::endl;
         }
+    }
+}
+
+void test_adder_subtractor(Adder_Subtractor& device, int start_index)
+{
+    int num_inputs = device.get_num_inputs();
+    if (num_inputs < 4)
+    {
+        std::cerr << "Error: Adder_Subtractor has too few inputs:" << num_inputs << std::endl;
+        return;
+    }
+
+    int num_bits = (num_inputs - 2) / 2;
+    int total_combos = 1 << num_inputs;
+    int mismatches = 0;
+
+    // Create signal generators for each input
+    std::vector<Signal_Generator*> signal_generators;
+    for (int i = 0; i < num_inputs; ++i)
+    {
+        Signal_Generator* sig_gen = new Signal_Generator();
+        signal_generators.push_back(sig_gen);
+        sig_gen->connect_output(&device, 0, i);
+    }
+
+    for (int i = start_index; i < total_combos; ++i)
+    {
+        // Set signal generator states based on current combination
+        for (int b = 0; b < num_inputs; ++b)
+        {
+            bool bit_value = (i >> b) & 1;
+            if (bit_value)
+                signal_generators[b]->go_high();
+            else
+                signal_generators[b]->go_low();
+        }
+
+        // Evaluate the device
+        device.update();
+
+        // Decode inputs (LSB first)
+        int a = 0;
+        int b = 0;
+        for (int bit = 0; bit < num_bits; ++bit)
+        {
+            a |= (((i >> bit) & 1) << bit);
+            b |= (((i >> (bit + num_bits)) & 1) << bit);
+        }
+        bool subtract = ((i >> (2 * num_bits)) & 1) != 0;
+        bool output_enable = ((i >> (2 * num_bits + 1)) & 1) != 0;
+
+        int modulus = 1 << num_bits;
+        int expected = subtract ? (a - b) : (a + b);
+        expected = (expected % modulus + modulus) % modulus;
+        if (!output_enable)
+        {
+            expected = 0;
+        }
+
+        // Read outputs
+        int actual = 0;
+        for (int bit = 0; bit < num_bits; ++bit)
+        {
+            actual |= (device.get_output(bit) ? (1 << bit) : 0);
+        }
+
+        // Build binary strings (LSB first to match input order)
+        std::string a_bits;
+        std::string b_bits;
+        std::string out_bits;
+        a_bits.reserve(num_bits);
+        b_bits.reserve(num_bits);
+        out_bits.reserve(num_bits);
+        for (int bit = 0; bit < num_bits; ++bit)
+        {
+            a_bits.push_back(((a >> bit) & 1) ? '1' : '0');
+            b_bits.push_back(((b >> bit) & 1) ? '1' : '0');
+            out_bits.push_back(((actual >> bit) & 1) ? '1' : '0');
+        }
+
+        std::cout << "input: " << a_bits << " " << b_bits << " "
+                  << (subtract ? '1' : '0') << " " << (output_enable ? '1' : '0')
+                  << " = " << a << (subtract ? "-" : "+") << b << std::endl;
+        std::cout << "output: " << out_bits << " = " << actual;
+        if (actual != expected)
+        {
+            std::cout << " (expected " << expected << ")";
+        }
+        std::cout << std::endl;
+
+        if (actual != expected)
+        {
+            ++mismatches;
+        }
+    }
+
+    if (mismatches == 0)
+    {
+        std::cout << "All Adder_Subtractor outputs match expected results." << std::endl;
+    }
+    else
+    {
+        std::cout << "Total mismatches: " << mismatches << std::endl;
+    }
+
+    for (Signal_Generator* sig_gen : signal_generators)
+    {
+        delete sig_gen;
     }
 }

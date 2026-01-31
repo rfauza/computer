@@ -23,7 +23,7 @@ int main()
 {
     Adder_Subtractor device(3);
     
-    test_truth_table(&device, 0b11000000);
+    test_adder_subtractor(device);
     
     return 0;
 }
