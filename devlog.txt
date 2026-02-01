@@ -1,7 +1,40 @@
 Total: 14h
 
 ToDo: 
-- add comparator flag outputs to adder/subtractor, then put the flag registers in cpu
+- add comparator flag outputs to adder/subtractor
+- add multi outputs to bus
+- devices for logic unit: add bitwise and/or/xor/~
+- make multiplier
+- make divider
+- make controller (multiplexer selector) 
+== this completes devices ==
+- make program memory (4-bit minecraft)
+- make main memory (registers for RAM) with imbedded controller
+- make arithmetic unit (adder/subtractor, multiplier, divider)
+- make logic unit (bitwise and/or/xor/~)
+- make ALU:
+    ALU has one output enable for each device within (also calls evaluate only on that device component) 
+    Control unit converts multi-bit to single wire signal
+    Passthrough for comparator flags from adder/subtractor
+- make CPU (ALU+CU):
+    put comparator flags in cpu
+    add the registers like on a pc
+- make GUI for front plate with lights and switches
+    program mode/run mode switch
+    pulse/auto-run switch
+    addr select
+    OP code
+    C, A, B
+    write button
+    pulse button
+- generate minecraft 4-bit pc
+- make a programmer to load machine code to it
+- make graphcis controller
+- make 5-bit version with grahics
+- make function call and return
+- make 8-bit version with Operating System and graphcis
+- make 16-bit version with OS and graphcis
+- try architecture with all in RAM (and storage) and no program memory
 
 
 Jan 31 2026 : 1.5h - total: 0h
@@ -9,6 +42,7 @@ Jan 31 2026 : 1.5h - total: 0h
 .5h all-component tester utility, testing all components after the changes
 .5h adding gitignore, updating git to remove .o and executables
 1h >> and <<, register
+.5 wrote out ToDo for whole project
 
 Jan 30 2026 : 3h - total: 14h
 1.5 Bus, changed components to take numbits so can have multi-bit logic gates and include addr in name
