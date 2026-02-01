@@ -1,0 +1,2 @@
+- Always put `}` on a new line in code.
+- Use `evaluate()` for computation without cascading; use `update()` to call `evaluate()` then cascade to downstream components.

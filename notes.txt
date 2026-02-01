@@ -23,6 +23,12 @@ Minecraft 4-bit ISA:
 1110 >>
 1111 <<
 
+5-bit:
+dereference pointer (store addrA->C)
+write to graphics line
+write to graphics block
+write to graphics data
+
 Binary Instructions (4-bit):
 0000 halt
 0001 add
@@ -73,10 +79,23 @@ A
 B
 C
 PC (program counter)
-SP
+SP (stack pointer)
 ZF (zero flag, show A==B) (8-bit NOR)
 SF (sign flag, shows A-B<0 => A<B)
 OF (overflow flag, show 
+
+Comparator:
+Z (Zero Flag / ZF): Set if result == 0. Used for EQ checks.
+N (Negative Flag / SF - Sign Flag): Set if MSB of result is 1 (negative in signed). Used for LT/GT signed.
+C (Carry Flag / CF): Set if carry out from add, or no-borrow from subtract. Used for unsigned LT/GT.
+V (Overflow Flag / OF): Set if signed overflow occurred (carry into MSB ≠ carry out of MSB). Used with N for signed comparisons.
+With all four:
+EQ: Z
+LT (signed): N XOR V
+GT (signed): ¬(N XOR V) ∧ ¬Z
+LT (unsigned): C
+GT (unsigned): ¬C ∧ ¬Z
+
 
 Assembly	        Logic	    What it checks in the Flags Register
 JE (Jump Equal)	      ==	            Is ZF = 1?

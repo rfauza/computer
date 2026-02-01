@@ -31,11 +31,13 @@ ToDo:
 - make a programmer to load machine code to it
 - make graphcis controller
 - make 5-bit version with grahics
-- make function call and return
+- make function call and return and pointers (store addr in ram registers and dereference)
 - make 8-bit version with Operating System and graphcis
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
+Feb 1 2026 
+1.5 comparator
 
 Jan 31 2026 : 1.5h - total: 0h
 .5h multi-input XOR

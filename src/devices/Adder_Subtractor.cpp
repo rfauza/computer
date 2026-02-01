@@ -20,10 +20,13 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     subtract_enable = nullptr;
     output_enable = nullptr;
     
+    // Allocate internal_output array (raw sum + carry, pre-output_enable)
+    internal_output = new bool[num_bits + 1];
+    
     // Initialize AND gates pointer
     output_AND_gates = nullptr;
     
-    // Allocate Full_Adder_Subtractor array
+    // Array of single-bit Full_Adder_Subtractors
     adder_subtractors = new Full_Adder_Subtractor[num_bits];    
     // Wire carry chain between FAS components
     for (uint16_t i = 1; i < num_bits; ++i)
@@ -45,6 +48,7 @@ Adder_Subtractor::~Adder_Subtractor()
 {
     delete[] output_AND_gates;
     delete[] adder_subtractors;
+    delete[] internal_output;
 }
 
 bool Adder_Subtractor::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -106,6 +110,14 @@ void Adder_Subtractor::update()
     {
         output_AND_gates[i].evaluate();
     }
+    
+    // Copy raw sum to internal_output
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        internal_output[i] = adder_subtractors[i].get_outputs()[0];  // Raw sum
+    }
+    // Copy final carry to internal_output
+    internal_output[num_bits] = adder_subtractors[num_bits - 1].get_outputs()[1];  // Final carry
     
     // Copy outputs from AND gates to device outputs
     for (uint16_t i = 0; i < num_bits; ++i)
