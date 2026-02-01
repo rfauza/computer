@@ -1,8 +1,6 @@
 Total: 14h
 
 ToDo: 
-- add comparator flag outputs to adder/subtractor
-- add multi outputs to bus
 - devices for logic unit: add bitwise and/or/xor/~
 - make multiplier
 - make divider
@@ -36,10 +34,11 @@ ToDo:
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 1 2026 
+Feb 1 2026 : 
 1.5 comparator
+1h logic unit
 
-Jan 31 2026 : 1.5h - total: 0h
+Jan 31 2026 : 3h - total: 17h
 .5h multi-input XOR
 .5h all-component tester utility, testing all components after the changes
 .5h adding gitignore, updating git to remove .o and executables
