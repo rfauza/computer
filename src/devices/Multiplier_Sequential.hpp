@@ -4,6 +4,7 @@
 #include "Adder.hpp"
 #include "L_Shift.hpp"
 #include "R_Shift.hpp"
+#include "../device_components/Flip_Flop.hpp"
 #include "../components/Signal_Generator.hpp"
 
 /**
@@ -112,7 +113,7 @@ private:
     Register* accumulator;       // Holds partial result (2*num_bits)
     Register* multiplicand;      // Holds A (shifted left each cycle)
     Register* multiplier_reg;    // Holds B (shifted right each cycle)
-    Register* busy_flag;         // Single bit busy status
+    Flip_Flop* busy_flag;        // Single bit busy status
     
     // Combinational logic
     Adder* adder;                // Adds multiplicand to accumulator
@@ -123,6 +124,7 @@ private:
     Signal_Generator* write_enable;   // For register write control
     Signal_Generator* read_enable;    // For register read control
     Signal_Generator* zero_signal;    // Constant zero
+    Signal_Generator* one_signal;     // Constant one
     
     uint16_t cycle_count;
 };

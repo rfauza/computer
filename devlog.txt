@@ -1,7 +1,6 @@
 Total: 14h
 
 ToDo: 
-- make multiplier
 - make divider
 - make controller (multiplexer selector) 
 == this completes devices ==
@@ -34,9 +33,9 @@ ToDo:
 - try architecture with all in RAM (and storage) and no program memory
 
 Feb 1 2026 : 
-1.5 comparator
+1.5h comparator
 1h logic unit
-3-430 5:10- multiplier
+2h multiplier
 
 Jan 31 2026 : 3h - total: 17h
 .5h multi-input XOR

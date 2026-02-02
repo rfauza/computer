@@ -96,6 +96,9 @@ GT (signed): ¬(N XOR V) ∧ ¬Z
 LT (unsigned): C
 GT (unsigned): ¬C ∧ ¬Z
 
+Multipliers:
+Multiplier is one cycle
+sequential mult and div are multi-cycle and use busy flag
 
 Assembly	        Logic	    What it checks in the Flags Register
 JE (Jump Equal)	      ==	            Is ZF = 1?

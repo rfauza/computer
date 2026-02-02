@@ -17,7 +17,7 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     accumulator = new Register(2 * num_bits);
     multiplicand = new Register(2 * num_bits);  // Extended to 2*num_bits for shifting
     multiplier_reg = new Register(num_bits);
-    busy_flag = new Register(1);
+    busy_flag = new Flip_Flop();
     
     // Create combinational components
     adder = new Adder(2 * num_bits);
@@ -28,16 +28,17 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     write_enable = new Signal_Generator();
     read_enable = new Signal_Generator();
     zero_signal = new Signal_Generator();
+    one_signal = new Signal_Generator();
     
     write_enable->go_low();
     read_enable->go_high();  // Registers always readable
     zero_signal->go_low();
+    one_signal->go_high();
     
     // Connect read enables (always high for combinational access)
     accumulator->connect_input(&read_enable->get_outputs()[0], 2 * num_bits + 1);
     multiplicand->connect_input(&read_enable->get_outputs()[0], 2 * num_bits + 1);
     multiplier_reg->connect_input(&read_enable->get_outputs()[0], num_bits + 1);
-    busy_flag->connect_input(&read_enable->get_outputs()[0], 2);
     
     // Wire outputs to register outputs
     for (uint16_t i = 0; i < 2 * num_bits; ++i)
@@ -59,6 +60,7 @@ Multiplier_Sequential::~Multiplier_Sequential()
     delete write_enable;
     delete read_enable;
     delete zero_signal;
+    delete one_signal;
 }
 
 bool Multiplier_Sequential::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -106,8 +108,8 @@ void Multiplier_Sequential::start()
     accumulator->update();
     
     // Set busy flag
-    busy_flag->connect_input(&write_enable->get_outputs()[0], 0);  // Write 1
-    busy_flag->connect_input(&write_enable->get_outputs()[0], 1);  // Write enable
+    busy_flag->connect_input(&one_signal->get_outputs()[0], 0);  // Set
+    busy_flag->connect_input(&zero_signal->get_outputs()[0], 1);  // Reset (inactive)
     busy_flag->update();
     
     write_enable->go_low();
@@ -183,8 +185,8 @@ void Multiplier_Sequential::evaluate()
     if (cycle_count >= num_bits)
     {
         // Clear busy flag
-        busy_flag->connect_input(&zero_signal->get_outputs()[0], 0);
-        busy_flag->connect_input(&write_enable->get_outputs()[0], 1);
+        busy_flag->connect_input(&zero_signal->get_outputs()[0], 0);  // Set (inactive)
+        busy_flag->connect_input(&one_signal->get_outputs()[0], 1);   // Reset (active)
         busy_flag->update();
     }
     
