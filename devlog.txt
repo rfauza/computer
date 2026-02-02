@@ -1,13 +1,11 @@
 Total: 14h
 
 ToDo: 
-- make divider
-- make controller (multiplexer selector) 
+- make decoder 
 == this completes devices ==
 - make program memory (4-bit minecraft)
 - make main memory (registers for RAM) with imbedded controller
 - make arithmetic unit (adder/subtractor, multiplier, divider)
-- make logic unit (bitwise and/or/xor/~)
 - make ALU:
     ALU has one output enable for each device within (also calls evaluate only on that device component) 
     Control unit converts multi-bit to single wire signal
@@ -36,6 +34,8 @@ Feb 1 2026 :
 1.5h comparator
 1h logic unit
 2h multiplier
+.5h divider
+1h decoder
 
 Jan 31 2026 : 3h - total: 17h
 .5h multi-input XOR
