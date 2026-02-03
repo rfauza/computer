@@ -41,17 +41,23 @@ bool Decoder::connect_input(const bool* const upstream_output_p, uint16_t input_
     // Wire input to its inverter
     input_inverters[input_index].connect_input(inputs[input_index], 0);
     
-    // Wire this input (or its inverted version) to every output AND gate
-    for (uint16_t output = 0; output < num_outputs; ++output)
+    // cycle through output indices (and output AND gates) to connect this input (or its inverted version) 
+    // to each output AND gate
+    for (uint16_t output_index = 0; output_index < num_outputs; ++output_index)
     {
-        bool bit_is_one = ((output >> input_index) & 0x1) != 0;
+        // bitshift the output_index decimal value by input_index times and mask it with a binary 001
+        // to see if that output AND should take the input directly or its inverted version
+        bool bit_is_one = ((output_index >> input_index) & 0b1) != 0;
+        // if the index decimal has a 1 in the bit position corresponding to the input_index, 
+        // connect the input bit uninverted
         if (bit_is_one)
         {
-            output_ands[output].connect_input(inputs[input_index], input_index);
+            output_ands[output_index].connect_input(inputs[input_index], input_index);
         }
+        // otherwise, connect the input bit inverted
         else
         {
-            output_ands[output].connect_input(&input_inverters[input_index].get_outputs()[0], input_index);
+            output_ands[output_index].connect_input(&input_inverters[input_index].get_outputs()[0], input_index);
         }
     }
     

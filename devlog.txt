@@ -1,7 +1,6 @@
 Total: 14h
 
 ToDo: 
-- make decoder 
 == this completes devices ==
 - make program memory (4-bit minecraft)
 - make main memory (registers for RAM) with imbedded controller
@@ -30,7 +29,12 @@ ToDo:
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 1 2026 : 
+
+Feb 2 2026 : 2.5h - total: 25.5h
+.5 decoder comments
+2h Program Memory
+
+Feb 1 2026 : 6h - total: 23h
 1.5h comparator
 1h logic unit
 2h multiplier
