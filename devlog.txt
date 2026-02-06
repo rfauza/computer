@@ -1,17 +1,16 @@
 Total: 14h
 
 ToDo: 
-== this completes devices ==
-- make program memory (4-bit minecraft)
-- make main memory (registers for RAM) with imbedded controller
+- make main memory (registers for RAM) with imbedded controller, C (WE), A and B (RE) select controllers
 - make arithmetic unit (adder/subtractor, multiplier, divider)
+    like LU, data inputs and output selector for each device within
 - make ALU:
-    ALU has one output enable for each device within (also calls evaluate only on that device component) 
+    ALU has one output enable for each device within  
     Control unit converts multi-bit to single wire signal
     Passthrough for comparator flags from adder/subtractor
 - make CPU (ALU+CU):
-    put comparator flags in cpu
-    add the registers like on a pc
+    put comparator flags and PC register in cpu
+    add stack pointer and function return
 - make GUI for front plate with lights and switches
     program mode/run mode switch
     pulse/auto-run switch
@@ -20,15 +19,33 @@ ToDo:
     C, A, B
     write button
     pulse button
-- generate minecraft 4-bit pc
+- make 3-bit computer with screen. 
+- make 3-bit pong and snake
+- generate base minecraft 4-bit pc (with multiplier, read-only divider subroutine)
 - make a programmer to load machine code to it
-- make graphcis controller
+- make a faceplate GUI
+- make faceplate addon to see RAM
+- make graphics controllers with char mode :
+    - knows to take 3-5 instructions depending on version
+    - OR (better) direclty wired to last 4 addresses in RAM ([mode/rgb],[rgb2],[Rpage],[Rsel],[Cpage],[Csel])
+      and activate with "write to graphics" command. this allows for 64 colors.
+    - 64x64 Color screen: 4 op codes [mode, R, G, B] [RS1-2, CS1-2] [RS3-6] [CS3-6]
+    - 128x128 BW screen: 4 op codes [mode, RS0, CS0, data] [RS1-2, CS1-2] [RS3-6] [CS3-6] = 18x25 chars
+    - 256x256 
 - make 5-bit version with grahics
 - make function call and return and pointers (store addr in ram registers and dereference)
 - make 8-bit version with Operating System and graphcis
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
+Feb 6 2026
+12:20
+
+Feb 4 2026 : 2h total 30.5h
+1h designing 3-bit ISA
+
+Feb 3 2026 : 3h - total 28.5h
+3h designing graphics and opcode architecture
 
 Feb 2 2026 : 2.5h - total: 25.5h
 .5 decoder comments

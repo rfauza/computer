@@ -2,7 +2,44 @@
 windows powershell to call up linux terminal
 > wsl -d Ubuntu
 
+3-bit ISA
+000 movl litA->[B][C] (can have 8x8=64 RAM addreses. first page is working data, others are registers like graph)
+001 mova A->BC
+010 add
+011 inv (bitwise invert. enables subtraction)!AB->C (turns sub into 3 inst, but gets utility of ~)
+100 XOR/jne (=jne if result is not 0) AxorB->C
+101 goto ABC (so we can have 2^9=512 PM with cond jmp) (OR 256 if we want MSB to mean lit vs addr)
+110 jgt A>B enables jump flag ((A[2]&!B[2]) OR ((NOT prev) AND (A[1]&!B[1])) OR ((NOT prev) AND (A[0]&!B[0]))
+111 AND/jeq A==B enables jump flag (OR, this can be and AND A&B->C op, that writes to jmp flag if result is 111. also works with XOR result 0)
 
+
+- using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
+- add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.
+    we can either share the first page in all the pages, or just swap one with the swap reg when needed. 
+    can even have more swap regs if needed, there are plenty of addr per page now (64)
+011 >> (enables multiplication) AB>>->C
+100 << (enables division) AB<<->C
+110 rp rampage (was graph (write to graphics, sends RAM addresses [row][col][data]))
+111 goto (2^9=512 addr, or page PM for serial execute 2^12=4,096)
+- return - can have return if goto automatically uses one RAM (register) that prog can write to
+      you write your own addr into reg, hit goto func. func ends with goto without writing to addr reg.
+- don't need halt. just jump to last addr in PM, computer halts at last addr
+- graph - or replace graph opcode with RAM page and have mova A->BC, so we can have 8x8x8 x8x8 = 32k addresses and later pages can be 
+    hardwired to registers, like the 8x8 screen (which alone is 64). last addr (111 111 = 64) on every page can be swap reg.
+    this way screen can even be 4x 8x8 = 16x16 or even more
+- OR instead of having a rampage, make rampage a register too, so 8 pages of 64 
+    (minus: swapA, swapB, swapC, rampage, retaddrA, retaddrB, retaddrC) = 8x57=456 RAM addr
+- 8x8 screen would only take 8 registers (each is 3 bits) with a decoder in graphics processor
+    or 9x3=27 for 9x9 using direct binary for each pixel
+- can even expose PC as a register instead of goto command, and have a retaddr reg, so end of func calls goto [retaddr]
+    this frees up 2 opcodes that can be used for conditional jumps (A==B, A>B).
+    calling those enables/disables the jump flag. flag is cleared 2 clock ticks later so unconditional jumps can happen
+    No, this won't work because we'd need more than one cycle to write to PM so restricts us to 8 addresses
+    So we need goto/jmp
+- can make pong? snake?
+- could maybe even page opcodes? would that be cheating? lol
+
+Minecraft_4_bit
 Minecraft 4-bit ISA:
 (here A, B and C are not registers but respective section of program memory)
 (the addresses in A, B and C are RAM addresses, so it'll have PM and RAM, both size 16)
@@ -10,8 +47,8 @@ Minecraft 4-bit ISA:
 0001 store litA->C (save literal in 3rd nibble of PM to addr in 2nd nibble of PM)
 0010 A+B->C
 0011 A+litB->C
-0100 A+B->C
-0101 A+litB->C
+0100 A-B->C
+0101 A-litB->C
 0110 A==B Goto C
 0111 A==B litGoto C
 1000 A>B Goto C
@@ -23,11 +60,57 @@ Minecraft 4-bit ISA:
 1110 >>
 1111 <<
 
+Super_4_bit ISA
+4-bit with PM paging and graphics:
+0000 halt
+0001 store litA->[B,C] (page with B addr, with C, so 8-bit RAM = 256) 
+0010 A+B->C
+0011 A-B->C
+0100 A*B->C (or store A->[B,C])
+0101 >> ((A>>1)->C)
+0110 << ((A<<1)->C)
+0111 ! (bitwise invert) ((!A)->C)
+1000 & (bitwise AND) ((A&B)->C)
+1001 | (bitwise OR) ((A|B)->C)
+1010 xor (bitwise XOR) ((AxorB)->C)
+1011 jmpen - jump enable: A,B are the addresses to compare. C is the type of comparison (A==B, A!=B, A>B, A<B). enables a jump flag. unconditional jump just compare addr==addr (jmpen 0001 0000 0000)
+1100 jmp (use all 3x4=12 bits to address PM = 4,096)
+1101 graphics write (signals graphcis unit to copy data from its register addresses in RAM, after we wrote to them with store)
+1110 call
+1111 return
+
+PM paging:
+ - can either be unconditional goto with hardcoded addr, so A=page lv1, B=page lv2, C=addr on page = 4,096 addr
+ - or use A and B as the 8-bit addr, which can be fetched from memory with one opcode, or hardcoded with the other = 256
+ - or hard coded in both for a 16-bit addr = 65,536 addresses
+ - conditional jumps can be 2-instruction. comparators activate the jump in next instruction (jump flag)
+
+RAM Paging:
+(addr 0 of each page can be scratch (store 0000) used to switch pages since LU can only address 4-bits for store addr)
+    can have one 4-bit data register (swap) to move values between pages (address 1111, removing 16 RAM addresses from the total 256)
+    that would require 4 commands: store 0000 into [page] 0000, A+0000->1111, a page command, then a 1111+0->C
+this is needed because we don't have an opcode left for store A->[B,C] (otherwise we could use that instead of adding 0)
+though we could do that instead of multiplier
+e.g.: moving data on page 1 addr 12 to page 2 addr 9:
+0001 0000 0001 0000 - store 0 into addr 0 of page 1 (to page to page 1 and to ensure we have a zero for adder)
+0010 1111 0000 1100 - add contents of addr 0 to addr 12, store to register addr 1111
+0001 0000 0010 0000 - store 0 into addr 0 of page 2 (to page to ram page 2 and to ensure we have a zero for adder)
+0010 1001 1111 0000 - add addr 0 and addr 1111 (register) and store to addr 9 on current page
+
+call/return:
+we don't need to have these be addresses, they can be registers in the CPU controlled by the CU. but we will need
+several addr so we can call a func from a func. 16 deep? so "stack pointer" would be "return pointer" on the call/ret
+RAM stack
+
+
 5-bit:
+can have operating system with load program from disk, file system
 dereference pointer (store addrA->C)
 write to graphics line
 write to graphics block
 write to graphics data
+bitwise &, |, invert, xor
+function call and return, context switch, PC restore, stack pointer
 
 Binary Instructions (4-bit):
 0000 halt
