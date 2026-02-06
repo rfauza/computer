@@ -38,8 +38,8 @@ ToDo:
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 6 2026
-12:20
+Feb 6 2026 : 
+1h wasted time with copilot breaking everything
 
 Feb 4 2026 : 2h total 30.5h
 1h designing 3-bit ISA
