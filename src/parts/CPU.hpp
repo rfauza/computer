@@ -4,7 +4,7 @@
 class CPU : public Part
 {
 public:
-    CPU();
+    CPU(uint16_t num_bits);
     ~CPU() override;
     void update() override;
 };

@@ -54,5 +54,5 @@ public:
     
 private:
     Inverter* input_inverters; // one per input
-    AND_Gate* output_ands; // one per output, each taking num_inputs number of inputs (so 16-AND for 4-bit decoder)
+    AND_Gate** output_ands; // array of pointers to AND_Gate objects (one per output)
 };

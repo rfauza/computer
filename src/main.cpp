@@ -16,17 +16,14 @@
 #include "devices/Register.hpp"
 #include "devices/Adder.hpp"
 #include "devices/Adder_Subtractor.hpp"
+#include "devices/Decoder.hpp"
 #include "utilities/utilities.hpp"
 
 int main()
 {
-    Register device = Register(4);
+    Decoder device = Decoder(4);
     
-    test_component(&device, "100000");
-    test_component(&device, "100010");
-    test_component(&device, "010001");
-    test_component(&device, "010010");
-    test_component(&device, "000001");
+    test_truth_table(&device);
     
     return 0;
 }

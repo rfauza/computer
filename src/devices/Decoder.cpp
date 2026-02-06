@@ -9,6 +9,8 @@ Decoder::Decoder(uint16_t num_bits)
     oss << "Decoder 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     
+    // Set num_inputs from num_bits parameter
+    num_inputs = num_bits;
     if (num_inputs == 0)
         num_inputs = 1;
     
@@ -16,18 +18,25 @@ Decoder::Decoder(uint16_t num_bits)
     allocate_IO_arrays();
     
     input_inverters = new Inverter[num_inputs];
-    output_ands = new AND_Gate[num_outputs];
+    output_ands = new AND_Gate*[num_outputs];
     for (uint16_t i = 0; i < num_outputs; ++i)
     {
-        output_ands[i] = AND_Gate(num_inputs);
-        outputs[i] = &output_ands[i].get_outputs()[0];
+        output_ands[i] = new AND_Gate(num_inputs);
+        outputs[i] = &output_ands[i]->get_outputs()[0];
     }
 }
 
 Decoder::~Decoder()
 {
     delete[] input_inverters;
-    delete[] output_ands;
+    if (output_ands)
+    {
+        for (uint16_t i = 0; i < num_outputs; ++i)
+        {
+            delete output_ands[i];
+        }
+        delete[] output_ands;
+    }
 }
 
 bool Decoder::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -52,12 +61,12 @@ bool Decoder::connect_input(const bool* const upstream_output_p, uint16_t input_
         // connect the input bit uninverted
         if (bit_is_one)
         {
-            output_ands[output_index].connect_input(inputs[input_index], input_index);
+            output_ands[output_index]->connect_input(inputs[input_index], input_index);
         }
         // otherwise, connect the input bit inverted
         else
         {
-            output_ands[output_index].connect_input(&input_inverters[input_index].get_outputs()[0], input_index);
+            output_ands[output_index]->connect_input(&input_inverters[input_index].get_outputs()[0], input_index);
         }
     }
     
@@ -72,7 +81,7 @@ void Decoder::evaluate()
     }
     for (uint16_t i = 0; i < num_outputs; ++i)
     {
-        output_ands[i].evaluate();
+        output_ands[i]->evaluate();
     }
 }
 

@@ -4,7 +4,7 @@
 class ALU : public Part
 {
 public:
-    ALU();
+    ALU(uint16_t num_bits);
     ~ALU() override;
     void update() override;
 };
