@@ -14,7 +14,7 @@ Bus::Bus(uint16_t num_bits) : Device(num_bits)
 
 Bus::~Bus() = default;
 
-void Bus::update()
+void Bus::evaluate()
 {
     // If no inputs are connected, output is all zeros
     if (inputs.empty()) {
@@ -31,6 +31,11 @@ void Bus::update()
             outputs[i] = outputs[i] || input[i];
         }
     }
+}
+
+void Bus::update()
+{
+    evaluate();
 }
 
 void Bus::attach_input(bool* input_signal)

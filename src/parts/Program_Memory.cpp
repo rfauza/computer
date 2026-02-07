@@ -1,29 +1,29 @@
 #include "Program_Memory.hpp"
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
-Program_Memory::Program_Memory(uint16_t num_bits)
-    : Part(num_bits),
-      decoder(num_bits),
-    input_bus(static_cast<uint16_t>(4 * num_bits)),
-    output_bus(static_cast<uint16_t>(4 * num_bits))
+Program_Memory::Program_Memory(uint16_t decoder_bits, uint16_t data_bits)
+    : Part(static_cast<uint16_t>(decoder_bits + 4 * data_bits + 2)),
+      decoder(decoder_bits)
 {
     std::ostringstream oss;
     oss << "Program_Memory 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     
-    if (num_bits == 0)
-        num_bits = 1;
+    if (decoder_bits == 0)
+        decoder_bits = 1;
+    if (data_bits == 0)
+        data_bits = 1;
     
-    num_addresses = static_cast<uint16_t>(1u << num_bits); // 2^num_bits
-    data_bus_bits = static_cast<uint16_t>(4 * num_bits); // Opcode, C, A, B
+    this->decoder_bits = decoder_bits;
+    this->data_bits = data_bits;
     
-    num_inputs = static_cast<uint16_t>(5 * num_bits + 2); // addr select, opcode, C, A, B, WE, RE
-    num_outputs = data_bus_bits;
+    num_addresses = static_cast<uint16_t>(1u << decoder_bits); // 2^decoder_bits
+    
+    num_inputs = static_cast<uint16_t>(decoder_bits + 4 * data_bits + 2); // addr select, opcode, C, A, B, WE, RE
+    num_outputs = static_cast<uint16_t>(4 * data_bits);
     allocate_IO_arrays();
-    
-    // Attach the data inputs to the input bus (skip the first [num_bits] address selector bits)
-    input_bus.attach_input(inputs[num_bits]);
 
     // Allocate register arrays and select-gates for each address
     for (uint16_t i = 0; i < 4; ++i)
@@ -46,43 +46,32 @@ Program_Memory::Program_Memory(uint16_t num_bits)
         // create 4 registers (opcode, C, A, B) for each address
         for (uint16_t reg_index = 0; reg_index < registers_per_address; ++reg_index)
         {
-            Register* reg = new Register(num_bits);
-            // registers[reg_index][addr] = reg;
-            registers[addr][reg_index] = reg;
-            
-            // Wire register data inputs to the input bus
-            uint16_t bus_offset = static_cast<uint16_t>(reg_index * num_bits); // offset by numbits for each register
-            // connect each bit
-            for (uint16_t bit = 0; bit < num_bits; ++bit)
-            {
-                reg->connect_input(&input_bus.get_outputs()[bus_offset + bit], bit);
-            }
-            
-            // Wire shared write/read enables (ANDed with address selector)
-            reg->connect_input(&write_selects[addr]->get_outputs()[0], num_bits);
-            reg->connect_input(&read_selects[addr]->get_outputs()[0], num_bits + 1);
-            
-            // Attach register outputs to shared output_bus
-            output_bus.attach_input(reg->get_outputs());
+            Register* reg = new Register(data_bits);
+            registers[reg_index][addr] = reg;
         }
     }
 }
 
 Program_Memory::~Program_Memory()
 {
+    // Delete all registers
     for (uint16_t i = 0; i < 4; ++i)
     {
+        for (uint16_t j = 0; j < num_addresses; ++j)
+        {
+            delete registers[i][j];
+        }
         delete[] registers[i];
     }
-
-    for (uint16_t i = 0; i < 4; ++i)
+    
+    // Delete all select gates
+    for (uint16_t i = 0; i < num_addresses; ++i)
     {
-        delete[] registers[i];
+        delete write_selects[i];
+        delete read_selects[i];
     }
     delete[] write_selects;
     delete[] read_selects;
-    
-    // output_bus destroyed automatically
 }
 
 bool Program_Memory::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -93,34 +82,54 @@ bool Program_Memory::connect_input(const bool* const upstream_output_p, uint16_t
     
     // Internal Connections:
     // Connect address bits to decoder
-    if (input_index < num_bits)
+    if (input_index < decoder_bits)
     {
         // Address bits -> decoder inputs
         return decoder.connect_input(inputs[input_index], input_index);
     }
-    // Do not connect data bus bits directly since Bus has this device's input array as one of its inputs in constructor
-    else if (input_index < static_cast<uint16_t>(num_bits + data_bus_bits))
+    // Connect data bits to ALL registers
+    else if (input_index < static_cast<uint16_t>(decoder_bits + 4 * data_bits))
     {
-        // Input_bus bits are read directly from this device's input
+        uint16_t data_bit_index = static_cast<uint16_t>(input_index - decoder_bits);
+        uint16_t reg_index = data_bit_index / data_bits;  // which register (opcode=0, C=1, A=2, B=3)
+        uint16_t bit_within_reg = data_bit_index % data_bits;  // which bit within that register
+        
+        // Connect this input to all copies of this register across all addresses
+        for (uint16_t addr = 0; addr < num_addresses; ++addr)
+        {
+            registers[reg_index][addr]->connect_input(inputs[input_index], bit_within_reg);
+        }
         return true;
     }
     // Connect write enable
-    else if (input_index == static_cast<uint16_t>(5 * num_bits))
+    else if (input_index == static_cast<uint16_t>(decoder_bits + 4 * data_bits))
     {
         // Write Enable -> all write select gates (input 1)
         for (uint16_t i = 0; i < num_addresses; ++i)
         {
             write_selects[i]->connect_input(inputs[input_index], 1);
+            
+            // Connect write_select output to all registers at this address
+            for (uint16_t reg = 0; reg < registers_per_address; ++reg)
+            {
+                registers[reg][i]->connect_input(&write_selects[i]->get_outputs()[0], data_bits);
+            }
         }
         return true;
     }
     // Connect read enable
-    else if (input_index == static_cast<uint16_t>(5 * num_bits + 1))
+    else if (input_index == static_cast<uint16_t>(decoder_bits + 4 * data_bits + 1))
     {
         // Read Enable -> all read select gates (input 1)
         for (uint16_t i = 0; i < num_addresses; ++i)
         {
             read_selects[i]->connect_input(inputs[input_index], 1);
+            
+            // Connect read_select output to all registers at this address
+            for (uint16_t reg = 0; reg < registers_per_address; ++reg)
+            {
+                registers[reg][i]->connect_input(&read_selects[i]->get_outputs()[0], data_bits + 1);
+            }
         }
         return true;
     }
@@ -130,7 +139,6 @@ bool Program_Memory::connect_input(const bool* const upstream_output_p, uint16_t
 
 void Program_Memory::evaluate()
 {
-    input_bus.evaluate();
     decoder.evaluate();
     
     for (uint16_t i = 0; i < num_addresses; ++i)
@@ -143,16 +151,22 @@ void Program_Memory::evaluate()
     {
         for (uint16_t i = 0; i < 4; ++i)
         {
-            registers[addr][i]->evaluate();
+            registers[i][addr]->evaluate();
         }
     }
     
-    output_bus.evaluate();
-    
-    // Copy output bus to outputs array
-    for (uint16_t bit = 0; bit < data_bus_bits; ++bit)
+    // Manually OR outputs from all addresses
+    // For each bit position in output (16 bits = 4 registers × 4 bits)
+    for (uint16_t bit = 0; bit < static_cast<uint16_t>(4 * data_bits); ++bit)
     {
-        outputs[bit] = output_bus.get_output(bit);
+        uint16_t reg_index = bit / data_bits;  // Which register (0-3)
+        uint16_t bit_in_reg = bit % data_bits; // Which bit in that register (0-3)
+        
+        outputs[bit] = false;
+        for (uint16_t addr = 0; addr < num_addresses; ++addr)
+        {
+            outputs[bit] = outputs[bit] || registers[reg_index][addr]->get_output(bit_in_reg);
+        }
     }
 }
 

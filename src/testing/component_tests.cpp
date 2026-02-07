@@ -1,4 +1,4 @@
-#include "utilities.hpp"
+#include "component_tests.hpp"
 #include "../components/Signal_Generator.hpp"
 #include "../devices/Adder_Subtractor.hpp"
 #include <iostream>

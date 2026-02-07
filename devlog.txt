@@ -1,6 +1,11 @@
 Total: 14h
 
 ToDo: 
+- make automated testing
+- Control Unit
+    add PC and incrementer (needs an adder)
+    PC has to be a register, that connects to PM select
+    also has RAMPage select register (2-bytes: store AB->rampage)
 - make main memory (registers for RAM) with imbedded controller, C (WE), A and B (RE) select controllers
 - make arithmetic unit (adder/subtractor, multiplier, divider)
     like LU, data inputs and output selector for each device within
@@ -39,6 +44,8 @@ ToDo:
 - try architecture with all in RAM (and storage) and no program memory
 
 Feb 6 2026 : 
+.5h making program memory 3-data bits in size (use goto ABC)
+.5h fixed decoder
 1h wasted time with copilot breaking everything
 
 Feb 4 2026 : 2h total 30.5h

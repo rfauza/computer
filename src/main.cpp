@@ -17,13 +17,26 @@
 #include "devices/Adder.hpp"
 #include "devices/Adder_Subtractor.hpp"
 #include "devices/Decoder.hpp"
-#include "utilities/utilities.hpp"
+#include "parts/Program_Memory.hpp"
+#include "testing/component_tests.hpp"
+#include "testing/program_memory_tester.hpp"
 
 int main()
 {
-    Decoder device = Decoder(4);
+    // Create a Program Memory with defaults (12-bit address, 4-bit data)
+    Program_Memory pm;
     
-    test_truth_table(&device);
+    std::cout << "=== Program Memory Test ===\n\n";
+    
+    // Write random data to 2 random addresses
+    program_memory_tester(pm, "5 7 3 2 1 1 0");
+    program_memory_tester(pm, "10 14 11 9 6 1 0");
+    
+    // Read from those addresses and a third with other data on the bus
+    std::cout << "--- Reading back ---\n";
+    program_memory_tester(pm, "5 5 5 5 5 0 1");
+    program_memory_tester(pm, "10 8 8 8 8 0 1");
+    program_memory_tester(pm, "20 15 15 15 15 0 1");
     
     return 0;
 }
