@@ -24,6 +24,7 @@ void AND_Gate::evaluate()
     for (uint16_t i = 0; i < num_inputs; ++i) {
         if (inputs[i] == nullptr) {
             std::cerr << "Error: " << component_name << " - input[" << i << "] not connected" << std::endl;
+            outputs[0] = false; // Set output to false if any input is not connected
             return;
         }
         outputs[0] = outputs[0] && (*inputs[i]);

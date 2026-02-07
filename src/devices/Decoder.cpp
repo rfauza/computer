@@ -22,7 +22,6 @@ Decoder::Decoder(uint16_t num_bits)
     for (uint16_t i = 0; i < num_outputs; ++i)
     {
         output_ands[i] = new AND_Gate(num_inputs);
-        outputs[i] = &output_ands[i]->get_outputs()[0];
     }
 }
 
@@ -82,6 +81,7 @@ void Decoder::evaluate()
     for (uint16_t i = 0; i < num_outputs; ++i)
     {
         output_ands[i]->evaluate();
+        outputs[i] = output_ands[i]->get_outputs()[0];
     }
 }
 
