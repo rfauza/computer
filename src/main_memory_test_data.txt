@@ -1,0 +1,14 @@
+# Main Memory Test Data
+# Format: address data
+# This example uses 8-bit addresses and 4-bit data
+
+# Store some test values
+00000000 0001
+00000001 0010
+00000010 0100
+00000011 1000
+00000100 0101
+00000101 1111
+00001010 1010
+00001111 0101
+11111111 1001

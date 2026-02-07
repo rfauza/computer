@@ -7,6 +7,7 @@ Program_Memory::Program_Memory(uint16_t decoder_bits, uint16_t data_bits)
     : Part(static_cast<uint16_t>(decoder_bits + 4 * data_bits + 2)),
       decoder(decoder_bits)
 {
+    // make component name
     std::ostringstream oss;
     oss << "Program_Memory 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();

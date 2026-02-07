@@ -1,12 +1,12 @@
 Total: 14h
 
 ToDo: 
-- make automated testing
 - Control Unit
+    decoder receives opcode from PM and sends it to ALU
     add PC and incrementer (needs an adder)
-    PC has to be a register, that connects to PM select
+    PC has to be a register, that connects to PM select (2*numbits)
     also has RAMPage select register (2-bytes: store AB->rampage)
-- make main memory (registers for RAM) with imbedded controller, C (WE), A and B (RE) select controllers
+- make main memory (registers for RAM) with imbedded controller, C (Write select), A and B (Read select) controllers
 - make arithmetic unit (adder/subtractor, multiplier, divider)
     like LU, data inputs and output selector for each device within
 - make ALU:
@@ -24,10 +24,11 @@ ToDo:
     C, A, B
     write button
     pulse button
+- make automated testing for all parts and components
+help me make an automated testing suite that will test all my classes. use the standard industry format inside the testing folder (retain the files currently in that folder)
 - make 3-bit computer with screen. 
 - make 3-bit pong and snake
 - generate base minecraft 4-bit pc (with multiplier, read-only divider subroutine)
-- make a programmer to load machine code to it
 - make a faceplate GUI
 - make faceplate addon to see RAM
 - make graphics controllers with char mode :
@@ -43,7 +44,12 @@ ToDo:
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 6 2026 : 
+Feb 7 2026 : 
+2h PM loader/verifier
+1h main mem loader/verifier
+
+Feb 6 2026 : 3h total 33.5h
+1h PM tester
 .5h making program memory 3-data bits in size (use goto ABC)
 .5h fixed decoder
 1h wasted time with copilot breaking everything
