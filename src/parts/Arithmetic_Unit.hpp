@@ -1,6 +1,8 @@
 #pragma once
 #include "Part.hpp"
 #include "../components/OR_Gate.hpp"
+#include "../components/AND_Gate.hpp"
+#include "../components/Signal_Generator.hpp"
 #include "../devices/Adder_Subtractor.hpp"
 #include "../devices/Multiplier.hpp"
 
@@ -89,6 +91,12 @@ private:
     Multiplier multiplier;
     OR_Gate* adder_output_enable_or;    // 4-input OR gate for add/sub/inc/dec enables
     OR_Gate* adder_subtract_enable_or;  // 2-input OR gate for sub/dec enables
+    OR_Gate* add_or_sub_or;             // 2-input OR gate for add/sub (select data_b)
+    OR_Gate* inc_or_dec_or;             // 2-input OR gate for inc/dec (select constant 1)
+    Signal_Generator* constant_bits;    // Array: constant 1 bits (only LSB=1, rest=0)
+    AND_Gate* data_b_gates;             // Array: gate data_b bits with (add OR sub)
+    AND_Gate* constant_one_gates;       // Array: gate constant 1 with (inc OR dec)
+    OR_Gate* b_input_or_gates;          // Array: combine gated data_b and constant_one
     
     bool** data_a;            // Alias to inputs[0..num_bits-1]
     bool** data_b;            // Alias to inputs[num_bits..2*num_bits-1]

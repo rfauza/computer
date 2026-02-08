@@ -33,7 +33,7 @@ void testMainMemory();
 
 int main()
 {
-    test_arithmetic_unit();
+    test_arithmetic_unit_truth_table();
     return 0;
 }
 

@@ -12,3 +12,4 @@
  * Verifies results mathematically to ensure correctness.
  */
 void test_arithmetic_unit();
+void test_arithmetic_unit_truth_table();

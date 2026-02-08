@@ -3,6 +3,7 @@ Total: 14h
 ToDo: 
 - make arithmetic unit (adder/subtractor, inc, dec, multiplier)
     like LU, data inputs and output selector for each device within
+    change tester to test whole truth table
 - make ALU:
     ALU has one output enable for each device within  
     Control unit converts multi-bit to single wire signal
