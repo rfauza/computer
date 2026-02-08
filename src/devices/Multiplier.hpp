@@ -17,9 +17,10 @@
  *   - Hardware complexity: O(n²) gates
  *   - Propagation delay: O(n) gate delays (combinational, single cycle)
  * 
- * Input layout (2*num_bits total):
+ * Input layout (2*num_bits + 1):
  *   - inputs[0] to inputs[num_bits-1]: A (multiplicand)
  *   - inputs[num_bits] to inputs[2*num_bits-1]: B (multiplier)
+ *   - inputs[2*num_bits]: output_enable (gates outputs with AND)
  * 
  * Output layout (2*num_bits total):
  *   - outputs[0] to outputs[2*num_bits-1]: Product (A × B)
@@ -72,5 +73,7 @@ private:
     AND_Gate** and_array;        // [num_bits][num_bits] AND gates for partial products
     Adder** adder_array;         // [num_bits-1] adders of increasing width
     Signal_Generator** zeros;    // Constant zero signals for shifting
+    AND_Gate* output_AND_gates;  // AND gates for output gating with output_enable
+    bool* output_enable;          // Pointer to inputs[2*num_bits]
 };
 

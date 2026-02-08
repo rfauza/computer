@@ -1,7 +1,7 @@
 Total: 14h
 
 ToDo: 
-- make arithmetic unit (adder/subtractor, multiplier, divider)
+- make arithmetic unit (adder/subtractor, inc, dec, multiplier)
     like LU, data inputs and output selector for each device within
 - make ALU:
     ALU has one output enable for each device within  
@@ -44,8 +44,8 @@ help me make an automated testing suite that will test all my classes. use the s
 - try architecture with all in RAM (and storage) and no program memory
 
 Feb 8 2026 : 
-write enable to mul and div
-fixing AU
+2h fixing AU add/sub, write enable to mul and div
+
 
 Feb 7 2026 : 4h
 2h PM loader/verifier

@@ -12,6 +12,12 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     num_outputs = 2 * num_bits + 1; // quotient (num_bits) + remainder (num_bits) + busy
     
     allocate_IO_arrays();
+
+    // Initialize outputs to false to avoid uninitialized values
+    for (uint16_t i = 0; i < num_outputs; ++i)
+    {
+        outputs[i] = false;
+    }
     
     // Create registers
     quotient = new Register(num_bits);

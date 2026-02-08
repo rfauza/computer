@@ -55,7 +55,7 @@ bool Adder::connect_input(const bool* const upstream_output_p, uint16_t input_in
     return true;
 }
 
-void Adder::update()
+void Adder::evaluate()
 {
     // Evaluate all adders in sequence
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -68,6 +68,11 @@ void Adder::update()
     {
         outputs[i] = adders[i].get_output(0);
     }
+}
+
+void Adder::update()
+{
+    evaluate();
     
     // Signal all downstream components to update
     for (Component* downstream : downstream_components)

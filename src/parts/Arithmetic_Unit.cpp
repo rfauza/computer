@@ -7,7 +7,6 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
 : Part(num_bits), 
     adder_subtractor(num_bits),
     multiplier(num_bits),
-    divider(num_bits),
     adder_output_enable_or(nullptr),
     adder_subtract_enable_or(nullptr)
 {
@@ -17,8 +16,8 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     component_name = oss.str();
     
     // Inputs: data_a (num_bits) + data_b (num_bits) + add_enable (1) + sub_enable (1) + 
-    // increment_enable (1) + decrement_enable (1) + mul_enable (1) + div_enable (1)
-    num_inputs = (2 * num_bits) + 6;
+    // increment_enable (1) + decrement_enable (1) + mul_enable (1)
+    num_inputs = (2 * num_bits) + 5;
     num_outputs = num_bits;
     
     allocate_IO_arrays();
@@ -41,7 +40,6 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     inc_enable = nullptr;
     dec_enable = nullptr;
     mul_enable = nullptr;
-    div_enable = nullptr;
 }
 
 Arithmetic_Unit::~Arithmetic_Unit()
@@ -57,14 +55,13 @@ bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_
         return false;
     
     // Route inputs: [data_a (num_bits), data_b (num_bits),  add_enable (1), sub_enable (1), 
-    // inc_enable (1), dec_enable (1), mul_enable (1), div_enable (1)]
+    // inc_enable (1), dec_enable (1), mul_enable (1)]
     if (input_index < num_bits)
     {
         // Data A input: route to all arithmetic devices
         bool result = true;
         result &= adder_subtractor.connect_input(inputs[input_index], input_index);
         result &= multiplier.connect_input(inputs[input_index], input_index);
-        result &= divider.connect_input(inputs[input_index], input_index);
         return result;
     }
     else if (input_index < 2 * num_bits)
@@ -73,7 +70,6 @@ bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_
         bool result = true;
         result &= adder_subtractor.connect_input(inputs[input_index], input_index);
         result &= multiplier.connect_input(inputs[input_index], input_index);
-        result &= divider.connect_input(inputs[input_index], input_index);
         return result;
     }
     else if (input_index == 2 * num_bits)
@@ -106,13 +102,7 @@ bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_
     {
         // mul_enable - store locally and connect to multiplier's output_enable
         mul_enable = inputs[input_index];
-        multiplier.connect_input(inputs[input_index], 2 * num_bits + 1);
-    }
-    else if (input_index == 2 * num_bits + 5)
-    {
-        // div_enable - store locally and connect to divider's output_enable
-        div_enable = inputs[input_index];
-        divider.connect_input(inputs[input_index], 2 * num_bits + 1);
+        multiplier.connect_input(inputs[input_index], 2 * num_bits);
     }
     
     return true;
@@ -144,18 +134,10 @@ void Arithmetic_Unit::evaluate()
     else if (mul_enable && *mul_enable)
     {
         multiplier.evaluate();
+        // Multiplier outputs 2*num_bits, but we gate to num_bits output ports
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = multiplier.get_output(i);
-        }
-    }
-    else if (div_enable && *div_enable)
-    {
-        divider.evaluate();
-        // Get quotient (first num_bits outputs)
-        for (uint16_t i = 0; i < num_bits; ++i)
-        {
-            outputs[i] = divider.get_output(i);
         }
     }
     else
@@ -186,4 +168,10 @@ void Arithmetic_Unit::print_adder_inputs() const
 {
     std::cout << "Adder_Subtractor inputs: ";
     adder_subtractor.print_io();
+}
+
+void Arithmetic_Unit::print_multiplier_io() const
+{
+    std::cout << "Multiplier IO: ";
+    multiplier.print_io();
 }

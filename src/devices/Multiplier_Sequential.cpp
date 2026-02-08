@@ -12,6 +12,12 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     num_outputs = 2 * num_bits + 1; // Product (2*num_bits) + busy
     
     allocate_IO_arrays();
+
+    // Initialize outputs to false to avoid uninitialized values
+    for (uint16_t i = 0; i < num_outputs; ++i)
+    {
+        outputs[i] = false;
+    }
     
     // Create registers
     accumulator = new Register(2 * num_bits);
