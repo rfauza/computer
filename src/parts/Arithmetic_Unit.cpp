@@ -1,12 +1,15 @@
 #include "Arithmetic_Unit.hpp"
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits) 
-    : Part(num_bits), 
-      adder_subtractor(num_bits),
-      multiplier(num_bits),
-      divider(num_bits)
+: Part(num_bits), 
+    adder_subtractor(num_bits),
+    multiplier(num_bits),
+    divider(num_bits),
+    adder_output_enable_or(nullptr),
+    adder_subtract_enable_or(nullptr)
 {
     // create component name string
     std::ostringstream oss;
@@ -20,6 +23,16 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     
     allocate_IO_arrays();
     
+    // Create the OR gates on the heap
+    adder_output_enable_or = new OR_Gate(4);
+    adder_subtract_enable_or = new OR_Gate(2);
+    
+    // Wire OR output to adder_subtractor's output_enable input
+    adder_output_enable_or->connect_output(&adder_subtractor, 0, 2 * num_bits + 1);
+    
+    // Wire subtract OR output to adder_subtractor's subtract_enable input
+    adder_subtract_enable_or->connect_output(&adder_subtractor, 0, 2 * num_bits);
+    
     // Set up aliases
     data_a = inputs;
     data_b = &inputs[num_bits];
@@ -31,7 +44,11 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     div_enable = nullptr;
 }
 
-Arithmetic_Unit::~Arithmetic_Unit() = default;
+Arithmetic_Unit::~Arithmetic_Unit()
+{
+    delete adder_output_enable_or;
+    delete adder_subtract_enable_or;
+}
 
 bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_t input_index)
 {
@@ -61,29 +78,29 @@ bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_
     }
     else if (input_index == 2 * num_bits)
     {
-        // add_enable - store locally and connect to adder_subtractor's output_enable
+        // add_enable - route to OR gate input 0
         add_enable = inputs[input_index];
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits + 1);
+        adder_output_enable_or->connect_input(inputs[input_index], 0);
     }
     else if (input_index == 2 * num_bits + 1)
     {
-        // sub_enable - connect to adder_subtractor's subtract_enable and output_enable
+        // sub_enable - route to output OR gate input 1, and subtract OR gate input 0
         sub_enable = inputs[input_index];
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits);
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits + 1);
+        adder_output_enable_or->connect_input(inputs[input_index], 1);
+        adder_subtract_enable_or->connect_input(inputs[input_index], 0);
     }
     else if (input_index == 2 * num_bits + 2)
     {
-        // inc_enable - connect to adder_subtractor's output_enable
+        // inc_enable - route to OR gate input 2
         inc_enable = inputs[input_index];
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits + 1);
+        adder_output_enable_or->connect_input(inputs[input_index], 2);
     }
     else if (input_index == 2 * num_bits + 3)
     {
-        // dec_enable - connect to adder_subtractor's subtract_enable and output_enable
+        // dec_enable - route to output OR gate input 3, and subtract OR gate input 1
         dec_enable = inputs[input_index];
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits);
-        adder_subtractor.connect_input(inputs[input_index], 2 * num_bits + 1);
+        adder_output_enable_or->connect_input(inputs[input_index], 3);
+        adder_subtract_enable_or->connect_input(inputs[input_index], 1);
     }
     else if (input_index == 2 * num_bits + 4)
     {
@@ -103,6 +120,10 @@ bool Arithmetic_Unit::connect_input(const bool* const upstream_output_p, uint16_
 
 void Arithmetic_Unit::evaluate()
 {
+    // Evaluate the operation enable OR gates
+    adder_output_enable_or->evaluate();
+    adder_subtract_enable_or->evaluate();
+    
     // Determine which operation is enabled and evaluate only that device
     if (add_enable && *add_enable)
     {
@@ -159,4 +180,10 @@ void Arithmetic_Unit::update()
             downstream->update();
         }
     }
+}
+
+void Arithmetic_Unit::print_adder_inputs() const
+{
+    std::cout << "Adder_Subtractor inputs: ";
+    adder_subtractor.print_io();
 }

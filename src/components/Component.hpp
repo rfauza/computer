@@ -76,17 +76,17 @@ public:
     /**
      * @brief Prints all outputs of this component to standard output
      */
-    void print_outputs();
+    void print_outputs() const;
     
     /**
      * @brief Prints all inputs of this component to standard output
      */
-    void print_inputs();
+    void print_inputs() const;
     
     /**
      * @brief Prints all inputs and outputs of this component to standard output
      */
-    void print_io();
+    void print_io() const;
     
     /**
      * @brief Gets the number of inputs for this component

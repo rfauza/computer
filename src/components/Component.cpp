@@ -28,7 +28,7 @@ void Component::update()
     }
 }
 
-void Component::print_outputs()
+void Component::print_outputs() const
 {
     std::cout << component_name << " outputs: ";
     for (uint16_t i = 0; i < num_outputs; ++i)
@@ -53,7 +53,7 @@ bool* Component::get_outputs() const
     return outputs;
 }
 
-void Component::print_inputs()
+void Component::print_inputs() const
 {
     std::cout << component_name << " inputs: ";
     for (uint16_t i = 0; i < num_inputs; ++i)
@@ -71,7 +71,7 @@ void Component::print_inputs()
     std::cout << std::endl;
 }
 
-void Component::print_io()
+void Component::print_io() const
 {
     print_inputs();
     print_outputs();

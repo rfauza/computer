@@ -1,5 +1,6 @@
 #pragma once
 #include "Part.hpp"
+#include "../components/OR_Gate.hpp"
 #include "../devices/Adder_Subtractor.hpp"
 #include "../devices/Multiplier_Sequential.hpp"
 #include "../devices/Divider_Sequential.hpp"
@@ -73,11 +74,18 @@ public:
      * @brief Updates the arithmetic unit and propagates to downstream components
      */
     void update() override;
+    
+    /**
+     * @brief Debug: Print adder_subtractor inputs
+     */
+    void print_adder_inputs() const;
 
 private:
     Adder_Subtractor adder_subtractor;
     Multiplier_Sequential multiplier;
     Divider_Sequential divider;
+    OR_Gate* adder_output_enable_or;    // 4-input OR gate for add/sub/inc/dec enables
+    OR_Gate* adder_subtract_enable_or;  // 2-input OR gate for sub/dec enables
     
     bool** data_a;            // Alias to inputs[0..num_bits-1]
     bool** data_b;            // Alias to inputs[num_bits..2*num_bits-1]
