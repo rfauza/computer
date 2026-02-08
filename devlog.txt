@@ -1,18 +1,17 @@
 Total: 14h
 
 ToDo: 
-- Control Unit
-    decoder receives opcode from PM and sends it to ALU
-    add PC and incrementer (needs an adder)
-    PC has to be a register, that connects to PM select (2*numbits)
-    also has RAMPage select register (2-bytes: store AB->rampage)
-- make main memory (registers for RAM) with imbedded controller, C (Write select), A and B (Read select) controllers
 - make arithmetic unit (adder/subtractor, multiplier, divider)
     like LU, data inputs and output selector for each device within
 - make ALU:
     ALU has one output enable for each device within  
     Control unit converts multi-bit to single wire signal
     Passthrough for comparator flags from adder/subtractor
+- Control Unit
+    decoder receives opcode from PM and sends it to ALU
+    add PC and incrementer (needs an adder)
+    PC has to be a register, that connects to PM select (2*numbits)
+    also has RAMPage select register (2-bytes: store AB->rampage)
 - make CPU (ALU+CU):
     put comparator flags and PC register in cpu
     add stack pointer and function return
@@ -44,9 +43,14 @@ help me make an automated testing suite that will test all my classes. use the s
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 7 2026 : 
+Feb 8 2026 : 
+write enable to mul and div
+fixing AU
+
+Feb 7 2026 : 4h
 2h PM loader/verifier
 1h main mem loader/verifier
+1h arithmetic unit
 
 Feb 6 2026 : 3h total 33.5h
 1h PM tester

@@ -8,7 +8,7 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     oss << "Divider_Sequential 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     
-    num_inputs = 2 * num_bits + 1;  // dividend (num_bits) + divisor (num_bits) + start
+    num_inputs = 2 * num_bits + 2;  // dividend (num_bits) + divisor (num_bits) + start + output_enable
     num_outputs = 2 * num_bits + 1; // quotient (num_bits) + remainder (num_bits) + busy
     
     allocate_IO_arrays();
@@ -35,6 +35,19 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     zero_signal->go_low();
     one_signal->go_high();
     
+    // Initialize output_enable pointer
+    output_enable = nullptr;
+    
+    // Allocate AND gates for output gating
+    output_AND_gates = new AND_Gate[2 * num_bits];
+    
+    // Connect quotient and remainder outputs to AND gate input 0
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        output_AND_gates[i].connect_input(&quotient->get_outputs()[i], 0);
+        output_AND_gates[num_bits + i].connect_input(&remainder->get_outputs()[i], 0);
+    }
+    
     // Allocate dividend bit storage
     dividend_bits = new bool[num_bits];
     
@@ -46,17 +59,13 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     // Connect subtractor's subtract enable (always subtracting)
     subtractor->connect_input(&one_signal->get_outputs()[0], 2 * num_bits);
     
-    // Wire outputs to register outputs
-    for (uint16_t i = 0; i < num_bits; ++i)
-    {
-        outputs[i] = &quotient->get_outputs()[i];
-        outputs[num_bits + i] = &remainder->get_outputs()[i];
-    }
+    // Busy flag output gets direct pointer
     outputs[2 * num_bits] = &busy_flag->get_outputs()[0];  // Busy flag output
 }
 
 Divider_Sequential::~Divider_Sequential()
 {
+    delete[] output_AND_gates;
     delete quotient;
     delete remainder;
     delete divisor;
@@ -75,6 +84,23 @@ bool Divider_Sequential::connect_input(const bool* const upstream_output_p, uint
 {
     if (!Component::connect_input(upstream_output_p, input_index))
         return false;
+    
+    // Dividend inputs: 0 to num_bits-1
+    // Divisor inputs: num_bits to 2*num_bits-1
+    // Start signal: 2*num_bits
+    // Output enable: 2*num_bits+1
+    
+    if (input_index == 2 * num_bits + 1)
+    {
+        // Output enable: route to all AND gate input 1
+        output_enable = inputs[input_index];
+        bool result = true;
+        for (uint16_t i = 0; i < 2 * num_bits; ++i)
+        {
+            result &= output_AND_gates[i].connect_input(output_enable, 1);
+        }
+        return result;
+    }
     
     return true;
 }
@@ -129,8 +155,8 @@ bool Divider_Sequential::is_busy() const
 
 void Divider_Sequential::evaluate()
 {
-    if (!is_busy())
-        return;
+    if (is_busy())
+    {
     
     write_enable->go_high();
     
@@ -219,7 +245,32 @@ void Divider_Sequential::evaluate()
         busy_flag->update();
     }
     
+    // Evaluate AND gates and copy outputs
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        output_AND_gates[i].evaluate();
+    }
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        outputs[i] = output_AND_gates[i].get_output(0);
+        outputs[num_bits + i] = output_AND_gates[num_bits + i].get_output(0);
+    }
+    
     write_enable->go_low();
+    } // End of if (is_busy())
+    else
+    {
+        // Not busy - still evaluate AND gates for output gating
+        for (uint16_t i = 0; i < 2 * num_bits; ++i)
+        {
+            output_AND_gates[i].evaluate();
+        }
+        for (uint16_t i = 0; i < num_bits; ++i)
+        {
+            outputs[i] = output_AND_gates[i].get_output(0);
+            outputs[num_bits + i] = output_AND_gates[num_bits + i].get_output(0);
+        }
+    }
 }
 
 void Divider_Sequential::update()

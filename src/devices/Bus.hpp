@@ -12,6 +12,7 @@ public:
     void update() override;
     void attach_input(bool* input_signal);
     void detach_input(bool* input_signal);
+    const bool* get_outputs() const { return outputs; }
     
 private:
     std::vector<bool*> inputs;

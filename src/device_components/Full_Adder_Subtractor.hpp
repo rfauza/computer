@@ -16,6 +16,6 @@ public:
     
 private:
     Full_Adder full_adder;
-    XOR_Gate xor_gate_1{1};
+    XOR_Gate xor_gate_1;
 };
 

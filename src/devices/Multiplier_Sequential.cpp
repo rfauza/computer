@@ -8,7 +8,7 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     oss << "Multiplier_Sequential 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     
-    num_inputs = 2 * num_bits + 1;  // A (num_bits) + B (num_bits) + start
+    num_inputs = 2 * num_bits + 2;  // A (num_bits) + B (num_bits) + start + output_enable
     num_outputs = 2 * num_bits + 1; // Product (2*num_bits) + busy
     
     allocate_IO_arrays();
@@ -35,21 +35,30 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     zero_signal->go_low();
     one_signal->go_high();
     
+    // Initialize output_enable pointer
+    output_enable = nullptr;
+    
+    // Allocate AND gates for output gating
+    output_AND_gates = new AND_Gate[2 * num_bits];
+    
+    // Connect accumulator outputs to AND gate input 0
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        output_AND_gates[i].connect_input(&accumulator->get_outputs()[i], 0);
+    }
+    
     // Connect read enables (always high for combinational access)
     accumulator->connect_input(&read_enable->get_outputs()[0], 2 * num_bits + 1);
     multiplicand->connect_input(&read_enable->get_outputs()[0], 2 * num_bits + 1);
     multiplier_reg->connect_input(&read_enable->get_outputs()[0], num_bits + 1);
     
-    // Wire outputs to register outputs
-    for (uint16_t i = 0; i < 2 * num_bits; ++i)
-    {
-        outputs[i] = &accumulator->get_outputs()[i];
-    }
+    // Wire outputs - busy flag gets direct pointer
     outputs[2 * num_bits] = &busy_flag->get_outputs()[0];  // Busy flag output
 }
 
 Multiplier_Sequential::~Multiplier_Sequential()
 {
+    delete[] output_AND_gates;
     delete accumulator;
     delete multiplicand;
     delete multiplier_reg;
@@ -71,6 +80,19 @@ bool Multiplier_Sequential::connect_input(const bool* const upstream_output_p, u
     // A inputs: 0 to num_bits-1
     // B inputs: num_bits to 2*num_bits-1
     // Start signal: 2*num_bits
+    // Output enable: 2*num_bits+1
+    
+    if (input_index == 2 * num_bits + 1)
+    {
+        // Output enable: route to all AND gate input 1
+        output_enable = inputs[input_index];
+        bool result = true;
+        for (uint16_t i = 0; i < 2 * num_bits; ++i)
+        {
+            result &= output_AND_gates[i].connect_input(output_enable, 1);
+        }
+        return result;
+    }
     
     return true;
 }
@@ -123,8 +145,8 @@ bool Multiplier_Sequential::is_busy() const
 
 void Multiplier_Sequential::evaluate()
 {
-    if (!is_busy())
-        return;
+    if (is_busy())
+    {
     
     write_enable->go_high();
     
@@ -190,7 +212,24 @@ void Multiplier_Sequential::evaluate()
         busy_flag->update();
     }
     
+    // Evaluate AND gates and copy outputs
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        output_AND_gates[i].evaluate();
+        outputs[i] = output_AND_gates[i].get_output(0);
+    }
+    
     write_enable->go_low();
+    } // End of if (is_busy())
+    else
+    {
+        // Not busy - still evaluate AND gates for output gating
+        for (uint16_t i = 0; i < 2 * num_bits; ++i)
+        {
+            output_AND_gates[i].evaluate();
+            outputs[i] = output_AND_gates[i].get_output(0);
+        }
+    }
 }
 
 void Multiplier_Sequential::update()

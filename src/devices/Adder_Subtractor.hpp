@@ -8,6 +8,7 @@ public:
     Adder_Subtractor(uint16_t num_bits);
     ~Adder_Subtractor() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
+    void evaluate() override;
     void update() override;
     const bool* get_internal_output() const { return internal_output; }
     
@@ -19,5 +20,5 @@ private:
     bool** data_input; // Alias to Component inputs[0..num_bits-1]
     bool* data_output; // Alias to Component outputs[0..num_bits-1]
     bool* subtract_enable; // Pointer to inputs[2*num_bits]
-    bool* output_enable; // Pointer to inputs[2*num_bits+1] (not yet implemented)
+    bool* output_enable; // Pointer to inputs[2*num_bits+1]
 };

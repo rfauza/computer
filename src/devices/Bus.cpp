@@ -5,11 +5,12 @@
 
 Bus::Bus(uint16_t num_bits) : Device(num_bits)
 {
+    num_inputs = num_bits;  // Bus accepts num_bits inputs
     num_outputs = num_bits;
     std::ostringstream oss;
     oss << "Bus 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
-    initialize_IO_arrays();
+    allocate_IO_arrays();
 }
 
 Bus::~Bus() = default;

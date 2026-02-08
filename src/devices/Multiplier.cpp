@@ -89,7 +89,8 @@ Multiplier::Multiplier(uint16_t num_bits) : Device(num_bits)
     uint16_t last_adder = num_bits - 2;
     for (uint16_t i = 0; i < num_bits; ++i)
     {
-        outputs[num_bits + i] = &adder_array[last_adder]->get_outputs()[i + 1];
+        const bool* adder_output = &adder_array[last_adder]->get_outputs()[i + 1];
+        outputs[num_bits + i] = adder_output;
     }
 }
 

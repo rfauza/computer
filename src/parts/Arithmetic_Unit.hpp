@@ -1,11 +1,90 @@
 #pragma once
 #include "Part.hpp"
+#include "../devices/Adder_Subtractor.hpp"
+#include "../devices/Multiplier_Sequential.hpp"
+#include "../devices/Divider_Sequential.hpp"
 
+/**
+ * @brief Arithmetic unit providing addition, subtraction, multiplication, and division
+ * 
+ * Combines arithmetic operations into a single Part.
+ * Performs one operation at a time based on enable signals.
+ * 
+ * Supported operations:
+ *   - ADD: A + B
+ *   - SUB: A - B
+ *   - MUL: A * B
+ *   - DIV: A / B (quotient)
+ * 
+ * Input layout (2*num_bits + 4 total):
+ *   - inputs[0] to inputs[num_bits-1]: data_a (first operand)
+ *   - inputs[num_bits] to inputs[2*num_bits-1]: data_b (second operand)
+ *   - inputs[2*num_bits]: add_enable (enable addition)
+ *   - inputs[2*num_bits+1]: sub_enable (enable subtraction)
+ *   - inputs[2*num_bits+2]: mul_enable (enable multiplication)
+ *   - inputs[2*num_bits+3]: div_enable (enable division)
+ * 
+ * Output layout (num_bits total):
+ *   - outputs[0] to outputs[num_bits-1]: Result of selected operation
+ * 
+ * Usage:
+ *   - Set exactly ONE enable signal HIGH to select operation
+ *   - Multiple enables HIGH will produce undefined behavior
+ *   - All enables LOW will produce undefined output
+ * 
+ * Example (4-bit):
+ *   A=0011 (3), B=0010 (2), add_enable=1 → Output=0101 (5)
+ *   A=0101 (5), B=0010 (2), sub_enable=1 → Output=0011 (3)
+ *   A=0011 (3), B=0010 (2), mul_enable=1 → Output=0110 (6)
+ *   A=0110 (6), B=0010 (2), div_enable=1 → Output=0011 (3)
+ * 
+ * Component of:
+ *   - ALU (combined with Logic_Unit and Comparator)
+ */
 class Arithmetic_Unit : public Part
 {
 public:
+    /**
+     * @brief Constructs an arithmetic unit with specified bit width
+     * 
+     * @param num_bits Width of data operands and output
+     */
     Arithmetic_Unit(uint16_t num_bits);
+    
     ~Arithmetic_Unit() override;
+    
+    /**
+     * @brief Connects an input signal to the arithmetic unit
+     * 
+     * @param upstream_output_p Pointer to upstream signal
+     * @param input_index Input index (see class documentation for layout)
+     * @return true if connection successful
+     */
+    bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
+    
+    /**
+     * @brief Evaluates the selected arithmetic operation
+     * 
+     * Checks enable signals and evaluates only the selected operation.
+     */
+    void evaluate() override;
+    
+    /**
+     * @brief Updates the arithmetic unit and propagates to downstream components
+     */
     void update() override;
-};
 
+private:
+    Adder_Subtractor adder_subtractor;
+    Multiplier_Sequential multiplier;
+    Divider_Sequential divider;
+    
+    bool** data_a;            // Alias to inputs[0..num_bits-1]
+    bool** data_b;            // Alias to inputs[num_bits..2*num_bits-1]
+    bool* add_enable;         // Pointer to inputs[2*num_bits]
+    bool* sub_enable;         // Pointer to inputs[2*num_bits+1]
+    bool* inc_enable;         // Pointer to inputs[2*num_bits+2]
+    bool* dec_enable;         // Pointer to inputs[2*num_bits+3]
+    bool* mul_enable;         // Pointer to inputs[2*num_bits+4]
+    bool* div_enable;         // Pointer to inputs[2*num_bits+5]
+};

@@ -20,6 +20,7 @@
 #include "parts/Program_Memory.hpp"
 #include "testing/component_tests.hpp"
 #include "testing/program_memory_tester.hpp"
+#include "testing/arithmetic_unit_tests.hpp"
 #include "utilities/program_memory_loader.hpp"
 #include "parts/Program_Memory.hpp"
 #include "parts/Main_Memory.hpp"
@@ -32,7 +33,7 @@ void testMainMemory();
 
 int main()
 {
-    testMainMemory();
+    test_arithmetic_unit();
     return 0;
 }
 

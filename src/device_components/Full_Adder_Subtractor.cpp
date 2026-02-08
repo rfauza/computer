@@ -3,6 +3,7 @@
 #include <iomanip>
 
 Full_Adder_Subtractor::Full_Adder_Subtractor()
+    : xor_gate_1(2)
 {
     std::ostringstream oss;
     oss << "Full_Adder_Subtractor 0x" << std::hex << reinterpret_cast<uintptr_t>(this);

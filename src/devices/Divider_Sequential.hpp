@@ -4,6 +4,7 @@
 #include "Adder_Subtractor.hpp"
 #include "L_Shift.hpp"
 #include "../device_components/Flip_Flop.hpp"
+#include "../components/AND_Gate.hpp"
 #include "../components/Signal_Generator.hpp"
 
 /**
@@ -139,6 +140,10 @@ private:
     Signal_Generator* read_enable;    // For register read control
     Signal_Generator* zero_signal;    // Constant zero
     Signal_Generator* one_signal;     // Constant one
+    
+    // Output gating
+    AND_Gate* output_AND_gates;      // AND gates for gating outputs with output_enable
+    bool* output_enable;              // Pointer to inputs[2*num_bits+1]
     
     // State
     uint16_t cycle_count;

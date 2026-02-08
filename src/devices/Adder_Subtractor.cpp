@@ -14,6 +14,12 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     
     allocate_IO_arrays();
     
+    // Initialize outputs to false
+    for (uint16_t i = 0; i < num_outputs; ++i)
+    {
+        outputs[i] = false;
+    }
+    
     // Set up aliases to Component's inputs and outputs
     data_input = inputs;
     data_output = outputs;
@@ -92,12 +98,11 @@ bool Adder_Subtractor::connect_input(const bool* const upstream_output_p, uint16
         }
         return result;
     }
-    // output_enable (input_index == 2*num_bits + 1) - not yet implemented
     
     return true;
 }
 
-void Adder_Subtractor::update()
+void Adder_Subtractor::evaluate()
 {
     // Evaluate all Full_Adder_Subtractor components in sequence
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -124,6 +129,11 @@ void Adder_Subtractor::update()
     {
         outputs[i] = output_AND_gates[i].get_output(0);  // Gated sum output
     }
+}
+
+void Adder_Subtractor::update()
+{
+    evaluate();
     
     // Signal all downstream components to update
     for (Component* downstream : downstream_components)
