@@ -1,21 +1,14 @@
 Total: 14h
 
 ToDo: 
-- make arithmetic unit (adder/subtractor, inc, dec, multiplier)
-    like LU, data inputs and output selector for each device within
-    change tester to test whole truth table
-- make ALU:
-    ALU has one output enable for each device within  
-    Control unit converts multi-bit to single wire signal
-    Passthrough for comparator flags from adder/subtractor
 - Control Unit
     decoder receives opcode from PM and sends it to ALU
     add PC and incrementer (needs an adder)
-    PC has to be a register, that connects to PM select (2*numbits)
+    PC has to be a register, that connects to PM select (2*numbits), and can be written to from PM or RAM PC register addr
     also has RAMPage select register (2-bytes: store AB->rampage)
-- make CPU (ALU+CU):
-    put comparator flags and PC register in cpu
+    comparator flags and PC register 
     add stack pointer and function return
+- make CPU (ALU+CU):
 - make GUI for front plate with lights and switches
     program mode/run mode switch
     pulse/auto-run switch
@@ -26,11 +19,11 @@ ToDo:
     pulse button
 - make automated testing for all parts and components
 help me make an automated testing suite that will test all my classes. use the standard industry format inside the testing folder (retain the files currently in that folder)
+- keyboard inputs (writes direclty to a register, only one is stored at a time, ignores other inputs until processed)
 - make 3-bit computer with screen. 
 - make 3-bit pong and snake
 - generate base minecraft 4-bit pc (with multiplier, read-only divider subroutine)
-- make a faceplate GUI
-- make faceplate addon to see RAM
+- make faceplate addon to see all 16 RAM addr contents (can page?)
 - make graphics controllers with char mode :
     - knows to take 3-5 instructions depending on version
     - OR (better) direclty wired to last 4 addresses in RAM ([mode/rgb],[rgb2],[Rpage],[Rsel],[Cpage],[Csel])
@@ -44,11 +37,13 @@ help me make an automated testing suite that will test all my classes. use the s
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 8 2026 : 
+Feb 8 2026 :  6.5h total 44h
 2h fixing AU add/sub, write enable to mul and div
+2h AU inc/dec, mult and truth table tester
+.5h ALU and tester
+2h comparator and test
 
-
-Feb 7 2026 : 4h
+Feb 7 2026 : 4h total 37.5h
 2h PM loader/verifier
 1h main mem loader/verifier
 1h arithmetic unit

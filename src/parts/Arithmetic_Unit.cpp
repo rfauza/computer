@@ -24,10 +24,9 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     // Inputs: data_a (num_bits) + data_b (num_bits) + add_enable (1) + sub_enable (1) + 
     // increment_enable (1) + decrement_enable (1) + mul_enable (1)
     num_inputs = (2 * num_bits) + 5;
-    num_outputs = num_bits;
+    num_outputs = num_bits;  // result only, no flags
     
-    allocate_IO_arrays();
-    
+    allocate_IO_arrays();    
     // Create the OR gates on the heap
     adder_output_enable_or = new OR_Gate(4);
     adder_subtract_enable_or = new OR_Gate(2);
@@ -173,7 +172,7 @@ void Arithmetic_Unit::evaluate()
     add_or_sub_or->evaluate();
     inc_or_dec_or->evaluate();
     
-    // Evaluate B input gating logic (for INC/DEC vs ADD/SUB)
+    // Evaluate B input gating logic
     for (uint16_t i = 0; i < num_bits; ++i)
     {
         data_b_gates[i].evaluate();
@@ -181,10 +180,13 @@ void Arithmetic_Unit::evaluate()
         b_input_or_gates[i].evaluate();
     }
     
-    // Determine which operation is enabled and evaluate only that device
+    // Evaluate adder_subtractor for selected operation result
+    adder_subtractor.evaluate();
+    
+    // Determine which operation is enabled and copy result from selected device
     if (add_enable && *add_enable)
     {
-        adder_subtractor.evaluate();
+        // Result from adder
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = adder_subtractor.get_output(i);
@@ -192,7 +194,7 @@ void Arithmetic_Unit::evaluate()
     }
     else if (sub_enable && *sub_enable)
     {
-        adder_subtractor.evaluate();
+        // Result from adder
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = adder_subtractor.get_output(i);
@@ -200,7 +202,7 @@ void Arithmetic_Unit::evaluate()
     }
     else if (inc_enable && *inc_enable)
     {
-        adder_subtractor.evaluate();
+        // Result from adder
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = adder_subtractor.get_output(i);
@@ -208,7 +210,7 @@ void Arithmetic_Unit::evaluate()
     }
     else if (dec_enable && *dec_enable)
     {
-        adder_subtractor.evaluate();
+        // Result from adder
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = adder_subtractor.get_output(i);
@@ -217,7 +219,7 @@ void Arithmetic_Unit::evaluate()
     else if (mul_enable && *mul_enable)
     {
         multiplier.evaluate();
-        // Multiplier outputs 2*num_bits, but we gate to num_bits output ports
+        // Result from multiplier (2*num_bits outputs, we take lower num_bits)
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = multiplier.get_output(i);
@@ -225,7 +227,7 @@ void Arithmetic_Unit::evaluate()
     }
     else
     {
-        // No operation enabled, set output to zero
+        // No operation enabled, set result to zero
         for (uint16_t i = 0; i < num_bits; ++i)
         {
             outputs[i] = false;

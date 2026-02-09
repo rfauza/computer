@@ -273,7 +273,8 @@ void test_arithmetic_unit_truth_table()
             sig_gens[2 * num_bits + 4].go_low();
         }
     }
-
+    
+     std::cout << "Arithmetic Unit ";
     if (failures == 0)
         std::cout << "✓ Truth table: PASS\n";
     else

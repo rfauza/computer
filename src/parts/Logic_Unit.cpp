@@ -137,21 +137,23 @@ void Logic_Unit::evaluate()
     }
     else if (r_shift_enable && *r_shift_enable)
     {
-        // Right shift: output[0] = 0, output[i] = input[i-1]
-        outputs[0] = false;
-        for (uint16_t i = 1; i < num_bits; ++i)
-        {
-            outputs[i] = *data_a[i - 1];
-        }
-    }
-    else if (l_shift_enable && *l_shift_enable)
-    {
-        // Left shift: output[i] = input[i+1], output[num_bits-1] = 0
+        // Right shift is inverted since LSB is at index 0:
+        // output[i] = input[i+1], top bit = 0
         for (uint16_t i = 0; i < num_bits - 1; ++i)
         {
             outputs[i] = *data_a[i + 1];
         }
         outputs[num_bits - 1] = false;
+    }
+    else if (l_shift_enable && *l_shift_enable)
+    {
+        // Left shift is inverted since LSB is at index 0: 
+        // output[0] = 0, output[i] = input[i-1]
+        outputs[0] = false;
+        for (uint16_t i = 1; i < num_bits; ++i)
+        {
+            outputs[i] = *data_a[i - 1];
+        }
     }
     else
     {

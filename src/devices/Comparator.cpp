@@ -2,96 +2,110 @@
 #include <sstream>
 #include <iomanip>
 
-Comparator::Comparator(uint16_t num_bits) : Device(num_bits), 
-zero_flag_nor(num_bits)
+Comparator::Comparator(uint16_t num_bits) 
+: Device(num_bits),
+  subtractor(num_bits)
 {
     std::ostringstream oss;
     oss << "Comparator 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     
-    // Inputs: raw_sum (num_bits) + carry_out (1) + A_MSB (1) + B_MSB (1) + subtract_flag (1)
-    num_inputs = num_bits + 4;
+    // Inputs: A (num_bits) + B (num_bits)
+    num_inputs = 2 * num_bits;
     
-    // Outputs: Z, N, C, V
-    num_outputs = 4;
+    // Outputs: EQ, NEQ, LT_U, GT_U, LT_S, GT_S
+    num_outputs = 6;
     
     allocate_IO_arrays();
     
-    // Set up aliases
-    raw_sum = inputs;
-    final_carry = nullptr;
-    a_msb = nullptr;
-    b_msb = nullptr;
-    subtract_flag = nullptr;
+    // Create always-high signal for subtractor (always subtract, always enabled)
+    always_high = new Signal_Generator();
+    always_high->go_high();
+    
+    // Wire always_high to subtractor's subtract_enable and output_enable
+    subtractor.connect_input(&always_high->get_outputs()[0], 2 * num_bits);      // subtract_enable
+    subtractor.connect_input(&always_high->get_outputs()[0], 2 * num_bits + 1);  // output_enable
+    
+    // Create decoding gates
+    not_z = new Inverter();
+    not_c = new Inverter();
+    n_xor_v = new XOR_Gate();
+    not_n_xor_v = new Inverter();
+    gt_u_and = new AND_Gate();
+    gt_s_and = new AND_Gate();
 }
 
 Comparator::~Comparator()
 {
-}
-
-bool Comparator::connect_input(const bool* const upstream_output_p, uint16_t input_index)
-{
-    // Call parent to set our inputs array
-    if (!Component::connect_input(upstream_output_p, input_index))
-        return false;
-    
-    // Route inputs to internal class aliases:
-    // [raw_sum (num_bits) | carry_out (1) | A_MSB (1) | B_MSB (1) | subtract_flag (1)]
-    if (input_index < num_bits)
-    {
-        // raw_sum inputs -> zero_flag_nor inputs
-        if (!zero_flag_nor.connect_input(inputs[input_index], input_index))
-            return false;
-    }
-    else if (input_index == num_bits)
-    {
-        // final_carry
-        final_carry = inputs[input_index];
-    }
-    else if (input_index == num_bits + 1)
-    {
-        // A_MSB
-        a_msb = inputs[input_index];
-    }
-    else if (input_index == num_bits + 2)
-    {
-        // B_MSB
-        b_msb = inputs[input_index];
-    }
-    else if (input_index == num_bits + 3)
-    {
-        // subtract_flag
-        subtract_flag = inputs[input_index];
-    }
-    
-    return true;
+    delete always_high;
+    delete not_z;
+    delete not_c;
+    delete n_xor_v;
+    delete not_n_xor_v;
+    delete gt_u_and;
+    delete gt_s_and;
 }
 
 void Comparator::evaluate()
 {
-    // Compute Z (Zero): NOR of raw_sum
-    zero_flag_nor.evaluate();
-    outputs[0] = zero_flag_nor.get_output(0);  // Z flag
-    
-    // Compute N (Negative): MSB of raw_sum (for signed numbers)
-    outputs[1] = (*raw_sum)[num_bits - 1];  // N flag
-    
-    // Compute C (Carry): final carry (unsigned overflow)
-    outputs[2] = *final_carry;  // C flag
-    
-    // Compute V (Overflow): Detect signed overflow
-    // (A_MSB == B_MSB (both have same sign)) && (A_MSB != Sum_MSB (result has different sign than A and B))
-    if (a_msb && b_msb)
+    // Wire A inputs to subtractor
+    for (uint16_t i = 0; i < num_bits; ++i)
     {
-        bool a_sign = *a_msb;
-        bool b_sign = *subtract_flag ? !(*b_msb) : *b_msb;  // Invert B if subtract
-        bool sum_msb = (*raw_sum)[num_bits - 1];
-        outputs[3] = (a_sign == b_sign) && (a_sign != sum_msb);  // V flag
+        subtractor.connect_input(inputs[i], i);
     }
-    else
+    
+    // Wire B inputs to subtractor
+    for (uint16_t i = 0; i < num_bits; ++i)
     {
-        outputs[3] = false;  // Default to no overflow if inputs not connected
+        subtractor.connect_input(inputs[num_bits + i], num_bits + i);
     }
+    
+    // Evaluate always_high signal and subtractor
+    always_high->evaluate();
+    subtractor.evaluate();
+    
+    // Get flags from subtractor (outputs at indices num_bits..num_bits+3)
+    bool z_flag = subtractor.get_output(num_bits + 0);  // Z: result is zero
+    bool n_flag = subtractor.get_output(num_bits + 1);  // N: negative (MSB of result)
+    bool c_flag = subtractor.get_output(num_bits + 2);  // C: carry out
+    bool v_flag = subtractor.get_output(num_bits + 3);  // V: signed overflow
+    
+    // Decode flags into comparison results using gates
+    
+    // NEQ = !Z
+    not_z->connect_input(&subtractor.get_outputs()[num_bits + 0], 0);
+    not_z->evaluate();
+    
+    // LT_U = !C
+    not_c->connect_input(&subtractor.get_outputs()[num_bits + 2], 0);
+    not_c->evaluate();
+    
+    // LT_S = N XOR V
+    n_xor_v->connect_input(&subtractor.get_outputs()[num_bits + 1], 0);
+    n_xor_v->connect_input(&subtractor.get_outputs()[num_bits + 3], 1);
+    n_xor_v->evaluate();
+    
+    // !(N XOR V) for GT_S
+    not_n_xor_v->connect_input(&n_xor_v->get_outputs()[0], 0);
+    not_n_xor_v->evaluate();
+    
+    // GT_U = C && !Z
+    gt_u_and->connect_input(&subtractor.get_outputs()[num_bits + 2], 0);
+    gt_u_and->connect_input(&not_z->get_outputs()[0], 1);
+    gt_u_and->evaluate();
+    
+    // GT_S = !(N XOR V) && !Z
+    gt_s_and->connect_input(&not_n_xor_v->get_outputs()[0], 0);
+    gt_s_and->connect_input(&not_z->get_outputs()[0], 1);
+    gt_s_and->evaluate();
+    
+    // Assign outputs
+    outputs[0] = z_flag;                         // EQ = Z
+    outputs[1] = not_z->get_output(0);           // NEQ = !Z
+    outputs[2] = not_c->get_output(0);           // LT_U = !C
+    outputs[3] = gt_u_and->get_output(0);        // GT_U = C && !Z
+    outputs[4] = n_xor_v->get_output(0);         // LT_S = N XOR V
+    outputs[5] = gt_s_and->get_output(0);        // GT_S = !(N XOR V) && !Z
 }
 
 void Comparator::update()
@@ -108,3 +122,4 @@ void Comparator::update()
         }
     }
 }
+

@@ -21,6 +21,7 @@
 #include "testing/component_tests.hpp"
 #include "testing/program_memory_tester.hpp"
 #include "testing/arithmetic_unit_tests.hpp"
+#include "testing/alu_tests.hpp"
 #include "utilities/program_memory_loader.hpp"
 #include "parts/Program_Memory.hpp"
 #include "parts/Main_Memory.hpp"
@@ -33,7 +34,15 @@ void testMainMemory();
 
 int main()
 {
+    // Test Arithmetic Unit (4-bit)
     test_arithmetic_unit_truth_table();
+    
+    // Test ALU (4-bit, print only failures)
+    test_alu_truth_table(4, true);
+    
+    // Uncomment to test ALU with all tests printed:
+    // test_alu_truth_table(4, true);
+    
     return 0;
 }
 

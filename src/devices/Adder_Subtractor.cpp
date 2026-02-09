@@ -10,7 +10,7 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     oss << "Adder_Subtractor 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     component_name = oss.str();
     num_inputs = (2 * num_bits) + 2;  // data_input_A (num_bits) + data_input_B (num_bits) + subtract_enable (1) + output_enable (1)
-    num_outputs = num_bits;            // data_output
+    num_outputs = num_bits + 4;        // data_output (num_bits) + flags (Z, N, C, V)
     
     allocate_IO_arrays();
     
@@ -23,6 +23,8 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     // Set up aliases to Component's inputs and outputs
     data_input = inputs;
     data_output = outputs;
+    data_a_input = inputs;
+    data_b_input = &inputs[num_bits];
     subtract_enable = nullptr;
     output_enable = nullptr;
     
@@ -31,6 +33,9 @@ Adder_Subtractor::Adder_Subtractor(uint16_t num_bits) : Device(num_bits)
     
     // Initialize AND gates pointer
     output_AND_gates = nullptr;
+    
+    // Create NOR gate for zero flag
+    zero_flag_nor = new NOR_Gate(num_bits);
     
     // Array of single-bit Full_Adder_Subtractors
     adder_subtractors = new Full_Adder_Subtractor[num_bits];    
@@ -55,6 +60,7 @@ Adder_Subtractor::~Adder_Subtractor()
     delete[] output_AND_gates;
     delete[] adder_subtractors;
     delete[] internal_output;
+    delete zero_flag_nor;
 }
 
 bool Adder_Subtractor::connect_input(const bool* const upstream_output_p, uint16_t input_index)
@@ -128,6 +134,42 @@ void Adder_Subtractor::evaluate()
     for (uint16_t i = 0; i < num_bits; ++i)
     {
         outputs[i] = output_AND_gates[i].get_output(0);  // Gated sum output
+    }
+    
+    // Compute flags at outputs[num_bits..num_bits+3]:
+    // Wire internal sum bits to zero_flag_nor
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        zero_flag_nor->connect_input(&internal_output[i], i);
+    }
+    zero_flag_nor->evaluate();
+    
+    // Z flag (zero): NOR of all sum bits
+    outputs[num_bits + 0] = zero_flag_nor->get_output(0);
+    
+    // N flag (negative): MSB of sum
+    outputs[num_bits + 1] = internal_output[num_bits - 1];
+    
+    // C flag (carry): final carry out
+    outputs[num_bits + 2] = internal_output[num_bits];
+    
+    // V flag (overflow): signed overflow detection
+    // For subtraction: (A_MSB != B_MSB) && (A_MSB != Sum_MSB)
+    // For addition: (A_MSB == B_MSB) && (A_MSB != Sum_MSB)
+    bool a_msb = *data_a_input[num_bits - 1];
+    bool b_msb = *data_b_input[num_bits - 1];
+    bool sum_msb = internal_output[num_bits - 1];
+    bool is_sub = subtract_enable && *subtract_enable;
+    
+    if (is_sub)
+    {
+        // Subtraction: overflow if signs differ and result sign differs from A
+        outputs[num_bits + 3] = (a_msb != b_msb) && (a_msb != sum_msb);
+    }
+    else
+    {
+        // Addition: overflow if same sign inputs produce different sign output
+        outputs[num_bits + 3] = (a_msb == b_msb) && (a_msb != sum_msb);
     }
 }
 
