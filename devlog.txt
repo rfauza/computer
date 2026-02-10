@@ -1,14 +1,38 @@
 Total: 14h
 
 ToDo: 
-- Control Unit
-    decoder receives opcode from PM and sends it to ALU
+- Control Unit (unique for each pc architecture)
+    decoder receives opcode from PM and sends it to ALU/registers
     add PC and incrementer (needs an adder)
     PC has to be a register, that connects to PM select (2*numbits), and can be written to from PM or RAM PC register addr
     also has RAMPage select register (2-bytes: store AB->rampage)
     comparator flags and PC register 
     add stack pointer and function return
+    
+    flags is numbits in size, should be 6
+
+now let's make the control unit. this will be a class that will be inherited by the control unit for each specific 
+computer design. this parent class should take the numbits in constructor, have a program counter register of size 
+2*numbits, an adder wired to pc for incrementing it. the output of the incrementer needs to be AND'ed with a flag so 
+that we can write to the PC from outside (program memory or ram for jumps), we will invert that flag with the right opcodes to 
+write to pc from other sources. the output of PC should be connected to the addr select of the program memory.
+the class should also have the comparator flags (membits, which should have a counter so they are cleared (set to 0) after 
+the next clock tick, so we can use them for conditional jumps on the next line of code but not after, but remember to use 
+component and classes instead of program logic everywhere possible). it will need a decoder that receives the opcode and sends a high on the 
+respective wire/index to the ALU, or write enable to the PC. it also needs a 2*numbits register (memory address, called RAMPage)
+that we will write to for paging the RAM, so this also needs to be written to from outside (pm or ram). the class will also need
+a stack pointer and related registers for function call/return. instead of having one long input and output, I want to
+separate them (like PM inputs, RAMPage inputs, flag_inputs, decoder_outputs, etc), and have different functions for connecting 
+the different input and output to/from the different devices within. 
+the inheriting/child classes will define the opcodes for each different computer, so the 
+connections between the decoder and the ALU (and decoder to internal connections like the pc write enable) will be defined
+in the child classes, all other connections should be done in this parent class. look at my classes and 
+see what type is the best fit for each of the above. if I missed anything else that a control unit should have, let me know
+    
+    
+    
 - make CPU (ALU+CU):
+- make 3-bit computer (print to terminal)
 - make GUI for front plate with lights and switches
     program mode/run mode switch
     pulse/auto-run switch

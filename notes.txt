@@ -3,15 +3,54 @@ windows powershell to call up linux terminal
 > wsl -d Ubuntu
 
 3-bit ISA
+(enables jmp flag with binary compare, clears with goto and jumps if flag true)
 000 movl litA->[B][C] (can have 8x8=64 RAM addreses. first page is working data, others are registers like graph)
-001 mova A->BC
+001 mova A->BC (mov contents of addr A to RAM addr BC. needed bc we're operating on 3 bits, so can only operate on 8 (page))
 010 add
 011 inv (bitwise invert. enables subtraction)!AB->C (turns sub into 3 inst, but gets utility of ~)
-100 XOR/jne (=jne if result is not 0) AxorB->C
+100 XOR/jeq (=jne if result is 0) AxorB->C (=jeq if result is 0, so invert A or B first)
 101 goto ABC (so we can have 2^9=512 PM with cond jmp) (OR 256 if we want MSB to mean lit vs addr)
 110 jgt A>B enables jump flag ((A[2]&!B[2]) OR ((NOT prev) AND (A[1]&!B[1])) OR ((NOT prev) AND (A[0]&!B[0]))
 111 AND/jeq A==B enables jump flag (OR, this can be and AND A&B->C op, that writes to jmp flag if result is 111. also works with XOR result 0)
 
+3-bit ISA with opcode paging
+- page 1 -
+000 page opcode ABC (can have 2^9=512 pages of opcodes, each with 7 codes = 448 opcodes)
+001 movl litA->[B][C]
+010 mova A->BC (needed bc alu can only operate on 3 x 3-bit addr on same rampage)
+011 add (could use long ints (6-bit) if we first set the 2nd mem addr of the MSB's, OR have a carry register to add back to some addr later)
+100 sub
+101 >> A->C
+110 << A->C
+111 ! A->C
+- page 2 -
+000 page opcode ABC
+001 goto ABC (2^9=512 PM lines. can page with incrementer by goto last addr, or have a PM page opcode =262k lines of code but that'd be overkill for 3-bit)
+010 AND A&B->C
+011 OR A|B->C
+100 XOR/jeq (=jeq enables jump flag if result is 0) AxorB->C
+101 jne
+110 jgt A>B enables jump flag ((A[2]&!B[2]) OR ((NOT prev) AND (A[1]&!B[1])) OR ((NOT prev) AND (A[0]&!B[0])))
+111 RAMPage
+- page 3 -
+000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
+001 CALL (function call)
+010 RET (return)
+011 NOOP - no op, can be used to page PM
+100 HALT
+101 PMPage?
+110 
+111
+- page 4 -
+000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
+001 Graphics Write (A=horizontal, B=vertical, C=data) (can't have more bc we're operating on 3-bit data, so to calculate pos)
+    so screen is 8x8. OR, use fractal? 8x8 of 8x8?
+010 Graph Letter? (26 letters, 10 digits, space,':.) 2^6=64
+011 
+100 
+101 
+110 
+111 
 
 - using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
 - add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.
@@ -53,7 +92,7 @@ Minecraft 4-bit ISA:
 0111 A==B litGoto C
 1000 A>B Goto C
 1001 A>B litGoto C
-1010 A<B Goto C
+1010 A<B Goto C (don't need)
 1011 A<B litGoto C
 1100 A*B->C
 1101 A*litB->C
