@@ -53,7 +53,7 @@ static void print_cu_state(Control_Unit* cu, uint16_t pc_bits, const std::string
     }
     std::cout << "]\n";
     std::cout << "  RAM Page = " << bools_to_int(cu->get_ram_page_outputs(), pc_bits) << "\n";
-    std::cout << "  Stack Pointer = " << bools_to_int(cu->get_stack_pointer_outputs(), pc_bits) << "\n";
+    //std::cout << "  Stack Pointer = " << bools_to_int(cu->get_stack_pointer_outputs(), pc_bits) << "\n";  // DISABLED
 }
 
 void test_control_unit(uint16_t num_bits, bool print_all)

@@ -146,7 +146,7 @@ public:
      * 
      * @return Pointer to stack pointer outputs (2*num_bits)
      */
-    bool* get_stack_pointer_outputs() const;
+    //bool* get_stack_pointer_outputs() const;  // DISABLED: inputs not connected
     
     /**
      * @brief Trigger a clock cycle (for flag clearing and other sequential logic)
@@ -185,11 +185,11 @@ protected:
     Register* ram_page_register;      /**< RAM paging register (2*num_bits) */
     Signal_Generator* ram_page_read_enable; /**< Always high - always read */
     
-    // Stack Management (for function calls)
-    Register* stack_pointer;          /**< Stack pointer (2*num_bits) */
-    Register* return_address;         /**< Return address storage (2*num_bits) */
-    Signal_Generator* sp_read_enable; /**< Always high - SP always read */
-    Signal_Generator* ra_read_enable; /**< Always high - RA always read */
+    // Stack Management (for function calls) - DISABLED: inputs not connected
+    //Register* stack_pointer;          /**< Stack pointer (2*num_bits) */
+    //Register* return_address;         /**< Return address storage (2*num_bits) */
+    //Signal_Generator* sp_read_enable; /**< Always high - SP always read */
+    //Signal_Generator* ra_read_enable; /**< Always high - RA always read */
     
     uint16_t pc_bits;                 /**< PC bit width (2*num_bits) */
 };

@@ -9,7 +9,7 @@ ToDo:
     comparator flags and PC register 
     add stack pointer and function return
     
-flags is numbits in size, should be 6
+
 rampage write enable should be opcode
 cmp flags always read/writable
 return addr and stack pointer. sp should point in ram to ra, so can have call from call
@@ -48,6 +48,7 @@ see what type is the best fit for each of the above. if I missed anything else t
     pulse button
 - make automated testing for all parts and components
 help me make an automated testing suite that will test all my classes. use the standard industry format inside the testing folder (retain the files currently in that folder)
+- create stack pointer, function call and return ability
 - keyboard inputs (writes direclty to a register, only one is stored at a time, ignores other inputs until processed)
 - make 3-bit computer with screen. 
 - make 3-bit pong and snake
@@ -69,6 +70,7 @@ help me make an automated testing suite that will test all my classes. use the s
 
 Feb 13 2026
 3h components print out parent and variable name
+.5h commenting out stack pointer and return addr and removing debug statements
 
 
 Feb 8 2026 :  6.5h total 44h

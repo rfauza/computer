@@ -15,7 +15,6 @@ Inverter::Inverter(uint16_t num_inputs_param, const std::string& name)
         oss << " - " << name;
     }
     component_name = oss.str();
-    std::cerr << "DEBUG: Inverter ctor name_param='" << name << "' actual='" << component_name << "'\n";
     num_outputs = num_inputs;
     initialize_IO_arrays();
 }

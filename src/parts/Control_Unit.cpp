@@ -117,21 +117,21 @@ Control_Unit::Control_Unit(uint16_t num_bits, const std::string& name) : Part(nu
     ram_page_read_enable->go_high();
     ram_page_register->connect_input(&ram_page_read_enable->get_outputs()[0], pc_bits + 1);
     
-    // === Stack Pointer and Return Address ===
-    stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
-    // Zero-initialize stack pointer outputs to 0
-    for (uint16_t i = 0; i < pc_bits; ++i)
-    {
-        stack_pointer->get_outputs()[i] = false;
-    }
-    sp_read_enable = new Signal_Generator("sp_read_enable_in_control_unit");
-    sp_read_enable->go_high();
-    stack_pointer->connect_input(&sp_read_enable->get_outputs()[0], pc_bits + 1);
-    
-    return_address = new Register(pc_bits, "return_address_in_control_unit");
-    ra_read_enable = new Signal_Generator("ra_read_enable_in_control_unit");
-    ra_read_enable->go_high();
-    return_address->connect_input(&ra_read_enable->get_outputs()[0], pc_bits + 1);
+    // === Stack Pointer and Return Address === DISABLED: inputs not connected
+    //stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
+    //// Zero-initialize stack pointer outputs to 0
+    //for (uint16_t i = 0; i < pc_bits; ++i)
+    //{
+    //    stack_pointer->get_outputs()[i] = false;
+    //}
+    //sp_read_enable = new Signal_Generator("sp_read_enable_in_control_unit");
+    //sp_read_enable->go_high();
+    //stack_pointer->connect_input(&sp_read_enable->get_outputs()[0], pc_bits + 1);
+    //
+    //return_address = new Register(pc_bits, "return_address_in_control_unit");
+    //ra_read_enable = new Signal_Generator("ra_read_enable_in_control_unit");
+    //ra_read_enable->go_high();
+    //return_address->connect_input(&ra_read_enable->get_outputs()[0], pc_bits + 1);
 }
 
 Control_Unit::~Control_Unit()
@@ -163,10 +163,10 @@ Control_Unit::~Control_Unit()
     delete clear_inverter;
     delete ram_page_register;
     delete ram_page_read_enable;
-    delete stack_pointer;
-    delete sp_read_enable;
-    delete return_address;
-    delete ra_read_enable;
+    //delete stack_pointer;  // DISABLED
+    //delete sp_read_enable;  // DISABLED
+    //delete return_address;  // DISABLED
+    //delete ra_read_enable;  // DISABLED
 }
 
 void Control_Unit::evaluate()
@@ -203,10 +203,10 @@ void Control_Unit::evaluate()
     // 6. Evaluate other registers
     ram_page_read_enable->evaluate();
     ram_page_register->evaluate();
-    sp_read_enable->evaluate();
-    stack_pointer->evaluate();
-    ra_read_enable->evaluate();
-    return_address->evaluate();
+    //sp_read_enable->evaluate();  // DISABLED: inputs not connected
+    //stack_pointer->evaluate();  // DISABLED: inputs not connected
+    //ra_read_enable->evaluate();  // DISABLED: inputs not connected
+    //return_address->evaluate();  // DISABLED: inputs not connected
 }
 
 void Control_Unit::update()
@@ -329,10 +329,10 @@ bool* Control_Unit::get_ram_page_outputs() const
     return ram_page_register->get_outputs();
 }
 
-bool* Control_Unit::get_stack_pointer_outputs() const
-{
-    return stack_pointer->get_outputs();
-}
+//bool* Control_Unit::get_stack_pointer_outputs() const
+//{
+//    return stack_pointer->get_outputs();
+//}  // DISABLED: inputs not connected
 
 void Control_Unit::clock_tick()
 {

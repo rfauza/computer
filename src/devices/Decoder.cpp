@@ -31,8 +31,6 @@ Decoder::Decoder(uint16_t num_bits, const std::string& name)
         else
             inv_name_str = "inverter_" + std::to_string(i) + "_in_decoder";
         input_inverters[i] = new Inverter(1, inv_name_str);
-        std::cerr << "DEBUG: Decoder created inverter expected='" << inv_name_str
-                  << "' actual='" << input_inverters[i]->get_component_name() << "'\n";
     }
     
     output_ands = new AND_Gate*[num_outputs];
@@ -44,8 +42,6 @@ Decoder::Decoder(uint16_t num_bits, const std::string& name)
         else
             and_name_str = "output_and_" + std::to_string(i) + "_in_decoder";
         output_ands[i] = new AND_Gate(num_inputs, and_name_str);
-        std::cerr << "DEBUG: Decoder created and expected='" << and_name_str
-                  << "' actual='" << output_ands[i]->get_component_name() << "'\n";
     }
 }
 

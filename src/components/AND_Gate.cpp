@@ -15,7 +15,7 @@ AND_Gate::AND_Gate(uint16_t num_inputs_param, const std::string& name)
         oss << " - " << name;
     }
     component_name = oss.str();
-    std::cerr << "DEBUG: AND_Gate ctor name_param='" << name << "' actual='" << component_name << "'\n";
+    component_name = oss.str();
     num_outputs = 1;
     initialize_IO_arrays();
 }
