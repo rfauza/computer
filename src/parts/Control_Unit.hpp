@@ -185,6 +185,9 @@ protected:
     Register* ram_page_register;      /**< RAM paging register (2*num_bits) */
     Signal_Generator* ram_page_read_enable; /**< Always high - always read */
     
+    // Default signals for optional external connections
+    Signal_Generator* default_low_signal; /**< Default low signal for unconnected optional inputs */
+    
     // Stack Management (for function calls) - DISABLED: inputs not connected
     //Register* stack_pointer;          /**< Stack pointer (2*num_bits) */
     //Register* return_address;         /**< Return address storage (2*num_bits) */

@@ -53,6 +53,12 @@ Control_Unit::Control_Unit(uint16_t num_bits, const std::string& name) : Part(nu
     pc_jump_and_gates = new AND_Gate*[pc_bits];
     pc_write_mux = new OR_Gate*[pc_bits];
     
+    // Create default low signal for optional/unconnected inputs
+    default_low_signal = new Signal_Generator("default_low_in_control_unit");
+    default_low_signal->go_low();  // Sets output to false directly, no need to evaluate
+    // Default: no jump enabled, no jump address
+    jump_enable_inverter->connect_input(&default_low_signal->get_outputs()[0], 0);
+    
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
         std::ostringstream and_inc_name, and_jmp_name, or_name;
@@ -70,7 +76,10 @@ Control_Unit::Control_Unit(uint16_t num_bits, const std::string& name) : Part(nu
         
         // Wire: jump_address & jump_enable -> OR gate
         // (jump address will be connected externally via connect_jump_address_to_pc)
-        // pc_jump_and_gates wiring done in connect methods
+        // Default: connect jump address to low (no jump)
+        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 0);
+        // Default: connect jump enable to low (no jump)
+        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 1);
         
         // Wire OR outputs to PC data inputs
         pc_write_mux[i]->connect_input(&pc_increment_and_gates[i]->get_outputs()[0], 0);
@@ -116,6 +125,13 @@ Control_Unit::Control_Unit(uint16_t num_bits, const std::string& name) : Part(nu
     ram_page_read_enable = new Signal_Generator("ram_page_read_enable_in_control_unit");
     ram_page_read_enable->go_high();
     ram_page_register->connect_input(&ram_page_read_enable->get_outputs()[0], pc_bits + 1);
+    // Ensure RAM page register write-enable defaults to low when not driven
+    ram_page_register->connect_input(&default_low_signal->get_outputs()[0], pc_bits);
+    // Also default all RAM page data inputs to low to avoid unconnected memory bit errors
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        ram_page_register->connect_input(&default_low_signal->get_outputs()[0], i);
+    }
     
     // === Stack Pointer and Return Address === DISABLED: inputs not connected
     //stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
@@ -152,6 +168,7 @@ Control_Unit::~Control_Unit()
     delete[] pc_write_mux;
     
     delete jump_enable_inverter;
+    delete default_low_signal;
     delete pc_write_enable;
     delete pc_read_enable;
     delete opcode_decoder;

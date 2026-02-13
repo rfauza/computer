@@ -23,6 +23,7 @@
 #include "testing/arithmetic_unit_tests.hpp"
 #include "testing/alu_tests.hpp"
 #include "testing/control_unit_tests.hpp"
+#include "testing/cpu_tests.hpp"
 #include "utilities/program_memory_loader.hpp"
 #include "parts/Program_Memory.hpp"
 #include "parts/Main_Memory.hpp"
@@ -42,7 +43,10 @@ int main()
     // test_alu_truth_table(4, true);
     
     // Test Control Unit (4-bit, print all tests)
-    test_control_unit(4, true);
+    // test_control_unit(4, true);
+    
+    // Test CPU (4-bit, print all tests)
+    test_cpu(4, true);
     
     // Uncomment to test ALU with all tests printed:
     // test_alu_truth_table(4, true);

@@ -33,8 +33,7 @@ the inheriting/child classes will define the opcodes for each different computer
 connections between the decoder and the ALU (and decoder to internal connections like the pc write enable) will be defined
 in the child classes, all other connections should be done in this parent class. look at my classes and 
 see what type is the best fit for each of the above. if I missed anything else that a control unit should have, let me know
-    
-    
+
     
 - make CPU (ALU+CU):
 - make 3-bit computer (print to terminal)
@@ -71,7 +70,7 @@ help me make an automated testing suite that will test all my classes. use the s
 Feb 13 2026
 3h components print out parent and variable name
 .5h commenting out stack pointer and return addr and removing debug statements
-
+1.5 cpu
 
 Feb 8 2026 :  6.5h total 44h
 2h fixing AU add/sub, write enable to mul and div
