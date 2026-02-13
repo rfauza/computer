@@ -4,7 +4,7 @@
 class Memory_Controller : public Part
 {
 public:
-    Memory_Controller(uint16_t num_bits);
+    Memory_Controller(uint16_t num_bits, const std::string& name = "");
     ~Memory_Controller() override;
     void update() override;
 };

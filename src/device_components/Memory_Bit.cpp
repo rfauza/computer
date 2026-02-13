@@ -2,10 +2,20 @@
 #include <sstream>
 #include <iomanip>
 
-Memory_Bit::Memory_Bit()
+Memory_Bit::Memory_Bit(const std::string& name)
+    : Component(name),
+    data_inverter(1, name.empty() ? std::string("data_inverter_in_memory_bit") : name + "_data_inverter"),
+      set_and(2, name.empty() ? std::string("set_and_in_memory_bit") : name + "_set_and"),
+      reset_and(2, name.empty() ? std::string("reset_and_in_memory_bit") : name + "_reset_and"),
+      output_and(2, name.empty() ? std::string("output_and_in_memory_bit") : name + "_output_and"),
+      flip_flop(name.empty() ? std::string("flip_flop_in_memory_bit") : name + "_flip_flop")
 {
     std::ostringstream oss;
     oss << "Memory_Bit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 3;  // [Data, Write_Enable, Read_Enable]
     num_outputs = 1; // [Q (output)]

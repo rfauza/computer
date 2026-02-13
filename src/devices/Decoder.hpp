@@ -28,8 +28,9 @@ public:
      * @brief Constructs a decoder with num_inputs selector bits
      * 
      * @param num_bits Number of selector inputs (outputs = 2^num_bits)
+     * @param name Optional name identifier for this component
      */
-    Decoder(uint16_t num_bits);
+    Decoder(uint16_t num_bits, const std::string& name = "");
     
     ~Decoder() override;
     
@@ -53,6 +54,6 @@ public:
     void update() override;
     
 private:
-    Inverter* input_inverters; // one per input
+    Inverter** input_inverters; // one per input
     AND_Gate** output_ands; // array of pointers to AND_Gate objects (one per output)
 };

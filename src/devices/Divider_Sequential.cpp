@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cycle_count(0)
+Divider_Sequential::Divider_Sequential(uint16_t num_bits, const std::string& name) : Device(num_bits, name), cycle_count(0)
 {
     std::ostringstream oss;
     oss << "Divider_Sequential 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     num_inputs = 2 * num_bits + 2;  // dividend (num_bits) + divisor (num_bits) + start + output_enable
@@ -20,21 +24,21 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     }
     
     // Create registers
-    quotient = new Register(num_bits);
-    remainder = new Register(num_bits);
-    divisor = new Register(num_bits);
-    busy_flag = new Flip_Flop();
+    quotient = new Register(num_bits, "quotient_in_divider_sequential");
+    remainder = new Register(num_bits, "remainder_in_divider_sequential");
+    divisor = new Register(num_bits, "divisor_in_divider_sequential");
+    busy_flag = new Flip_Flop("busy_flag_in_divider_sequential");
     
     // Create combinational components
-    subtractor = new Adder_Subtractor(num_bits);
-    shift_left_rem = new L_Shift(num_bits);
-    shift_left_quot = new L_Shift(num_bits);
+    subtractor = new Adder_Subtractor(num_bits, "subtractor_in_divider_sequential");
+    shift_left_rem = new L_Shift(num_bits, "shift_left_rem_in_divider_sequential");
+    shift_left_quot = new L_Shift(num_bits, "shift_left_quot_in_divider_sequential");
     
     // Create control signals
-    write_enable = new Signal_Generator();
-    read_enable = new Signal_Generator();
-    zero_signal = new Signal_Generator();
-    one_signal = new Signal_Generator();
+    write_enable = new Signal_Generator("write_enable_in_divider_sequential");
+    read_enable = new Signal_Generator("read_enable_in_divider_sequential");
+    zero_signal = new Signal_Generator("zero_signal_in_divider_sequential");
+    one_signal = new Signal_Generator("one_signal_in_divider_sequential");
     
     write_enable->go_low();
     read_enable->go_high();
@@ -45,13 +49,21 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
     output_enable = nullptr;
     
     // Allocate AND gates for output gating
-    output_AND_gates = new AND_Gate[2 * num_bits];
+    output_AND_gates = new AND_Gate*[2 * num_bits];
+    std::ostringstream output_and_name;
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        output_and_name.str("");
+        output_and_name.clear();
+        output_and_name << "output_and_" << i << "_in_divider_sequential";
+        output_AND_gates[i] = new AND_Gate(2, output_and_name.str());
+    }
     
     // Connect quotient and remainder outputs to AND gate input 0
     for (uint16_t i = 0; i < num_bits; ++i)
     {
-        output_AND_gates[i].connect_input(&quotient->get_outputs()[i], 0);
-        output_AND_gates[num_bits + i].connect_input(&remainder->get_outputs()[i], 0);
+        output_AND_gates[i]->connect_input(&quotient->get_outputs()[i], 0);
+        output_AND_gates[num_bits + i]->connect_input(&remainder->get_outputs()[i], 0);
     }
     
     // Allocate dividend bit storage
@@ -71,6 +83,10 @@ Divider_Sequential::Divider_Sequential(uint16_t num_bits) : Device(num_bits), cy
 
 Divider_Sequential::~Divider_Sequential()
 {
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        delete output_AND_gates[i];
+    }
     delete[] output_AND_gates;
     delete quotient;
     delete remainder;
@@ -103,7 +119,7 @@ bool Divider_Sequential::connect_input(const bool* const upstream_output_p, uint
         bool result = true;
         for (uint16_t i = 0; i < 2 * num_bits; ++i)
         {
-            result &= output_AND_gates[i].connect_input(output_enable, 1);
+            result &= output_AND_gates[i]->connect_input(output_enable, 1);
         }
         return result;
     }
@@ -254,12 +270,12 @@ void Divider_Sequential::evaluate()
     // Evaluate AND gates and copy outputs
     for (uint16_t i = 0; i < 2 * num_bits; ++i)
     {
-        output_AND_gates[i].evaluate();
+        output_AND_gates[i]->evaluate();
     }
     for (uint16_t i = 0; i < num_bits; ++i)
     {
-        outputs[i] = output_AND_gates[i].get_output(0);
-        outputs[num_bits + i] = output_AND_gates[num_bits + i].get_output(0);
+        outputs[i] = output_AND_gates[i]->get_output(0);
+        outputs[num_bits + i] = output_AND_gates[num_bits + i]->get_output(0);
     }
     
     write_enable->go_low();
@@ -269,12 +285,12 @@ void Divider_Sequential::evaluate()
         // Not busy - still evaluate AND gates for output gating
         for (uint16_t i = 0; i < 2 * num_bits; ++i)
         {
-            output_AND_gates[i].evaluate();
+            output_AND_gates[i]->evaluate();
         }
         for (uint16_t i = 0; i < num_bits; ++i)
         {
-            outputs[i] = output_AND_gates[i].get_output(0);
-            outputs[num_bits + i] = output_AND_gates[num_bits + i].get_output(0);
+            outputs[i] = output_AND_gates[i]->get_output(0);
+            outputs[num_bits + i] = output_AND_gates[num_bits + i]->get_output(0);
         }
     }
 }

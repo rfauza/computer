@@ -2,12 +2,16 @@
 #include <sstream>
 #include <iomanip>
 
-Comparator::Comparator(uint16_t num_bits) 
-: Device(num_bits),
+Comparator::Comparator(uint16_t num_bits, const std::string& name)
+: Device(num_bits, name),
   subtractor(num_bits)
 {
     std::ostringstream oss;
     oss << "Comparator 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Inputs: A (num_bits) + B (num_bits)
@@ -19,7 +23,7 @@ Comparator::Comparator(uint16_t num_bits)
     allocate_IO_arrays();
     
     // Create always-high signal for subtractor (always subtract, always enabled)
-    always_high = new Signal_Generator();
+    always_high = new Signal_Generator("always_high_in_comparator");
     always_high->go_high();
     
     // Wire always_high to subtractor's subtract_enable and output_enable
@@ -27,12 +31,12 @@ Comparator::Comparator(uint16_t num_bits)
     subtractor.connect_input(&always_high->get_outputs()[0], 2 * num_bits + 1);  // output_enable
     
     // Create decoding gates
-    not_z = new Inverter();
-    not_c = new Inverter();
-    n_xor_v = new XOR_Gate();
-    not_n_xor_v = new Inverter();
-    gt_u_and = new AND_Gate();
-    gt_s_and = new AND_Gate();
+    not_z = new Inverter(1, "not_z_in_comparator");
+    not_c = new Inverter(1, "not_c_in_comparator");
+    n_xor_v = new XOR_Gate(2, "n_xor_v_in_comparator");
+    not_n_xor_v = new Inverter(1, "not_n_xor_v_in_comparator");
+    gt_u_and = new AND_Gate(2, "gt_u_and_in_comparator");
+    gt_s_and = new AND_Gate(2, "gt_s_and_in_comparator");
 }
 
 Comparator::~Comparator()

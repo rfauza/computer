@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bits), cycle_count(0)
+Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits, const std::string& name) : Device(num_bits, name), cycle_count(0)
 {
     std::ostringstream oss;
     oss << "Multiplier_Sequential 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     num_inputs = 2 * num_bits + 2;  // A (num_bits) + B (num_bits) + start + output_enable
@@ -20,21 +24,21 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     }
     
     // Create registers
-    accumulator = new Register(2 * num_bits);
-    multiplicand = new Register(2 * num_bits);  // Extended to 2*num_bits for shifting
-    multiplier_reg = new Register(num_bits);
-    busy_flag = new Flip_Flop();
+    accumulator = new Register(2 * num_bits, "accumulator_in_multiplier_sequential");
+    multiplicand = new Register(2 * num_bits, "multiplicand_in_multiplier_sequential");  // Extended to 2*num_bits for shifting
+    multiplier_reg = new Register(num_bits, "multiplier_reg_in_multiplier_sequential");
+    busy_flag = new Flip_Flop("busy_flag_in_multiplier_sequential");
     
     // Create combinational components
-    adder = new Adder(2 * num_bits);
-    shift_left = new L_Shift(2 * num_bits);
-    shift_right = new R_Shift(num_bits);
+    adder = new Adder(2 * num_bits, "adder_in_multiplier_sequential");
+    shift_left = new L_Shift(2 * num_bits, "shift_left_in_multiplier_sequential");
+    shift_right = new R_Shift(num_bits, "shift_right_in_multiplier_sequential");
     
     // Create control signals
-    write_enable = new Signal_Generator();
-    read_enable = new Signal_Generator();
-    zero_signal = new Signal_Generator();
-    one_signal = new Signal_Generator();
+    write_enable = new Signal_Generator("write_enable_in_multiplier_sequential");
+    read_enable = new Signal_Generator("read_enable_in_multiplier_sequential");
+    zero_signal = new Signal_Generator("zero_signal_in_multiplier_sequential");
+    one_signal = new Signal_Generator("one_signal_in_multiplier_sequential");
     
     write_enable->go_low();
     read_enable->go_high();  // Registers always readable
@@ -45,12 +49,20 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
     output_enable = nullptr;
     
     // Allocate AND gates for output gating
-    output_AND_gates = new AND_Gate[2 * num_bits];
+    output_AND_gates = new AND_Gate*[2 * num_bits];
+    std::ostringstream output_and_name;
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        output_and_name.str("");
+        output_and_name.clear();
+        output_and_name << "output_and_" << i << "_in_multiplier_sequential";
+        output_AND_gates[i] = new AND_Gate(2, output_and_name.str());
+    }
     
     // Connect accumulator outputs to AND gate input 0
     for (uint16_t i = 0; i < 2 * num_bits; ++i)
     {
-        output_AND_gates[i].connect_input(&accumulator->get_outputs()[i], 0);
+        output_AND_gates[i]->connect_input(&accumulator->get_outputs()[i], 0);
     }
     
     // Connect read enables (always high for combinational access)
@@ -64,6 +76,10 @@ Multiplier_Sequential::Multiplier_Sequential(uint16_t num_bits) : Device(num_bit
 
 Multiplier_Sequential::~Multiplier_Sequential()
 {
+    for (uint16_t i = 0; i < 2 * num_bits; ++i)
+    {
+        delete output_AND_gates[i];
+    }
     delete[] output_AND_gates;
     delete accumulator;
     delete multiplicand;
@@ -95,7 +111,7 @@ bool Multiplier_Sequential::connect_input(const bool* const upstream_output_p, u
         bool result = true;
         for (uint16_t i = 0; i < 2 * num_bits; ++i)
         {
-            result &= output_AND_gates[i].connect_input(output_enable, 1);
+            result &= output_AND_gates[i]->connect_input(output_enable, 1);
         }
         return result;
     }
@@ -221,8 +237,8 @@ void Multiplier_Sequential::evaluate()
     // Evaluate AND gates and copy outputs
     for (uint16_t i = 0; i < 2 * num_bits; ++i)
     {
-        output_AND_gates[i].evaluate();
-        outputs[i] = output_AND_gates[i].get_output(0);
+        output_AND_gates[i]->evaluate();
+        outputs[i] = output_AND_gates[i]->get_output(0);
     }
     
     write_enable->go_low();
@@ -232,8 +248,8 @@ void Multiplier_Sequential::evaluate()
         // Not busy - still evaluate AND gates for output gating
         for (uint16_t i = 0; i < 2 * num_bits; ++i)
         {
-            output_AND_gates[i].evaluate();
-            outputs[i] = output_AND_gates[i].get_output(0);
+            output_AND_gates[i]->evaluate();
+            outputs[i] = output_AND_gates[i]->get_output(0);
         }
     }
 }

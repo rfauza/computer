@@ -2,35 +2,49 @@
 #include <sstream>
 #include <iomanip>
 
-Adder::Adder(uint16_t num_bits) : Device(num_bits)
+Adder::Adder(uint16_t num_bits, const std::string& name) : Device(num_bits, name)
 {
     std::ostringstream oss;
     oss << "Adder 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 2 * num_bits;  // A (num_bits) + B (num_bits)
     num_outputs = num_bits;      // Sum (num_bits)
     
     allocate_IO_arrays();
     
-    // Allocate Full_Adder array
-    adders = new Full_Adder[num_bits];
+    // Allocate Full_Adder array with descriptive names
+    adders = new Full_Adder*[num_bits];
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        std::ostringstream fa_name;
+        fa_name << "full_adder_" << i << "_in_adder";
+        adders[i] = new Full_Adder(fa_name.str());
+    }
     
     // Create signal generator for carry-in (0)
-    carry_in_signal = new Signal_Generator();
+    carry_in_signal = new Signal_Generator("carry_in_signal_in_adder");
     carry_in_signal->go_low();
     
     // Connect carry_in to first adder
-    adders[0].connect_input(&carry_in_signal->get_outputs()[0], 2);
+    adders[0]->connect_input(&carry_in_signal->get_outputs()[0], 2);
     
     // Wire carry chain between adders
     for (uint16_t i = 1; i < num_bits; ++i)
     {
-        adders[i].connect_input(&adders[i-1].get_outputs()[1], 2);  // Carry out -> Carry in
+        adders[i]->connect_input(&adders[i-1]->get_outputs()[1], 2);  // Carry out -> Carry in
     }
 }
 
 Adder::~Adder()
 {
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        delete adders[i];
+    }
     delete[] adders;
     delete carry_in_signal;
 }
@@ -43,13 +57,13 @@ bool Adder::connect_input(const bool* const upstream_output_p, uint16_t input_in
     // Route A inputs (0 to num_bits-1)
     if (input_index < num_bits)
     {
-        return adders[input_index].connect_input(inputs[input_index], 0);
+        return adders[input_index]->connect_input(inputs[input_index], 0);
     }
     // Route B inputs (num_bits to 2*num_bits-1)
     else if (input_index < 2 * num_bits)
     {
         uint16_t bit_index = input_index - num_bits;
-        return adders[bit_index].connect_input(inputs[input_index], 1);
+        return adders[bit_index]->connect_input(inputs[input_index], 1);
     }
     
     return true;
@@ -60,13 +74,13 @@ void Adder::evaluate()
     // Evaluate all adders in sequence
     for (uint16_t i = 0; i < num_bits; ++i)
     {
-        adders[i].evaluate();
+        adders[i]->evaluate();
     }
     
     // Copy sum outputs
     for (uint16_t i = 0; i < num_bits; ++i)
     {
-        outputs[i] = adders[i].get_output(0);
+        outputs[i] = adders[i]->get_output(0);
     }
 }
 

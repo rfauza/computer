@@ -14,7 +14,7 @@
 class Flip_Flop : public Component
 {
 public:
-    Flip_Flop();
+    Flip_Flop(const std::string& name = "");
     ~Flip_Flop() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

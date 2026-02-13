@@ -124,8 +124,7 @@ void test_control_unit(uint16_t num_bits, bool print_all)
         page_write_enable_sig.go_low();
         page_write_enable_sig.evaluate();
         
-        // Initial evaluation
-        cu->evaluate();
+        // Initial state: read PC before any evaluation so PC starts at address 0
         int initial_pc = bools_to_int(cu->get_pc_outputs(), pc_bits);
         
         if (print_all)

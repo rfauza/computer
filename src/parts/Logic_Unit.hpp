@@ -54,7 +54,7 @@ public:
      * 
      * @param num_bits Width of data operands and output
      */
-    Logic_Unit(uint16_t num_bits);
+    Logic_Unit(uint16_t num_bits, const std::string& name = "");
     
     ~Logic_Unit() override;
     

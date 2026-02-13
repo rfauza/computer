@@ -27,7 +27,7 @@
 class Program_Memory : public Part
 {
 public:
-    Program_Memory(uint16_t decoder_bits = 12, uint16_t data_bits = 4);
+    Program_Memory(uint16_t decoder_bits = 12, uint16_t data_bits = 4, const std::string& name = "");
     ~Program_Memory() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

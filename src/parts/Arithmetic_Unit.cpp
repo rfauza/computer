@@ -3,8 +3,8 @@
 #include <iomanip>
 #include <iostream>
 
-Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits) 
-: Part(num_bits), 
+Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits, const std::string& name) 
+: Part(num_bits, name), 
     adder_subtractor(num_bits),
     multiplier(num_bits),
     adder_output_enable_or(nullptr),
@@ -19,6 +19,9 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     // create component name string
     std::ostringstream oss;
     oss << "Arithmetic_Unit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Inputs: data_a (num_bits) + data_b (num_bits) + add_enable (1) + sub_enable (1) + 
@@ -28,10 +31,10 @@ Arithmetic_Unit::Arithmetic_Unit(uint16_t num_bits)
     
     allocate_IO_arrays();    
     // Create the OR gates on the heap
-    adder_output_enable_or = new OR_Gate(4);
-    adder_subtract_enable_or = new OR_Gate(2);
-    add_or_sub_or = new OR_Gate(2);  // OR(add_enable, sub_enable)
-    inc_or_dec_or = new OR_Gate(2);  // OR(inc_enable, dec_enable)
+    adder_output_enable_or = new OR_Gate(4, "adder_output_enable_or_in_arithmetic_unit");
+    adder_subtract_enable_or = new OR_Gate(2, "adder_subtract_enable_or_in_arithmetic_unit");
+    add_or_sub_or = new OR_Gate(2, "add_or_sub_or_in_arithmetic_unit");  // OR(add_enable, sub_enable)
+    inc_or_dec_or = new OR_Gate(2, "inc_or_dec_or_in_arithmetic_unit");  // OR(inc_enable, dec_enable)
     
     // Create constant 1 signal generators for INC/DEC (array of bits, only LSB=1)
     constant_bits = new Signal_Generator[num_bits];

@@ -5,7 +5,7 @@
 class Bus : public Device
 {
 public:
-    Bus(uint16_t num_bits);
+    Bus(uint16_t num_bits, const std::string& name = "");
     ~Bus() override;
     
     void evaluate() override;

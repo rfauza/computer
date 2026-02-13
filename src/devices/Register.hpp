@@ -25,8 +25,9 @@ public:
      * @brief Constructs a register with num_bits storage capacity
      * 
      * @param num_bits Width of the register (number of bits to store)
+     * @param name Optional name identifier for this component
      */
-    Register(uint16_t num_bits);
+    Register(uint16_t num_bits, const std::string& name = "");
     
     /**
      * @brief Destructor

@@ -2,11 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-ALU::ALU(uint16_t num_bits) : Part(num_bits)
+ALU::ALU(uint16_t num_bits, const std::string& name) : Part(num_bits, name)
 {
     // generate component name string
     std::ostringstream oss;
     oss << "ALU 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Inputs: data_a (num_bits) + data_b (num_bits) + 11 enables
@@ -17,9 +20,9 @@ ALU::ALU(uint16_t num_bits) : Part(num_bits)
     allocate_IO_arrays();
     
     // Create sub-units
-    arithmetic_unit = new Arithmetic_Unit(num_bits);
-    logic_unit = new Logic_Unit(num_bits);
-    comparator = new Comparator(num_bits);
+    arithmetic_unit = new Arithmetic_Unit(num_bits, "arithmetic_unit_in_alu");
+    logic_unit = new Logic_Unit(num_bits, "logic_unit_in_alu");
+    comparator = new Comparator(num_bits, "comparator_in_alu");
     
     // Note: Comparator will receive A and B inputs directly in connect_input
     // No wiring needed here - will be done per-input in connect_input method

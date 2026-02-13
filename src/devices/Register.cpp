@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Register::Register(uint16_t num_bits) : Device(num_bits)
+Register::Register(uint16_t num_bits, const std::string& name) : Device(num_bits, name)
 {
     std::ostringstream oss;
     oss << "Register 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Set up I/O: num_bits data inputs + 2 control inputs, num_bits outputs
@@ -17,7 +21,9 @@ Register::Register(uint16_t num_bits) : Device(num_bits)
     // Create Memory_Bit for each bit position
     for (uint16_t i = 0; i < num_bits; i++)
     {
-        memory_bits.push_back(new Memory_Bit());
+        std::ostringstream mb_name;
+        mb_name << "memory_bit_" << i << "_in_register";
+        memory_bits.push_back(new Memory_Bit(mb_name.str()));
     }
 }
 

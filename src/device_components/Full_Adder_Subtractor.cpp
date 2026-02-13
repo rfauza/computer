@@ -2,11 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Full_Adder_Subtractor::Full_Adder_Subtractor()
-    : xor_gate_1(2)
+Full_Adder_Subtractor::Full_Adder_Subtractor(const std::string& name)
+    : Component(name), xor_gate_1(2)
 {
     std::ostringstream oss;
     oss << "Full_Adder_Subtractor 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 4; // [A, B, Carry-In, Subtract]
     num_outputs = 2; // [Sum, Carry]

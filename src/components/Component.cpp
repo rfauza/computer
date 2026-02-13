@@ -1,6 +1,14 @@
 #include "Component.hpp"
 #include <iostream>
 
+Component::Component(const std::string& name)
+{
+    if (!name.empty())
+    {
+        component_name = name;
+    }
+}
+
 Component::~Component()
 {
     if (inputs != nullptr)

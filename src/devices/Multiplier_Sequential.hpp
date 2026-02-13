@@ -61,7 +61,7 @@ public:
      * 
      * @param num_bits Width of input operands (output is 2*num_bits wide)
      */
-    Multiplier_Sequential(uint16_t num_bits);
+    Multiplier_Sequential(uint16_t num_bits, const std::string& name = "");
     
     ~Multiplier_Sequential() override;
     
@@ -128,7 +128,7 @@ private:
     Signal_Generator* one_signal;     // Constant one
     
     // Output gating
-    AND_Gate* output_AND_gates;      // AND gates for gating outputs with output_enable
+    AND_Gate** output_AND_gates;      // AND gates for gating outputs with output_enable
     bool* output_enable;              // Pointer to inputs[2*num_bits+1]
     
     uint16_t cycle_count;

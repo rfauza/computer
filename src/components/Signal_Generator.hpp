@@ -4,7 +4,7 @@
 class Signal_Generator : public Component
 {
 public:
-    Signal_Generator();
+    Signal_Generator(const std::string& name = "");
     ~Signal_Generator() override;
     void evaluate() override;
     

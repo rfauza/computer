@@ -1,12 +1,17 @@
 #include "Decoder.hpp"
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
-Decoder::Decoder(uint16_t num_bits)
-    : Device(num_bits)
+Decoder::Decoder(uint16_t num_bits, const std::string& name)
+    : Device(num_bits, name)
 {
     std::ostringstream oss;
     oss << "Decoder 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Set num_inputs from num_bits parameter
@@ -17,16 +22,39 @@ Decoder::Decoder(uint16_t num_bits)
     num_outputs = static_cast<uint16_t>(1u << num_inputs); // left-shift 1 by num_inputs to get 2^n outputs
     allocate_IO_arrays();
     
-    input_inverters = new Inverter[num_inputs];
+    input_inverters = new Inverter*[num_inputs];
+    for (uint16_t i = 0; i < num_inputs; ++i)
+    {
+        std::string inv_name_str;
+        if (!name.empty())
+            inv_name_str = name + "_inverter_" + std::to_string(i);
+        else
+            inv_name_str = "inverter_" + std::to_string(i) + "_in_decoder";
+        input_inverters[i] = new Inverter(1, inv_name_str);
+        std::cerr << "DEBUG: Decoder created inverter expected='" << inv_name_str
+                  << "' actual='" << input_inverters[i]->get_component_name() << "'\n";
+    }
+    
     output_ands = new AND_Gate*[num_outputs];
     for (uint16_t i = 0; i < num_outputs; ++i)
     {
-        output_ands[i] = new AND_Gate(num_inputs);
+        std::string and_name_str;
+        if (!name.empty())
+            and_name_str = name + "_output_and_" + std::to_string(i);
+        else
+            and_name_str = "output_and_" + std::to_string(i) + "_in_decoder";
+        output_ands[i] = new AND_Gate(num_inputs, and_name_str);
+        std::cerr << "DEBUG: Decoder created and expected='" << and_name_str
+                  << "' actual='" << output_ands[i]->get_component_name() << "'\n";
     }
 }
 
 Decoder::~Decoder()
 {
+    for (uint16_t i = 0; i < num_inputs; ++i)
+    {
+        delete input_inverters[i];
+    }
     delete[] input_inverters;
     if (output_ands)
     {
@@ -47,7 +75,7 @@ bool Decoder::connect_input(const bool* const upstream_output_p, uint16_t input_
         return false;
     
     // Wire input to its inverter
-    input_inverters[input_index].connect_input(inputs[input_index], 0);
+    input_inverters[input_index]->connect_input(inputs[input_index], 0);
     
     // cycle through output indices (and output AND gates) to connect this input (or its inverted version) 
     // to each output AND gate
@@ -65,7 +93,7 @@ bool Decoder::connect_input(const bool* const upstream_output_p, uint16_t input_
         // otherwise, connect the input bit inverted
         else
         {
-            output_ands[output_index]->connect_input(&input_inverters[input_index].get_outputs()[0], input_index);
+            output_ands[output_index]->connect_input(&input_inverters[input_index]->get_outputs()[0], input_index);
         }
     }
     
@@ -76,7 +104,7 @@ void Decoder::evaluate()
 {
     for (uint16_t i = 0; i < num_inputs; ++i)
     {
-        input_inverters[i].evaluate();
+        input_inverters[i]->evaluate();
     }
     for (uint16_t i = 0; i < num_outputs; ++i)
     {

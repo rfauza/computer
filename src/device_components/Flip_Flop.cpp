@@ -2,10 +2,19 @@
 #include <sstream>
 #include <iomanip>
 
-Flip_Flop::Flip_Flop()
+Flip_Flop::Flip_Flop(const std::string& name)
+        : Component(name),
+            inverter_set(1, name.empty() ? std::string("inverter_set_in_flip_flop") : name + "_inverter_set"),
+            inverter_reset(1, name.empty() ? std::string("inverter_reset_in_flip_flop") : name + "_inverter_reset"),
+      nand_gate_1(2, name.empty() ? std::string("nand_gate_1_in_flip_flop") : name + "_nand_gate_1"),
+      nand_gate_2(2, name.empty() ? std::string("nand_gate_2_in_flip_flop") : name + "_nand_gate_2")
 {
     std::ostringstream oss;
     oss << "Flip_Flop 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 2;  // [Set, Reset]
     num_outputs = 1; // [Q (output)]

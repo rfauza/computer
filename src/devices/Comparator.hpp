@@ -27,7 +27,7 @@
 class Comparator : public Device
 {
 public:
-    Comparator(uint16_t num_bits);
+    Comparator(uint16_t num_bits, const std::string& name = "");
     ~Comparator() override;
     void evaluate() override;
     void update() override;

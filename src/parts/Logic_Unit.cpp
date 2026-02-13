@@ -2,10 +2,13 @@
 #include <sstream>
 #include <iomanip>
 
-Logic_Unit::Logic_Unit(uint16_t num_bits) : Part(num_bits)
+Logic_Unit::Logic_Unit(uint16_t num_bits, const std::string& name) : Part(num_bits, name)
 {
     std::ostringstream oss;
     oss << "Logic_Unit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     // Inputs: data_a (num_bits) + data_b (num_bits) + and_enable (1) + or_enable (1) + xor_enable (1) + not_enable (1) + r_shift_enable (1) + l_shift_enable (1)

@@ -52,7 +52,7 @@ public:
      * 
      * @param num_bits Width of data operands and output
      */
-    Arithmetic_Unit(uint16_t num_bits);
+    Arithmetic_Unit(uint16_t num_bits, const std::string& name = "");
     
     ~Arithmetic_Unit() override;
     

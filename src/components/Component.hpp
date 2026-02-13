@@ -14,9 +14,11 @@ class Component
 {
 public:
     /**
-     * @brief Default constructor
+     * @brief Constructor with optional name
+     * @param name Optional name identifier for this component (defaults to empty string)
      */
-    Component() = default;
+    Component(const std::string& name = "");
+    
     
     /**
      * @brief Virtual destructor

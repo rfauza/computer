@@ -8,7 +8,7 @@
 class Full_Adder_Subtractor : public Component
 {
 public:
-    Full_Adder_Subtractor();
+    Full_Adder_Subtractor(const std::string& name = "");
     ~Full_Adder_Subtractor() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

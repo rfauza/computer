@@ -6,7 +6,7 @@
 class Half_Adder : public Component
 {
 public:
-    Half_Adder();
+    Half_Adder(const std::string& name = "");
     ~Half_Adder() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

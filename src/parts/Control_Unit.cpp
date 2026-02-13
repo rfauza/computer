@@ -2,26 +2,36 @@
 #include <sstream>
 #include <iomanip>
 
-Control_Unit::Control_Unit(uint16_t num_bits) : Part(num_bits)
+Control_Unit::Control_Unit(uint16_t num_bits, const std::string& name) : Part(num_bits, name)
 {
     // create component name string
     std::ostringstream oss;
     oss << "Control_Unit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
-    pc_bits = static_cast<uint16_t>(2 * num_bits);
+    pc_bits = static_cast<uint16_t>(2 * num_bits); // numbits for program counter
     opcode_bits = num_bits;  // Default opcode size = num_bits
     num_flags = 6;  // Standard comparator flags: EQ, NEQ, LT_U, GT_U, LT_S, GT_S
     
     // === Program Counter and Incrementer ===
-    pc = new Register(pc_bits);
-    pc_incrementer = new Adder(pc_bits);
+    pc = new Register(pc_bits, "pc_in_control_unit");
+    // Zero-initialize PC outputs to 0
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->get_outputs()[i] = false;
+    }
+    pc_incrementer = new Adder(pc_bits, "pc_incrementer_in_control_unit");
     
     // Create signal generators for increment value (binary 1: LSB=1, rest=0)
     increment_signals = new Signal_Generator*[pc_bits];
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        increment_signals[i] = new Signal_Generator();
+        std::ostringstream name_str;
+        name_str << "increment_signal_" << i << "_in_control_unit";
+        increment_signals[i] = new Signal_Generator(name_str.str());
         if (i == 0)
             increment_signals[i]->go_high();  // LSB = 1
         else
@@ -38,73 +48,88 @@ Control_Unit::Control_Unit(uint16_t num_bits) : Part(num_bits)
     }
     
     // === PC Write Control (Mux between increment and jump) ===
-    jump_enable_inverter = new Inverter();
-    pc_increment_gates = new AND_Gate*[pc_bits];
-    pc_jump_gates = new AND_Gate*[pc_bits];
+    jump_enable_inverter = new Inverter(1, "jump_enable_inverter_in_control_unit");
+    pc_increment_and_gates = new AND_Gate*[pc_bits];
+    pc_jump_and_gates = new AND_Gate*[pc_bits];
     pc_write_mux = new OR_Gate*[pc_bits];
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_increment_gates[i] = new AND_Gate(2);
-        pc_jump_gates[i] = new AND_Gate(2);
-        pc_write_mux[i] = new OR_Gate(2);
+        std::ostringstream and_inc_name, and_jmp_name, or_name;
+        and_inc_name << "pc_increment_and_gate_" << i << "_in_control_unit";
+        and_jmp_name << "pc_jump_and_gate_" << i << "_in_control_unit";
+        or_name << "pc_write_mux_" << i << "_in_control_unit";
+        
+        pc_increment_and_gates[i] = new AND_Gate(2, and_inc_name.str());
+        pc_jump_and_gates[i] = new AND_Gate(2, and_jmp_name.str());
+        pc_write_mux[i] = new OR_Gate(2, or_name.str());
         
         // Wire: incrementer_output & !jump_enable -> OR gate
-        pc_increment_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
-        pc_increment_gates[i]->connect_input(&jump_enable_inverter->get_outputs()[0], 1);
+        pc_increment_and_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
+        pc_increment_and_gates[i]->connect_input(&jump_enable_inverter->get_outputs()[0], 1);
         
         // Wire: jump_address & jump_enable -> OR gate
         // (jump address will be connected externally via connect_jump_address_to_pc)
-        // pc_jump_gates wiring done in connect methods
+        // pc_jump_and_gates wiring done in connect methods
         
         // Wire OR outputs to PC data inputs
-        pc_write_mux[i]->connect_input(&pc_increment_gates[i]->get_outputs()[0], 0);
-        pc_write_mux[i]->connect_input(&pc_jump_gates[i]->get_outputs()[0], 1);
+        pc_write_mux[i]->connect_input(&pc_increment_and_gates[i]->get_outputs()[0], 0);
+        pc_write_mux[i]->connect_input(&pc_jump_and_gates[i]->get_outputs()[0], 1);
         pc->connect_input(&pc_write_mux[i]->get_outputs()[0], i);
     }
     
     // PC always writes and reads
-    pc_write_enable = new Signal_Generator();
+    pc_write_enable = new Signal_Generator("pc_write_enable_in_control_unit");
     pc_write_enable->go_high();
     pc->connect_input(&pc_write_enable->get_outputs()[0], pc_bits);     // write enable
     
-    pc_read_enable = new Signal_Generator();
+    pc_read_enable = new Signal_Generator("pc_read_enable_in_control_unit");
     pc_read_enable->go_high();
     pc->connect_input(&pc_read_enable->get_outputs()[0], pc_bits + 1);  // read enable
     
     // === Opcode Decoder ===
-    opcode_decoder = new Decoder(opcode_bits);
+    opcode_decoder = new Decoder(opcode_bits, "opcode_decoder_in_control_unit");
     
     // === Comparator Flags Storage ===
-    flag_register = new Register(num_flags);
-    flag_write_enable = new Signal_Generator();
+    flag_register = new Register(num_flags, "flag_register_in_control_unit");
+    flag_write_enable = new Signal_Generator("flag_write_enable_in_control_unit");
     flag_write_enable->go_high();  // Flags always write when provided
     flag_register->connect_input(&flag_write_enable->get_outputs()[0], num_flags);
     
-    flag_read_enable = new Signal_Generator();
+    flag_read_enable = new Signal_Generator("flag_read_enable_in_control_unit");
     flag_read_enable->go_high();  // Flags always readable
     flag_register->connect_input(&flag_read_enable->get_outputs()[0], num_flags + 1);
     
     // Flag auto-clear mechanism: flip-flop tracks when to clear
-    flag_clear_counter = new Flip_Flop();
-    clear_set = new Signal_Generator();
+    flag_clear_counter = new Flip_Flop("flag_clear_counter_in_control_unit");
+    clear_set = new Signal_Generator("clear_set_in_control_unit");
     clear_set->go_low();  // Initially no clear
-    clear_inverter = new Inverter();
+    clear_inverter = new Inverter(1, "clear_inverter_in_control_unit");
     
     // === RAM Page Register ===
-    ram_page_register = new Register(pc_bits);
-    ram_page_read_enable = new Signal_Generator();
+    ram_page_register = new Register(pc_bits, "ram_page_register_in_control_unit");
+    // Zero-initialize RAM page outputs to 0
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        ram_page_register->get_outputs()[i] = false;
+    }
+    ram_page_read_enable = new Signal_Generator("ram_page_read_enable_in_control_unit");
     ram_page_read_enable->go_high();
     ram_page_register->connect_input(&ram_page_read_enable->get_outputs()[0], pc_bits + 1);
     
     // === Stack Pointer and Return Address ===
-    stack_pointer = new Register(pc_bits);
-    sp_read_enable = new Signal_Generator();
+    stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
+    // Zero-initialize stack pointer outputs to 0
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        stack_pointer->get_outputs()[i] = false;
+    }
+    sp_read_enable = new Signal_Generator("sp_read_enable_in_control_unit");
     sp_read_enable->go_high();
     stack_pointer->connect_input(&sp_read_enable->get_outputs()[0], pc_bits + 1);
     
-    return_address = new Register(pc_bits);
-    ra_read_enable = new Signal_Generator();
+    return_address = new Register(pc_bits, "return_address_in_control_unit");
+    ra_read_enable = new Signal_Generator("ra_read_enable_in_control_unit");
     ra_read_enable->go_high();
     return_address->connect_input(&ra_read_enable->get_outputs()[0], pc_bits + 1);
 }
@@ -117,13 +142,13 @@ Control_Unit::~Control_Unit()
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
         delete increment_signals[i];
-        delete pc_increment_gates[i];
-        delete pc_jump_gates[i];
+        delete pc_increment_and_gates[i];
+        delete pc_jump_and_gates[i];
         delete pc_write_mux[i];
     }
     delete[] increment_signals;
-    delete[] pc_increment_gates;
-    delete[] pc_jump_gates;
+    delete[] pc_increment_and_gates;
+    delete[] pc_jump_and_gates;
     delete[] pc_write_mux;
     
     delete jump_enable_inverter;
@@ -159,8 +184,8 @@ void Control_Unit::evaluate()
     jump_enable_inverter->evaluate();
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_increment_gates[i]->evaluate();
-        pc_jump_gates[i]->evaluate();
+        pc_increment_and_gates[i]->evaluate();
+        pc_jump_and_gates[i]->evaluate();
         pc_write_mux[i]->evaluate();
     }
     
@@ -217,7 +242,7 @@ bool Control_Unit::connect_jump_address_to_pc(const bool* const* jump_address_ou
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_jump_gates[i]->connect_input(jump_address_output[i], 0);
+        pc_jump_and_gates[i]->connect_input(jump_address_output[i], 0);
     }
     return true;
 }
@@ -233,7 +258,7 @@ bool Control_Unit::connect_jump_enable(const bool* jump_enable_signal)
     // Connect to all jump gates
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_jump_gates[i]->connect_input(jump_enable_signal, 1);
+        pc_jump_and_gates[i]->connect_input(jump_enable_signal, 1);
     }
     
     return true;

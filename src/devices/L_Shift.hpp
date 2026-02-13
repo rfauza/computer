@@ -26,7 +26,7 @@ public:
      * 
      * @param num_bits Width of the value to shift
      */
-    L_Shift(uint16_t num_bits);
+    L_Shift(uint16_t num_bits, const std::string& name = "");
     
     /**
      * @brief Destructor

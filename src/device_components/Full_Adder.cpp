@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Full_Adder::Full_Adder()
+Full_Adder::Full_Adder(const std::string& name) : Component(name)
 {
     std::ostringstream oss;
     oss << "Full_Adder 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 3; // [A, B, Carry-In]
     num_outputs = 2; // [Sum, Carry]

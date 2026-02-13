@@ -36,7 +36,7 @@ public:
      * 
      * @param num_bits Base bit width (PC will be 2*num_bits)
      */
-    Control_Unit(uint16_t num_bits);
+    Control_Unit(uint16_t num_bits, const std::string& name = "");
     
     virtual ~Control_Unit();
     
@@ -162,8 +162,8 @@ protected:
     
     // PC Write Control
     Inverter* jump_enable_inverter;   /**< Inverts jump enable */
-    AND_Gate** pc_increment_gates;    /**< Gates increment value with !jump_enable */
-    AND_Gate** pc_jump_gates;         /**< Gates jump address with jump_enable */
+    AND_Gate** pc_increment_and_gates;    /**< Gates increment value with !jump_enable */
+    AND_Gate** pc_jump_and_gates;         /**< Gates jump address with jump_enable */
     OR_Gate** pc_write_mux;           /**< Muxes increment vs jump for PC write */
     Signal_Generator* pc_write_enable; /**< Always high - PC always writes */
     Signal_Generator* pc_read_enable;  /**< Always high - PC always reads */

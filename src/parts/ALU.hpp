@@ -51,7 +51,7 @@ public:
      * 
      * @param num_bits Width of data operands and output
      */
-    ALU(uint16_t num_bits);
+    ALU(uint16_t num_bits, const std::string& name = "");
     
     ~ALU() override;
     

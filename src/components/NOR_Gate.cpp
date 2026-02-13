@@ -3,11 +3,17 @@
 #include <sstream>
 #include <iomanip>
 
-NOR_Gate::NOR_Gate(uint16_t num_inputs_param)
+NOR_Gate::NOR_Gate(uint16_t num_inputs_param, const std::string& name)
+    : Component(name)
 {
     num_inputs = num_inputs_param;
+    // create component name string (include hex address and optional provided name)
     std::ostringstream oss;
     oss << "NOR_Gate 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_outputs = 1;
     initialize_IO_arrays();

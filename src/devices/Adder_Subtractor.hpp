@@ -6,7 +6,7 @@
 class Adder_Subtractor : public Device
 {
 public:
-    Adder_Subtractor(uint16_t num_bits);
+    Adder_Subtractor(uint16_t num_bits, const std::string& name = "");
     ~Adder_Subtractor() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;
@@ -14,8 +14,8 @@ public:
     const bool* get_internal_output() const { return internal_output; }
     
 private:
-    Full_Adder_Subtractor* adder_subtractors;
-    AND_Gate* output_AND_gates;
+    Full_Adder_Subtractor** adder_subtractors;
+    AND_Gate** output_AND_gates;
     NOR_Gate* zero_flag_nor;
     bool* internal_output; // Raw sum [0..num_bits-1] + carry_out [num_bits]
     

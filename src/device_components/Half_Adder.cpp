@@ -2,10 +2,14 @@
 #include <sstream>
 #include <iomanip>
 
-Half_Adder::Half_Adder()
+Half_Adder::Half_Adder(const std::string& name) : Component(name)
 {
     std::ostringstream oss;
     oss << "Half_Adder 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 2;
     num_outputs = 2; // [0] is Sum, [1] is Carry

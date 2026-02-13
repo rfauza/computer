@@ -3,10 +3,15 @@
 #include <sstream>
 #include <iomanip>
 
-Signal_Generator::Signal_Generator()
+Signal_Generator::Signal_Generator(const std::string& name)
+    : Component(name)
 {
     std::ostringstream oss;
     oss << "Signal_Generator 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     num_inputs = 0;
     num_outputs = 1;

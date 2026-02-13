@@ -22,7 +22,7 @@
 class Main_Memory : public Part
 {
 public:
-    Main_Memory(uint16_t address_bits = 8, uint16_t data_bits = 4);
+    Main_Memory(uint16_t address_bits = 8, uint16_t data_bits = 4, const std::string& name = "");
     ~Main_Memory() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

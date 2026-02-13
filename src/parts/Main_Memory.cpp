@@ -3,13 +3,16 @@
 #include <iomanip>
 #include <iostream>
 
-Main_Memory::Main_Memory(uint16_t address_bits, uint16_t data_bits)
-    : Part(static_cast<uint16_t>(address_bits + data_bits + 2)),
+Main_Memory::Main_Memory(uint16_t address_bits, uint16_t data_bits, const std::string& name)
+    : Part(static_cast<uint16_t>(address_bits + data_bits + 2), name),
       decoder(address_bits)
 {
     // make component name
     std::ostringstream oss;
     oss << "Main_Memory 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty()) {
+        oss << " - " << name;
+    }
     component_name = oss.str();
     
     if (address_bits == 0)
@@ -34,15 +37,22 @@ Main_Memory::Main_Memory(uint16_t address_bits, uint16_t data_bits)
     // for each address, create select gates and one memory register
     for (uint16_t addr = 0; addr < num_addresses; ++addr)
     {
-        write_selects[addr] = new AND_Gate(2);
-        read_selects[addr] = new AND_Gate(2);
+        std::ostringstream ws_name, rs_name;
+        ws_name << "write_select_" << addr << "_in_main_memory";
+        rs_name << "read_select_" << addr << "_in_main_memory";
+        write_selects[addr] = new AND_Gate(2, ws_name.str());
+        read_selects[addr] = new AND_Gate(2, rs_name.str());
         
         // Connect decoder output to select gates (input 0)
         write_selects[addr]->connect_input(&decoder.get_outputs()[addr], 0);
         read_selects[addr]->connect_input(&decoder.get_outputs()[addr], 0);
         
-        // create register for this address
-        registers[addr] = new Register(data_bits);
+        // create register for this address (with hierarchical name)
+        {
+            std::ostringstream reg_name;
+            reg_name << "register_addr_" << addr << "_in_main_memory";
+            registers[addr] = new Register(data_bits, reg_name.str());
+        }
     }
 }
 

@@ -6,7 +6,7 @@
 class Full_Adder : public Component
 {
 public:
-    Full_Adder();
+    Full_Adder(const std::string& name = "");
     ~Full_Adder() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;

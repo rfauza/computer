@@ -9,7 +9,12 @@ ToDo:
     comparator flags and PC register 
     add stack pointer and function return
     
-    flags is numbits in size, should be 6
+flags is numbits in size, should be 6
+rampage write enable should be opcode
+cmp flags always read/writable
+return addr and stack pointer. sp should point in ram to ra, so can have call from call
+clock tick is logic. needs to be gates
+need a halt/run flag that gets set with opcode halt or pc overflow
 
 now let's make the control unit. this will be a class that will be inherited by the control unit for each specific 
 computer design. this parent class should take the numbits in constructor, have a program counter register of size 
@@ -60,6 +65,11 @@ help me make an automated testing suite that will test all my classes. use the s
 - make 8-bit version with Operating System and graphcis
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
+
+
+Feb 13 2026
+3h components print out parent and variable name
+
 
 Feb 8 2026 :  6.5h total 44h
 2h fixing AU add/sub, write enable to mul and div
