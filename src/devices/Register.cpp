@@ -81,16 +81,18 @@ void Register::evaluate()
 
 void Register::update()
 {
-    // Evaluate this component
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
+    // Phase 2: update memory bits so stored values are latched
+    for (uint16_t i = 0; i < memory_bits.size(); i++)
     {
-        if (downstream)
-        {
-            downstream->update();
-        }
+        memory_bits[i]->update();
     }
+
+    // Refresh outputs from memory bits after update
+    for (uint16_t i = 0; i < memory_bits.size(); i++)
+    {
+        outputs[i] = memory_bits[i]->get_output(0);
+    }
+
+    // Do not propagate updates from Register; higher-level components handle downstream updates.
 }
 

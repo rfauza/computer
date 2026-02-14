@@ -70,7 +70,8 @@ void test_cpu(uint16_t num_bits, bool print_all)
                 << "1110 CMP\n"
                 << "1111 LOAD\n";
     
-    CPU* cpu = new CPU(num_bits, opcode_spec.str(), "test_cpu");
+    uint16_t pc_bits = static_cast<uint16_t>(2 * num_bits);
+    CPU* cpu = new CPU(num_bits, opcode_spec.str(), "test_cpu", pc_bits);
     
     // Keep signal generators alive for the duration of the tests to avoid
     // dangling pointers inside the CPU/control unit that reference their outputs.

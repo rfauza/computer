@@ -2,6 +2,17 @@
 windows powershell to call up linux terminal
 > wsl -d Ubuntu
 
+3-bit ISA v2 - 8 RAM addr, 512 PM addr
+(enables jmp flag with binary compare, clears with goto and jumps if flag true)
+000 halt
+001 movl litA->[C] (stores literal value in A of PM into RAM addr C)
+010 add
+011 sub
+100 cmp
+101 jeq ABC
+110 jgt
+111 
+
 3-bit ISA
 (enables jmp flag with binary compare, clears with goto and jumps if flag true)
 000 movl litA->[B][C] (can have 8x8=64 RAM addreses. first page is working data, others are registers like graph)

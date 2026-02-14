@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
-CPU::CPU(uint16_t num_bits, const std::string& opcode_string, const std::string& name) 
+CPU::CPU(uint16_t num_bits, const std::string& opcode_string, const std::string& name, uint16_t pc_bits_param) 
     : Part(num_bits, name), low_signal(nullptr)
 {
     std::ostringstream oss;
@@ -14,15 +14,36 @@ CPU::CPU(uint16_t num_bits, const std::string& opcode_string, const std::string&
     }
     component_name = oss.str();
     
-    opcode_bits = num_bits;  // Opcode size equals data width
+    // Parse the opcode specification first to determine opcode_bits
+    parse_opcodes(opcode_string);
+    
+    // Determine opcode_bits from actual opcodes (find max opcode value)
+    opcode_bits = 0;
+    for (const auto& pair : opcode_to_operation)
+    {
+        uint16_t opcode = pair.first;
+        // Count bits needed to represent this opcode
+        uint16_t bits_needed = 0;
+        uint16_t temp = opcode;
+        while (temp > 0)
+        {
+            bits_needed++;
+            temp >>= 1;
+        }
+        if (bits_needed > opcode_bits)
+            opcode_bits = bits_needed;
+    }
+    
+    // Default to num_bits if no opcodes defined or all are zero
+    if (opcode_bits == 0)
+        opcode_bits = num_bits;
+    
     num_decoder_outputs = static_cast<uint16_t>(1u << opcode_bits);
     
-    // Create Control Unit and ALU
-    control_unit = new Control_Unit(num_bits, "control_unit_in_cpu");
+    // Create Control Unit with determined opcode_bits and ALU
+    // Forward requested PC width (pc_bits_param) to control unit; 0 means default (2*num_bits)
+    control_unit = new Control_Unit(num_bits, opcode_bits, pc_bits_param, "control_unit_in_cpu");
     alu = new ALU(num_bits, "alu_in_cpu");
-    
-    // Parse the opcode specification
-    parse_opcodes(opcode_string);
     
     // Create OR gates for combining decoder outputs to ALU enables
     // Each OR gate will have as many inputs as there are opcodes mapping to that operation
@@ -226,12 +247,33 @@ bool* CPU::get_pc_outputs() const
     return control_unit->get_pc_outputs();
 }
 
+bool CPU::get_run_halt_flag() const
+{
+    return control_unit->get_run_halt_flag();
+}
+
 int CPU::get_opcode_for_operation(const std::string& operation_name) const
 {
     auto it = operation_to_opcode.find(operation_name);
     if (it != operation_to_opcode.end())
         return static_cast<int>(it->second);
     return -1;
+}
+
+bool CPU::wire_halt_opcode(uint16_t halt_opcode_value)
+{
+    // Wire decoder output for the halt opcode to Control Unit halt signal
+    // halt_opcode_value should be the numeric opcode (e.g., 0 for "000" HALT)
+    if (halt_opcode_value >= (1u << opcode_bits))
+        return false;  // Opcode out of range
+    
+    bool* decoder_outputs = control_unit->get_decoder_outputs();
+    return control_unit->connect_halt_signal(&decoder_outputs[halt_opcode_value]);
+}
+
+bool* CPU::get_decoder_outputs() const
+{
+    return control_unit->get_decoder_outputs();
 }
 
 void CPU::clock_tick()
@@ -265,7 +307,11 @@ void CPU::evaluate()
 
 void CPU::update()
 {
-    evaluate();
+    // DO NOT CALL EVALUATE HERE!
+    // update() should only latch storage elements, not re-compute combinational logic
+    
+    // Update internal storage elements
+    control_unit->update();
     
     // Signal all downstream components to update
     for (Component* downstream : downstream_components)

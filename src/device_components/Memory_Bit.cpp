@@ -80,15 +80,15 @@ void Memory_Bit::evaluate()
 
 void Memory_Bit::update()
 {
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
+    // Phase 2: update internal components so flip-flop and gating latch
+    data_inverter.update();
+    set_and.update();
+    reset_and.update();
+    flip_flop.update();
+    output_and.update();
+
+    // Refresh output from output_and after update
+    outputs[0] = output_and.get_output(0);
+
+    // Do not propagate updates here; parent Register or system will call downstream updates.
 }

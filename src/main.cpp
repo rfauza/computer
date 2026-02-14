@@ -34,8 +34,12 @@
 // Forward declaration of testMainMemory
 void testMainMemory();
 
+// Forward declaration for optional 3-bit runner implemented in main_3bit.cpp
+extern int run_3bit_test(int argc, char* argv[]);
+
 int main()
 {
+    // Legacy test calls (kept commented for reference)
     // Test Arithmetic Unit (4-bit)
     // test_arithmetic_unit_truth_table();
     
@@ -46,12 +50,13 @@ int main()
     // test_control_unit(4, true);
     
     // Test CPU (4-bit, print all tests)
-    test_cpu(4, true);
+    // test_cpu(4, true);
     
     // Uncomment to test ALU with all tests printed:
     // test_alu_truth_table(4, true);
-    
-    return 0;
+
+    // Unconditionally run the 3-bit interactive test (no argv required)
+    return run_3bit_test(0, nullptr);
 }
 
 bool loadPM()

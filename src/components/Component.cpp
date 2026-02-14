@@ -25,15 +25,11 @@ void Component::evaluate()
 
 void Component::update()
 {
+    // Default update: evaluate this component only.
+    // Do not automatically propagate updates to downstream components
+    // because the system orchestrates Phase 2 update propagation explicitly
+    // to avoid infinite recursion through feedback loops.
     evaluate();
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
 }
 
 void Component::print_outputs() const
@@ -141,6 +137,10 @@ void Component::allocate_IO_arrays()
     if (num_outputs > 0)
     {
         outputs = new bool[num_outputs];
+        for (uint16_t i = 0; i < num_outputs; ++i)
+        {
+            outputs[i] = false;
+        }
     }
     else
     {

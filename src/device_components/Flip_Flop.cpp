@@ -77,15 +77,18 @@ void Flip_Flop::evaluate()
 
 void Flip_Flop::update()
 {
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
+    // Phase 2: update internal components so feedback/latches settle
+    inverter_set.update();
+    inverter_reset.update();
+    nand_gate_1.update();
+    nand_gate_2.update();
+    // extra passes to let feedback settle
+    nand_gate_1.update();
+    nand_gate_2.update();
+
+    // Refresh output from internal gate
+    outputs[0] = nand_gate_1.get_output(0);
+
+    // Do not automatically propagate updates from leaf device internals;
+    // higher-level parts/controllers orchestrate update propagation to avoid recursion.
 }

@@ -35,8 +35,23 @@ public:
      * @brief Constructs a Control Unit with specified bit width
      * 
      * @param num_bits Base bit width (PC will be 2*num_bits)
+     * @param opcode_bits Number of bits in opcode (defaults to num_bits if 0)
+     * @param name Optional component name
      */
-    Control_Unit(uint16_t num_bits, const std::string& name = "");
+    // Optional 3-argument constructor kept for callers that provide a name string
+    // but not an explicit pc_bits; delegates to the full constructor which
+    // accepts an explicit `pc_bits_param`.
+    Control_Unit(uint16_t num_bits, uint16_t opcode_bits = 0, const std::string& name = "");
+
+    /**
+     * @brief Full constructor with explicit PC bit-width parameter
+     *
+     * @param num_bits Base bit width (PC will be pc_bits_param)
+     * @param opcode_bits Number of opcode bits (defaults to num_bits if 0)
+     * @param pc_bits_param Explicit PC bit width
+     * @param name Optional component name
+     */
+    Control_Unit(uint16_t num_bits, uint16_t opcode_bits, uint16_t pc_bits_param, const std::string& name = "");
     
     virtual ~Control_Unit();
     
@@ -149,6 +164,36 @@ public:
     //bool* get_stack_pointer_outputs() const;  // DISABLED: inputs not connected
     
     /**
+     * @brief Get run/halt flag state
+     * 
+     * @return true if CPU should run, false if halted
+     */
+    bool get_run_halt_flag() const;
+    
+    /**
+     * @brief Set the run/halt flag (true=run, false=halt)
+     * 
+     * @param state The desired run state
+     */
+    void set_run_halt_flag(bool state);
+    
+    /**
+     * @brief Connect halt opcode control signal
+     * 
+     * @param halt_signal Pointer to halt signal (from decoder or other control)
+     * @return true if successful
+     */
+    bool connect_halt_signal(const bool* halt_signal);
+    
+    /**
+     * @brief Connect PC increment carry output to halt trigger
+     * 
+     * When PC increment overflows (carry out), this signal will trigger halt.
+     * @param carry_signal Pointer to carry output (single bool)
+     * @return true if successful
+     */
+    bool connect_pc_carry(const bool* carry_signal);
+    /**
      * @brief Trigger a clock cycle (for flag clearing and other sequential logic)
      */
     void clock_tick();
@@ -178,6 +223,7 @@ protected:
     Signal_Generator* flag_read_enable;  /**< Always high - flags always read */
     Flip_Flop* flag_clear_counter;    /**< Flip-flop for 1-cycle delay */
     Signal_Generator* clear_set;      /**< Used to set the clear counter */
+    Signal_Generator* clear_reset;    /**< Used to reset the clear counter */
     Inverter* clear_inverter;         /**< Inverts clear signal to clear flags */
     uint16_t num_flags;               /**< Number of comparator flags */
     
@@ -187,6 +233,14 @@ protected:
     
     // Default signals for optional external connections
     Signal_Generator* default_low_signal; /**< Default low signal for unconnected optional inputs */
+    
+    // Run/Halt Flag Control
+    Flip_Flop* run_halt_flag;         /**< Stores execution state: true=run, false=halt */
+    Signal_Generator* halt_set_signal; /**< Sets halt flag to initialize running state */
+    OR_Gate* halt_or_gate;            /**< ORs halt opcode and PC carry for halt trigger */
+    Inverter* halt_inverter;          /**< Inverts halt signal for immediate PC gating (!halt = run) */
+    AND_Gate* pc_carry_and_gate;      /**< AND gate to gate PC increment with run flag */
+    Signal_Generator* default_no_halt; /**< Default low signal for halt inputs (no halt) */
     
     // Stack Management (for function calls) - DISABLED: inputs not connected
     //Register* stack_pointer;          /**< Stack pointer (2*num_bits) */

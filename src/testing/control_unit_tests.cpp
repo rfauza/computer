@@ -60,8 +60,8 @@ void test_control_unit(uint16_t num_bits, bool print_all)
 {
     std::cout << "\n=== Testing Control Unit (num_bits=" << num_bits << ") ===\n";
     
-    Control_Unit* cu = new Control_Unit(num_bits);
     uint16_t pc_bits = static_cast<uint16_t>(2 * num_bits);
+    Control_Unit* cu = new Control_Unit(num_bits, 0, pc_bits);  // opcode_bits=0 defaults to num_bits, pc_bits=2*num_bits
     
     int failures = 0;
     int total_tests = 0;

@@ -6,18 +6,22 @@
 #include <vector>
 
 /**
- * @brief Main memory built from registers and a decoder
+ * @brief Triple-ported Main Memory (2 read ports + 1 write port)
  * 
- * Addressed by address_bits selector inputs. Each address stores one register.
+ * Supports simultaneous read from two addresses and write to a third in one cycle.
  * 
- * Input layout (address_bits + data_bits + 2 total):
- *   - inputs[0..address_bits-1]                    : address bits (LSB at index 0)
- *   - inputs[address_bits..address_bits+data_bits-1] : input data bus
- *   - inputs[address_bits + data_bits]              : write_enable (WE)
- *   - inputs[address_bits + data_bits + 1]          : read_enable (RE)
+ * Input layout (3*address_bits + data_bits + 3 total):
+ *   - inputs[0..address_bits-1]                             : address A (read port 1)
+ *   - inputs[address_bits..2*address_bits-1]                : address B (read port 2)
+ *   - inputs[2*address_bits..3*address_bits-1]              : address C (write port)
+ *   - inputs[3*address_bits..3*address_bits+data_bits-1]    : write data
+ *   - inputs[3*address_bits+data_bits]                      : write_enable (WE)
+ *   - inputs[3*address_bits+data_bits+1]                    : read_enable_A (RE_A)
+ *   - inputs[3*address_bits+data_bits+2]                    : read_enable_B (RE_B)
  * 
- * Output layout (data_bits total):
- *   - outputs[0..data_bits-1]    : output data bus
+ * Output layout (2*data_bits total):
+ *   - outputs[0..data_bits-1]         : data A output (from port A)
+ *   - outputs[data_bits..2*data_bits-1] : data B output (from port B)
  */
 class Main_Memory : public Part
 {
@@ -36,9 +40,12 @@ private:
     uint16_t num_addresses = 0;
     uint16_t data_bits = 0;
 
-    Decoder decoder;
+    Decoder decoder_a;  // Decoder for read port A
+    Decoder decoder_b;  // Decoder for read port B
+    Decoder decoder_c;  // Decoder for write port C
     AND_Gate** write_selects;
-    AND_Gate** read_selects;
+    AND_Gate** read_selects_a;
+    AND_Gate** read_selects_b;
     Register** registers;  // Array of Register pointers
 };
 

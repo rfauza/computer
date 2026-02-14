@@ -37,7 +37,7 @@ public:
      * @param opcode_string Newline-separated opcode definitions ("0000 ADD\n0001 SUB\n...")
      * @param name Optional component name
      */
-    CPU(uint16_t num_bits, const std::string& opcode_string, const std::string& name = "");
+    CPU(uint16_t num_bits, const std::string& opcode_string, const std::string& name = "", uint16_t pc_bits = 4);
     
     ~CPU() override;
     
@@ -93,6 +93,13 @@ public:
     bool* get_pc_outputs() const;
     
     /**
+     * @brief Get run/halt flag state from control unit
+     * 
+     * @return true if CPU is running, false if halted
+     */
+    bool get_run_halt_flag() const;
+    
+    /**
      * @brief Get opcode value for a given operation name
      * 
      * @param operation_name Name of operation (e.g., "ADD", "SUB")
@@ -104,6 +111,29 @@ public:
      * @brief Trigger a clock cycle for sequential logic
      */
     void clock_tick();
+    
+    /**
+     * @brief Get pointer to decoder outputs for instruction decoding
+     * 
+     * @return Pointer to decoder output array (2^opcode_bits)
+     */
+    bool* get_decoder_outputs() const;
+    
+    /**
+     * @brief Get number of opcode bits
+     */
+    uint16_t get_opcode_bits() const { return opcode_bits; }
+    
+    /**
+     * @brief Wire a specific opcode to the halt signal
+     * 
+     * Connects decoder output for the given opcode to Control Unit halt signal.
+     * This allows the HALT instruction to stop execution.
+     * 
+     * @param halt_opcode_value The opcode value (e.g., 0 for "000" opcode)
+     * @return true if successful
+     */
+    bool wire_halt_opcode(uint16_t halt_opcode_value);
     
 private:
     /**
