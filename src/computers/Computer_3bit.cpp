@@ -170,10 +170,12 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
 
     // === Wire MOVL and ADD opcodes to RAM write enable ===
     ram_write_or = new OR_Gate(2, "ram_write_or_in_computer_3bit");
-    if (cu_decoder && (1u << cpu->get_opcode_bits()) > 2)
+    unsigned int opcode_count = 1u << cpu->get_opcode_bits();
+    if (cu_decoder && opcode_count > 2)
     {
         ram_write_or->connect_input(&cu_decoder[1], 0);  // MOVL
         ram_write_or->connect_input(&cu_decoder[2], 1);  // ADD
+        // SUB
         ram_write_or->evaluate();
         // Connect write enable (after 3 address inputs + data bits)
         ram->connect_input(&ram_write_or->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS));
@@ -318,11 +320,12 @@ bool Computer_3bit::load_program(const std::string& filename)
         }
 
         std::cout << "  [" << std::setw(3) << std::setfill('0') << address << "] "
-                  << to_binary(opcode, NUM_BITS) << " "
-                  << to_binary(c_val, NUM_BITS) << " "
-                  << to_binary(a_val, NUM_BITS) << " "
-                  << to_binary(b_val, NUM_BITS) << " ; "
-                  << get_opcode_name(opcode) << std::endl;
+              << to_binary(opcode, NUM_BITS) << " "
+              << to_binary(c_val, NUM_BITS) << " "
+              << to_binary(a_val, NUM_BITS) << " "
+              << to_binary(b_val, NUM_BITS) << " ; "
+              << get_opcode_name(opcode) << " "
+              << c_val << " " << a_val << " " << b_val << std::endl;
 
         // Drive address inputs using member signal generators (temporary)
         for (uint16_t i = 0; i < decoder_bits; ++i)
@@ -472,7 +475,8 @@ void Computer_3bit::print_state() const
               << to_binary(c_val, NUM_BITS) << " "
               << to_binary(a_val, NUM_BITS) << " "
               << to_binary(b_val, NUM_BITS) << " ; "
-              << get_opcode_name(opcode) << std::endl;
+              << get_opcode_name(opcode) << " "
+              << c_val << " " << a_val << " " << b_val << std::endl;
     
     // Print RAM contents - read actual values from RAM
     std::cout << "\nRAM Contents:" << std::endl;
@@ -521,6 +525,8 @@ void Computer_3bit::print_state() const
     
     // Restore RAM write enable to normal operation
     ram->connect_input(&ram_write_or->get_outputs()[0], ram_we_index);
+    // Debug: print RAM write-enable OR gate state
+    std::cout << "[DBG][Computer_3bit] ram_write_or=" << (ram_write_or ? (ram_write_or->get_outputs()[0] ? 1 : 0) : 0) << std::endl;
     
     std::cout << std::string(50, '=') << std::endl;
 }
@@ -558,6 +564,27 @@ void Computer_3bit::evaluate()
         ram_data_mux_or[i]->evaluate();
     }
     ram_write_or->evaluate();
+    // DEBUG: if write enable is active, log relevant signals to trace unexpected writes
+    if (ram_write_or->get_outputs()[0])
+    {
+        // Gather decoder bits and write address/data
+        bool* dec_ptr = cpu->get_decoder_outputs();
+        uint16_t dec0 = dec_ptr ? (dec_ptr[0] ? 1 : 0) : 0;
+        uint16_t dec1 = dec_ptr ? (dec_ptr[1] ? 1 : 0) : 0;
+        uint16_t dec2 = dec_ptr ? (dec_ptr[2] ? 1 : 0) : 0;
+        uint16_t write_addr = 0;
+        for (uint16_t i = 0; i < NUM_BITS; ++i)
+        {
+            write_addr |= (program_memory->get_outputs()[NUM_BITS + i] ? 1 : 0) << i; // C field
+        }
+        uint16_t write_data = 0;
+        for (uint16_t i = 0; i < NUM_BITS; ++i)
+        {
+            write_data |= (ram_data_mux_or[i]->get_outputs()[0] ? 1 : 0) << i;
+        }
+        std::cout << "[DBG][Computer_3bit] decoder=" << dec0 << dec1 << dec2
+                  << " ram_we=1 addr=" << write_addr << " data=" << write_data << std::endl;
+    }
     // Re-evaluate RAM so write_selects and registers see the new WE/data
     // This ensures the write_select AND gates pick up the just-computed write enable
     // before update() latches the register values.

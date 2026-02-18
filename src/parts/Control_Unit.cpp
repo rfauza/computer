@@ -1,6 +1,7 @@
 #include "Control_Unit.hpp"
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 // Delegating constructor: allow callers that omit explicit pc_bits to
 // construct with (num_bits, opcode_bits, name). Default PC width will be
@@ -143,7 +144,7 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     pc_write_enable = new Signal_Generator("pc_write_enable_in_control_unit");
     pc_write_enable->go_high();
     pc->connect_input(&pc_write_enable->get_outputs()[0], pc_bits);     // write enable
-    
+
     pc_read_enable = new Signal_Generator("pc_read_enable_in_control_unit");
     pc_read_enable->go_high();
     pc->connect_input(&pc_read_enable->get_outputs()[0], pc_bits + 1);  // read enable
@@ -257,7 +258,10 @@ void Control_Unit::evaluate()
 {
     // Evaluate in dependency order
     
-    // 0. Evaluate run/halt flag and halt detection (used in PC increment gating)
+    // 0. Decode opcode early so HALT detection uses current instruction
+    opcode_decoder->evaluate();
+
+    // 1. Evaluate run/halt flag and halt detection (used in PC increment gating)
     halt_or_gate->evaluate();
     halt_inverter->evaluate();  // Immediate halt signal for PC gating
     run_halt_flag->evaluate();

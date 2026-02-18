@@ -6,12 +6,12 @@ windows powershell to call up linux terminal
 (enables jmp flag with binary compare, clears with goto and jumps if flag true)
 000 halt
 001 movl litA->[C] (stores literal value in A of PM into RAM addr C)
-010 add
-011 sub
-100 cmp
+010 add A+B->C
+011 sub A-B->C
+100 cmp A B
 101 jeq ABC
-110 jgt
-111 
+110 jgt ABC
+111 NoOp
 
 3-bit ISA
 (enables jmp flag with binary compare, clears with goto and jumps if flag true)

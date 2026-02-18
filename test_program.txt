@@ -1,14 +1,35 @@
 # Simple 3-bit test program
 # Demonstrates MOVL, ADD, and HALT
 
-# Move literal 3 into RAM address 5
+# no op
+111 001 001 001
+
+# 000 Move literal 3 into RAM address 5
 001 101 011 000
 
-# Move literal 2 into RAM address 6
+# 001 Move literal 2 into RAM address 6
 001 110 010 000
 
-# Add RAM[5] + RAM[6] and store result in RAM[7]
+# 010 Sub RAM[5] + RAM[6] and store result in RAM[7]
+011 111 101 110
+
+# 010 Add RAM[5] + RAM[6] and store result in RAM[7]
 010 111 101 110
+
+# no op
+# 111 001 001 001
+
+# 011 compare addr 5 (3) and addr 6 (2)
+100 010 101 110
+
+# 100 jgt addr 5 (3) > addr 6 (2)
+110 000 000 110
+
+# 101 Move literal 7 into RAM address 5
+001 101 111 000
+
+# 110 Move literal 1 into RAM address 5
+001 101 001 000
 
 # Halt execution
 000 000 000 000
