@@ -168,14 +168,14 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
         }
     }
 
-    // === Wire MOVL and ADD opcodes to RAM write enable ===
-    ram_write_or = new OR_Gate(2, "ram_write_or_in_computer_3bit");
+    // === Wire MOVL, ADD and SUB opcodes to RAM write enable ===
+    ram_write_or = new OR_Gate(3, "ram_write_or_in_computer_3bit");
     unsigned int opcode_count = 1u << cpu->get_opcode_bits();
     if (cu_decoder && opcode_count > 2)
     {
         ram_write_or->connect_input(&cu_decoder[1], 0);  // MOVL
         ram_write_or->connect_input(&cu_decoder[2], 1);  // ADD
-        // SUB
+        ram_write_or->connect_input(&cu_decoder[3], 2);  // SUB
         ram_write_or->evaluate();
         // Connect write enable (after 3 address inputs + data bits)
         ram->connect_input(&ram_write_or->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS));
@@ -436,8 +436,8 @@ bool Computer_3bit::clock_tick()
     
     // Phase 2: Update (storage elements latch new values)
     // Update all storage elements together: PC, RAM, registers
-    cpu->update();
-    ram->update();
+    // cpu->update();
+    // ram->update();
     
     // Check if halted (run/halt flag from control unit)
     bool is_running = cpu->get_run_halt_flag();
@@ -595,6 +595,7 @@ void Computer_3bit::update()
 {
     // Called when this component is a downstream of another
     // We don't need to do anything special here since clock_tick() handles the full cycle
+    evaluate();
     
     // Signal all downstream components to update
     for (Component* downstream : downstream_components)
