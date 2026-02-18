@@ -106,6 +106,14 @@ private:
     Signal_Generator* ram_read_enable;
     OR_Gate* ram_write_or;  // Combines MOVL and ADD opcodes for RAM write enable
     
+    // RAM write gating: ram_read_flag controls whether writes are allowed
+    // ram_we_gated = NOT(ram_read_flag) AND ram_write_or
+    // During reads: ram_read_flag=1, so WE=0 (no writes)
+    // During write setup: ram_read_flag=0, so WE=ram_write_or (writes allowed)
+    Signal_Generator* ram_read_flag;      // High during read phase, low during write phase
+    Inverter* ram_read_flag_not;          // Invert the flag
+    AND_Gate* ram_we_gated;               // AND(NOT ram_read_flag, ram_write_or) → effective WE
+    
     // Mux for RAM data input: selects PM A field (MOVL) or CPU result (ADD/SUB)
     Inverter* ram_data_mux_not;
     AND_Gate** ram_data_mux_and_literal;
@@ -127,7 +135,13 @@ private:
     const bool** data_b_ptrs;  // Pointers to RAM port B outputs
     const bool** data_c_ptrs;  // Pointers to PM A field for MOVL literals
     
-    // Helper to convert 3-bit value to binary string
+    /**
+     * @brief Toggle RAM read flag and evaluate gating logic
+     * @param flag_high If true, set flag HIGH (read phase); if false, set flag LOW (write phase)
+     */
+    void toggle_ram_read_flag(bool flag_high);
+    
+    /// @brief Helper to convert 3-bit value to binary string
     std::string to_binary(uint16_t value, uint16_t bits) const;
     
     // Helper to convert binary string to int

@@ -256,4 +256,18 @@ void Main_Memory::print_all_registers() const
     }
 }
 
+void Main_Memory::print_selects() const
+{
+    std::cout << "\nRAM Select Gates (write/read):" << std::endl;
+    for (uint16_t addr = 0; addr < num_addresses; ++addr)
+    {
+        bool ws = write_selects[addr] ? write_selects[addr]->get_outputs()[0] : false;
+        bool rsa = read_selects_a[addr] ? read_selects_a[addr]->get_outputs()[0] : false;
+        bool rsb = read_selects_b[addr] ? read_selects_b[addr]->get_outputs()[0] : false;
+        std::cout << "  [" << addr << "]: WE=" << (ws ? 1 : 0)
+                  << " RA=" << (rsa ? 1 : 0)
+                  << " RB=" << (rsb ? 1 : 0) << std::endl;
+    }
+}
+
 

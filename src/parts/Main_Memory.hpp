@@ -39,6 +39,12 @@ public:
      * @brief Debug: Print all register contents without modifying connections or evaluating
      */
     void print_all_registers() const;
+    
+    /**
+     * @brief Debug: Print select gate outputs (write_selects, read_selects)
+     * This is read-only and does not call evaluate().
+     */
+    void print_selects() const;
 
 private:
     uint16_t address_bits = 0;

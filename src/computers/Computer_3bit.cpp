@@ -177,9 +177,27 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
         ram_write_or->connect_input(&cu_decoder[2], 1);  // ADD
         ram_write_or->connect_input(&cu_decoder[3], 2);  // SUB
         ram_write_or->evaluate();
-        // Connect write enable (after 3 address inputs + data bits)
-        ram->connect_input(&ram_write_or->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS));
     }
+    
+    // === Create RAM write gating: control WE based on read/write phase ===
+    // ram_we_gated = NOT(ram_read_flag) AND ram_write_or
+    // During reads (ram_read_flag=1): WE=0, no writes
+    // During write setup (ram_read_flag=0): WE=ram_write_or
+    ram_read_flag = new Signal_Generator("ram_read_flag_in_computer_3bit");
+    ram_read_flag->go_high();  // Start in read mode
+    ram_read_flag->evaluate();
+    
+    ram_read_flag_not = new Inverter(1, "ram_read_flag_not_in_computer_3bit");
+    ram_read_flag_not->connect_input(&ram_read_flag->get_outputs()[0], 0);
+    ram_read_flag_not->evaluate();
+    
+    ram_we_gated = new AND_Gate(2, "ram_we_gated_in_computer_3bit");
+    ram_we_gated->connect_input(&ram_read_flag_not->get_outputs()[0], 0);  // NOT ram_read_flag
+    ram_we_gated->connect_input(&ram_write_or->get_outputs()[0], 1);       // ram_write_or
+    ram_we_gated->evaluate();
+    
+    // Connect gated write enable to RAM (instead of raw ram_write_or)
+    ram->connect_input(&ram_we_gated->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS));
 
     // RAM read enables always high
     ram->connect_input(&ram_read_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS + 1));  // RE_A
@@ -217,6 +235,9 @@ Computer_3bit::~Computer_3bit()
     delete ram_write_enable;
     delete ram_read_enable;
     delete ram_write_or;
+    delete ram_read_flag;
+    delete ram_read_flag_not;
+    delete ram_we_gated;
     delete ram_data_mux_not;
     
     // Delete pointer arrays
@@ -482,6 +503,15 @@ void Computer_3bit::print_state() const
     
     // Print RAM contents by reading register values directly (read-only, no connections or evaluations)
     ram->print_all_registers();
+    // Print RAM select gates (read-only)
+    ram->print_selects();
+
+    // Print RAM write-enable OR gate IO (read-only)
+    if (ram_write_or)
+    {
+        std::cout << "\n[DBG][Computer_3bit] ram_write_or IO:" << std::endl;
+        ram_write_or->print_io();
+    }
     
     std::cout << std::string(50, '=') << std::endl;
 }
@@ -497,6 +527,21 @@ void Computer_3bit::reset()
     std::cout << "Computer reset to initial state" << std::endl;
 }
 
+void Computer_3bit::toggle_ram_read_flag(bool flag_high)
+{
+    if (flag_high)
+    {
+        ram_read_flag->go_high();
+    }
+    else
+    {
+        ram_read_flag->go_low();
+    }
+    ram_read_flag->evaluate();
+    ram_read_flag_not->evaluate();
+    ram_we_gated->evaluate();
+}
+
 void Computer_3bit::evaluate()
 {
     // Evaluation order for single-cycle 2R1W operation:
@@ -507,7 +552,13 @@ void Computer_3bit::evaluate()
     //    Then update() will latch the write
     
     program_memory->evaluate();
-    ram->evaluate();  // RAM reads with new addresses
+    // std::cout << "ram contents at beginning of loop: ";
+    // ram->print_inputs();  // Debug: print RAM inputs before evaluation
+    
+    // Phase 1: Set read flag HIGH (prevents writes during reads)
+    toggle_ram_read_flag(true);
+    
+    ram->evaluate();  // RAM reads with new addresses (WE gated to 0)
     cpu->evaluate();  // CPU computes using RAM outputs
     
     // Evaluate RAM write control logic
@@ -518,7 +569,8 @@ void Computer_3bit::evaluate()
         ram_data_mux_and_result[i]->evaluate();
         ram_data_mux_or[i]->evaluate();
     }
-    ram_write_or->evaluate();
+    // ram_write_or->evaluate();
+    // ram_write_or->print_io();  // Debug: print RAM write enable OR gate IO after evaluation
     // DEBUG: if write enable is active, log relevant signals to trace unexpected writes
     if (ram_write_or->get_outputs()[0])
     {
@@ -543,7 +595,12 @@ void Computer_3bit::evaluate()
     // Re-evaluate RAM so write_selects and registers see the new WE/data
     // This ensures the write_select AND gates pick up the just-computed write enable
     // before update() latches the register values.
-    ram->evaluate();
+    
+    // Phase 2: Set read flag LOW (allow writes during write setup)
+    ram_write_or->evaluate();
+    toggle_ram_read_flag(false);
+    
+    ram->evaluate();  // RAM evaluates with WE now controlled by ram_write_or
 }
 
 void Computer_3bit::update()
