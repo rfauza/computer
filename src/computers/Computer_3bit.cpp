@@ -432,7 +432,9 @@ bool Computer_3bit::clock_tick()
     // Phase 1: Evaluate (combinational logic computes next values)
     evaluate();
     
-    // (debug prints removed)
+    // Debug: print RAM inputs after combinational evaluation to trace signals
+    std::cout << "[DBG][Computer_3bit] RAM input signals:" << std::endl;
+    ram->print_inputs();
     
     // Phase 2: Update (storage elements latch new values)
     // Update all storage elements together: PC, RAM, registers
@@ -478,55 +480,8 @@ void Computer_3bit::print_state() const
               << get_opcode_name(opcode) << " "
               << c_val << " " << a_val << " " << b_val << std::endl;
     
-    // Print RAM contents - read actual values from RAM
-    std::cout << "\nRAM Contents:" << std::endl;
-    
-    // Temporarily disable RAM write enable during read loop
-    Signal_Generator temp_we_low("temp_we_low_for_print");
-    temp_we_low.go_low();
-    temp_we_low.evaluate();
-    uint16_t ram_we_index = static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS);  // After 3 addr inputs + data
-    ram->connect_input(&temp_we_low.get_outputs()[0], ram_we_index);
-    
-    for (uint16_t addr = 0; addr < NUM_RAM_ADDRESSES; ++addr)
-    {
-        // Drive RAM address A to select address using temporary signals
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-        {
-            bool addr_bit = ((addr >> i) & 1) != 0;
-            if (addr_bit) (*ram_addr_sigs)[i].go_high();
-            else (*ram_addr_sigs)[i].go_low();
-            (*ram_addr_sigs)[i].evaluate();
-            // Connect to address A input (first 3 bits)
-            ram->connect_input(&(*ram_addr_sigs)[i].get_outputs()[0], i);
-        }
-        
-        // Evaluate RAM to read from selected address
-        ram->evaluate();
-        
-        // Read output from port A (bits 0-2)
-        uint16_t ram_value = 0;
-        const bool* ram_outputs = ram->get_outputs();
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-        {
-            ram_value |= (ram_outputs[i] ? 1 : 0) << i;
-        }
-        
-        std::cout << "  [" << addr << "]: " << to_binary(ram_value, NUM_BITS) 
-                  << " (" << ram_value << ")" << std::endl;
-    }
-    
-    // Restore RAM address A inputs to PM A-field connections
-    for (uint16_t i = 0; i < NUM_BITS; ++i)
-    {
-        uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);  // bits 6-8
-        ram->connect_input(&program_memory->get_outputs()[pm_a_field_index], i);
-    }
-    
-    // Restore RAM write enable to normal operation
-    ram->connect_input(&ram_write_or->get_outputs()[0], ram_we_index);
-    // Debug: print RAM write-enable OR gate state
-    std::cout << "[DBG][Computer_3bit] ram_write_or=" << (ram_write_or ? (ram_write_or->get_outputs()[0] ? 1 : 0) : 0) << std::endl;
+    // Print RAM contents by reading register values directly (read-only, no connections or evaluations)
+    ram->print_all_registers();
     
     std::cout << std::string(50, '=') << std::endl;
 }

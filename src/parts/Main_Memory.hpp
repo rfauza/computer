@@ -34,6 +34,11 @@ public:
     
     uint16_t get_address_bits() const { return address_bits; }
     uint16_t get_data_bits() const { return data_bits; }
+    
+    /**
+     * @brief Debug: Print all register contents without modifying connections or evaluating
+     */
+    void print_all_registers() const;
 
 private:
     uint16_t address_bits = 0;

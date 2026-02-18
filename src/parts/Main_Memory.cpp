@@ -234,3 +234,26 @@ void Main_Memory::update()
     }
 }
 
+void Main_Memory::print_all_registers() const
+{
+    std::cout << "\nRAM Contents:" << std::endl;
+    for (uint16_t addr = 0; addr < num_addresses; ++addr)
+    {
+        uint16_t value = 0;
+        for (uint16_t bit = 0; bit < data_bits; ++bit)
+        {
+            value |= (registers[addr]->get_output(bit) ? 1 : 0) << bit;
+        }
+        
+        // Convert value to binary string
+        std::string binary;
+        for (int i = data_bits - 1; i >= 0; --i)
+        {
+            binary += ((value >> i) & 1) ? '1' : '0';
+        }
+        
+        std::cout << "  [" << addr << "]: " << binary << " (" << value << ")" << std::endl;
+    }
+}
+
+
