@@ -454,8 +454,8 @@ bool Computer_3bit::clock_tick()
     evaluate();
     
     // Debug: print RAM inputs after combinational evaluation to trace signals
-    std::cout << "[DBG][Computer_3bit] RAM input signals:" << std::endl;
-    ram->print_inputs();
+    // std::cout << "[DBG][Computer_3bit] RAM input signals:" << std::endl;
+    // ram->print_inputs();
     
     // Phase 2: Update (storage elements latch new values)
     // Update all storage elements together: PC, RAM, registers
@@ -507,11 +507,11 @@ void Computer_3bit::print_state() const
     ram->print_selects();
 
     // Print RAM write-enable OR gate IO (read-only)
-    if (ram_write_or)
-    {
-        std::cout << "\n[DBG][Computer_3bit] ram_write_or IO:" << std::endl;
-        ram_write_or->print_io();
-    }
+    // if (ram_write_or)
+    // {
+    //     std::cout << "\n[DBG][Computer_3bit] ram_write_or IO:" << std::endl;
+    //     ram_write_or->print_io();
+    // }
     
     std::cout << std::string(50, '=') << std::endl;
 }
@@ -560,6 +560,19 @@ void Computer_3bit::evaluate()
     
     ram->evaluate();  // RAM reads with new addresses (WE gated to 0)
     cpu->evaluate();  // CPU computes using RAM outputs
+
+    // Print ALU comparator flags for debugging (EQ, NEQ, LT_U, GT_U, LT_S, GT_S)
+    bool* alu_out = cpu->get_result_outputs();
+    if (alu_out)
+    {
+        std::cout << "[DBG][Compare Flags] ";
+        std::cout << "EQ=" << (alu_out[NUM_BITS + 0] ? 1 : 0) << " ";
+        std::cout << "NEQ=" << (alu_out[NUM_BITS + 1] ? 1 : 0) << " ";
+        std::cout << "LT_U=" << (alu_out[NUM_BITS + 2] ? 1 : 0) << " ";
+        std::cout << "GT_U=" << (alu_out[NUM_BITS + 3] ? 1 : 0) << " ";
+        std::cout << "LT_S=" << (alu_out[NUM_BITS + 4] ? 1 : 0) << " ";
+        std::cout << "GT_S=" << (alu_out[NUM_BITS + 5] ? 1 : 0) << std::endl;
+    }
     
     // Evaluate RAM write control logic
     ram_data_mux_not->evaluate();
@@ -572,26 +585,26 @@ void Computer_3bit::evaluate()
     // ram_write_or->evaluate();
     // ram_write_or->print_io();  // Debug: print RAM write enable OR gate IO after evaluation
     // DEBUG: if write enable is active, log relevant signals to trace unexpected writes
-    if (ram_write_or->get_outputs()[0])
-    {
-        // Gather decoder bits and write address/data
-        bool* dec_ptr = cpu->get_decoder_outputs();
-        uint16_t dec0 = dec_ptr ? (dec_ptr[0] ? 1 : 0) : 0;
-        uint16_t dec1 = dec_ptr ? (dec_ptr[1] ? 1 : 0) : 0;
-        uint16_t dec2 = dec_ptr ? (dec_ptr[2] ? 1 : 0) : 0;
-        uint16_t write_addr = 0;
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-        {
-            write_addr |= (program_memory->get_outputs()[NUM_BITS + i] ? 1 : 0) << i; // C field
-        }
-        uint16_t write_data = 0;
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-        {
-            write_data |= (ram_data_mux_or[i]->get_outputs()[0] ? 1 : 0) << i;
-        }
-        std::cout << "[DBG][Computer_3bit] decoder=" << dec0 << dec1 << dec2
-                  << " ram_we=1 addr=" << write_addr << " data=" << write_data << std::endl;
-    }
+    // if (ram_write_or->get_outputs()[0])
+    // {
+    //     // Gather decoder bits and write address/data
+    //     bool* dec_ptr = cpu->get_decoder_outputs();
+    //     uint16_t dec0 = dec_ptr ? (dec_ptr[0] ? 1 : 0) : 0;
+    //     uint16_t dec1 = dec_ptr ? (dec_ptr[1] ? 1 : 0) : 0;
+    //     uint16_t dec2 = dec_ptr ? (dec_ptr[2] ? 1 : 0) : 0;
+    //     uint16_t write_addr = 0;
+    //     for (uint16_t i = 0; i < NUM_BITS; ++i)
+    //     {
+    //         write_addr |= (program_memory->get_outputs()[NUM_BITS + i] ? 1 : 0) << i; // C field
+    //     }
+    //     uint16_t write_data = 0;
+    //     for (uint16_t i = 0; i < NUM_BITS; ++i)
+    //     {
+    //         write_data |= (ram_data_mux_or[i]->get_outputs()[0] ? 1 : 0) << i;
+    //     }
+    //     std::cout << "[DBG][Computer_3bit] decoder=" << dec0 << dec1 << dec2
+    //               << " ram_we=1 addr=" << write_addr << " data=" << write_data << std::endl;
+    // }
     // Re-evaluate RAM so write_selects and registers see the new WE/data
     // This ensures the write_select AND gates pick up the just-computed write enable
     // before update() latches the register values.

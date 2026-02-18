@@ -148,7 +148,7 @@ private:
     /**
      * @brief Wire decoder outputs to ALU enables based on opcode mapping
      * 
-     * Creates OR gates to combine multiple decoder outputs to each ALU enable
+     * Directly connects decoder outputs to ALU enable inputs.
      */
     void wire_decoder_to_alu();
     
@@ -157,20 +157,6 @@ private:
     
     std::map<std::string, uint16_t> operation_to_opcode;  /**< Maps operation names to opcodes */
     std::map<uint16_t, std::string> opcode_to_operation;  /**< Maps opcodes to operation names */
-    
-    // OR gates to combine decoder outputs to ALU enables
-    // (multiple opcodes can map to same ALU operation)
-    OR_Gate* add_enable_or;      /**< Combines opcodes that trigger ADD */
-    OR_Gate* sub_enable_or;      /**< Combines opcodes that trigger SUB */
-    OR_Gate* inc_enable_or;      /**< Combines opcodes that trigger INC */
-    OR_Gate* dec_enable_or;      /**< Combines opcodes that trigger DEC */
-    OR_Gate* mul_enable_or;      /**< Combines opcodes that trigger MUL */
-    OR_Gate* and_enable_or;      /**< Combines opcodes that trigger AND */
-    OR_Gate* or_enable_or;       /**< Combines opcodes that trigger OR */
-    OR_Gate* xor_enable_or;      /**< Combines opcodes that trigger XOR */
-    OR_Gate* not_enable_or;      /**< Combines opcodes that trigger NOT */
-    OR_Gate* rsh_enable_or;      /**< Combines opcodes that trigger RSH */
-    OR_Gate* lsh_enable_or;      /**< Combines opcodes that trigger LSH */
     
     Signal_Generator* low_signal; /**< Always-low signal for unused OR gate inputs */
     

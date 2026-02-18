@@ -2,6 +2,7 @@ Total: 14h
 
 ToDo: 
 - fix halt behavior
+- fix jump behavior
 - change v2 name to v1
 - make longer test testing all operations
 
@@ -57,8 +58,11 @@ clock tick is logic. needs to be gates
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
-Feb 17 2026
-6p 
+
+
+Feb 17 2026 : 2h total 56h
+1h fixing copilot error on writing to ram when reading. let it try for 2 whole days. I fixed it in 1h.
+1h RAM prints all contents, made sub work
 
 Feb 13 2026 : 10h total 54h
 3h components print out parent and variable name
