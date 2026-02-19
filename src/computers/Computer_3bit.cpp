@@ -6,8 +6,8 @@
 #include <bitset>
 #include <filesystem>
 
-// Define 3-bit ISA v2 opcodes
-const std::string Computer_3bit::ISA_V2_OPCODES = 
+// Define 3-bit ISA v1 opcodes
+const std::string Computer_3bit::ISA_V1_OPCODES = 
     "000 HALT\n"
     "001 MOVL\n"
     "010 ADD\n"
@@ -27,8 +27,8 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     }
     component_name = oss.str();
     
-    // Create CPU with 3-bit ISA v2 and request PC width = PC_BITS (9)
-    cpu = new CPU(NUM_BITS, ISA_V2_OPCODES, "cpu_3bit", PC_BITS);
+    // Create CPU with 3-bit ISA v1 and request PC width = PC_BITS (9)
+    cpu = new CPU(NUM_BITS, ISA_V1_OPCODES, "cpu_3bit", PC_BITS);
     
     // Wire HALT opcode (000 = 0) to Control Unit halt signal
     cpu->wire_halt_opcode(0);
@@ -228,7 +228,7 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     ram->connect_input(&ram_read_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS + 1));  // RE_A
     ram->connect_input(&ram_write_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS + 2));  // RE_B
 
-    std::cout << "3-bit Computer initialized with ISA v2" << std::endl;
+    std::cout << "3-bit Computer initialized with ISA v1" << std::endl;
     std::cout << "  Data width: " << NUM_BITS << " bits" << std::endl;
     std::cout << "  RAM addresses: " << NUM_RAM_ADDRESSES << " (triple-ported: 2R1W)" << std::endl;
     std::cout << "  PM addresses: " << NUM_PM_ADDRESSES << std::endl;

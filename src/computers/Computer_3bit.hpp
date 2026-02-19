@@ -13,7 +13,7 @@
 /**
  * @brief 3-bit Computer with CPU, Program Memory, and RAM
  * 
- * Implements the 3-bit ISA v2:
+ * Implements the 3-bit ISA v1:
  *   000 HALT   - Stop execution
  *   001 MOVL   - Move literal: litA -> [C]
  *   010 ADD    - Add: [A] + [B] -> [C]
@@ -97,7 +97,7 @@ private:
     Main_Memory* ram;
     
     // Opcode mappings
-    static const std::string ISA_V2_OPCODES;
+    static const std::string ISA_V1_OPCODES;
     
     // Control signals
     Signal_Generator* pm_write_enable;

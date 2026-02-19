@@ -60,7 +60,6 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- change v2 name to v1
 - change main_3bit name
 - make longer test testing all operations
 - break computer into parent class
