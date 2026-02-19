@@ -47,14 +47,9 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
         else
             increment_signals[i]->go_low();   // All other bits = 0
         
-        increment_signals[i]->evaluate();
-        pc_incrementer->connect_input(&increment_signals[i]->get_outputs()[0], i);  // A inputs = 1
-    }
-    
-    // Connect PC output to incrementer B input
-    for (uint16_t i = 0; i < pc_bits; ++i)
-    {
-        pc_incrementer->connect_input(&pc->get_outputs()[i], pc_bits + i); // B inputs = PC
+        // increment_signals[i]->evaluate();
+        pc_incrementer->connect_input(&pc->get_outputs()[i], i); // A inputs = PC output
+        pc_incrementer->connect_input(&increment_signals[i]->get_outputs()[0], pc_bits + i);  // B inputs = 0001
     }
     
     // === PC Write Control (Mux between increment and jump) ===
@@ -195,6 +190,11 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
         ram_page_register->connect_input(&default_low_signal->get_outputs()[0], i);
     }
     
+    // === Jump Instruction Conditions === (initialized in connect_jump_instructions)
+    jump_instruction_and_gates = nullptr;
+    jump_instructions_or_gate = nullptr;
+    num_jump_conditions = 0;
+    
     // === Stack Pointer and Return Address === DISABLED: inputs not connected
     //stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
     //// Zero-initialize stack pointer outputs to 0
@@ -248,6 +248,20 @@ Control_Unit::~Control_Unit()
     delete halt_or_gate;
     delete halt_inverter;
     delete default_no_halt;
+    
+    // Clean up jump instruction gates
+    if (jump_instruction_and_gates)
+    {
+        for (uint16_t i = 0; i < num_jump_conditions; ++i)
+        {
+            if (jump_instruction_and_gates[i])
+                delete jump_instruction_and_gates[i];
+        }
+        delete[] jump_instruction_and_gates;
+    }
+    if (jump_instructions_or_gate)
+        delete jump_instructions_or_gate;
+    
     //delete stack_pointer;  // DISABLED
     //delete sp_read_enable;  // DISABLED
     //delete return_address;  // DISABLED
@@ -261,6 +275,11 @@ void Control_Unit::evaluate()
     // 0. Decode opcode early so HALT detection uses current instruction
     opcode_decoder->evaluate();
 
+    // 0.5. Evaluate flags EARLY so jump instruction conditions can use them
+    flag_write_enable->evaluate();
+    flag_read_enable->evaluate();
+    flag_register->evaluate();
+
     // 1. Evaluate run/halt flag and halt detection (used in PC increment gating)
     halt_or_gate->evaluate();
     halt_inverter->evaluate();  // Immediate halt signal for PC gating
@@ -272,6 +291,19 @@ void Control_Unit::evaluate()
         increment_signals[i]->evaluate();
     }
     pc_incrementer->evaluate();
+    
+    // 1.5. Evaluate jump instruction conditions (jump instructions ANDed with flags)
+    if (jump_instruction_and_gates && num_jump_conditions > 0)
+    {
+        for (uint16_t i = 0; i < num_jump_conditions; ++i)
+        {
+            jump_instruction_and_gates[i]->evaluate();
+        }
+        if (jump_instructions_or_gate)
+        {
+            jump_instructions_or_gate->evaluate();
+        }
+    }
     
     // 2. Jump control logic
     jump_enable_inverter->evaluate();
@@ -287,11 +319,6 @@ void Control_Unit::evaluate()
     
     // 4. Decode opcode
     opcode_decoder->evaluate();
-    
-    // 5. Evaluate flags
-    flag_write_enable->evaluate();
-    flag_read_enable->evaluate();
-    flag_register->evaluate();
     
     // 6. Evaluate other registers
     ram_page_read_enable->evaluate();
@@ -475,6 +502,52 @@ bool Control_Unit::connect_halt_signal(const bool* halt_signal)
     // Connect halt signal directly to halt_or_gate input 0
     // When halt opcode is decoded, halt_signal goes HIGH, triggering Reset (Q=0)
     halt_or_gate->connect_input(halt_signal, 0);
+    
+    return true;
+}
+
+bool Control_Unit::connect_jump_instructions(const std::vector<std::pair<uint16_t, uint16_t>>& jump_conditions)
+{
+    if (jump_conditions.empty())
+        return false;
+    
+    // Store number of jump conditions
+    num_jump_conditions = static_cast<uint16_t>(jump_conditions.size());
+    
+    // Create AND gates for each jump condition (jump_instruction & flag)
+    jump_instruction_and_gates = new AND_Gate*[num_jump_conditions];
+    for (uint16_t i = 0; i < num_jump_conditions; ++i)
+    {
+        std::ostringstream and_name;
+        and_name << "jump_instruction_and_" << i << "_in_control_unit";
+        jump_instruction_and_gates[i] = new AND_Gate(2, and_name.str());
+        
+        // Get decoder and flag indices for this jump condition
+        uint16_t decoder_index = jump_conditions[i].first;
+        uint16_t flag_index = jump_conditions[i].second;
+        
+        // Validate flag index
+        if (flag_index >= num_flags)
+            return false;
+        
+        // Connect decoder output (jump instruction signal) to AND gate input 0
+        jump_instruction_and_gates[i]->connect_input(&opcode_decoder->get_outputs()[decoder_index], 0);
+        
+        // Connect comparator flag to AND gate input 1
+        jump_instruction_and_gates[i]->connect_input(&flag_register->get_outputs()[flag_index], 1);
+    }
+    
+    // Create OR gate to combine all jump conditions
+    jump_instructions_or_gate = new OR_Gate(num_jump_conditions, "jump_instructions_or_gate_in_control_unit");
+    
+    // Connect all AND gate outputs to the OR gate
+    for (uint16_t i = 0; i < num_jump_conditions; ++i)
+    {
+        jump_instructions_or_gate->connect_input(&jump_instruction_and_gates[i]->get_outputs()[0], i);
+    }
+    
+    // Connect OR gate output to jump_enable signal
+    connect_jump_enable(&jump_instructions_or_gate->get_outputs()[0]);
     
     return true;
 }

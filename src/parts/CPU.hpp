@@ -135,6 +135,28 @@ public:
      */
     bool wire_halt_opcode(uint16_t halt_opcode_value);
     
+    /**
+     * @brief Connect conditional jump instructions with their comparator flags
+     * 
+     * Sets up logic to AND jump instruction decoder outputs with appropriate comparator flags,
+     * then ORs all jump conditions together to drive the jump_enable signal.
+     * This enables conditional jumping based on comparison results.
+     * 
+     * @param jump_operation_flag_pairs Vector of (operation_name, flag_index) pairs
+     *   e.g., {("JEQ", 0), ("JGT", 3)} means JEQ ANDed with EQ flag, JGT ANDed with GT_U flag
+     * @return true if successful
+     */
+    bool connect_jump_conditions(const std::vector<std::pair<std::string, uint16_t>>& jump_operation_flag_pairs);
+    
+    /**
+     * @brief Connect jump address from external source
+     * 
+     * @param jump_address_outputs Pointer array to jump address bits
+     * @param num_address_bits Number of address bits (should match PC width)
+     * @return true if successful
+     */
+    bool connect_jump_address(const bool* const* jump_address_outputs, uint16_t num_address_bits);
+    
 private:
     /**
      * @brief Parse opcode specification string

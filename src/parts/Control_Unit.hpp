@@ -8,6 +8,7 @@
 #include "../components/OR_Gate.hpp"
 #include "../components/Inverter.hpp"
 #include "../device_components/Flip_Flop.hpp"
+#include <vector>
 
 /**
  * @brief Base Control Unit for managing program execution
@@ -157,6 +158,13 @@ public:
     bool* get_ram_page_outputs() const;
     
     /**
+     * @brief Get PC bit width
+     * 
+     * @return Number of bits in the Program Counter
+     */
+    uint16_t get_pc_bits() const { return pc_bits; }
+    
+    /**
      * @brief Get pointer to stack pointer outputs
      * 
      * @return Pointer to stack pointer outputs (2*num_bits)
@@ -193,6 +201,18 @@ public:
      * @return true if successful
      */
     bool connect_pc_carry(const bool* carry_signal);
+    /**
+     * @brief Connect jump instruction conditions
+     * 
+     * Sets up AND gates between jump instructions and their corresponding comparator flags,
+     * then ORs all jump conditions together to drive the jump_enable signal.
+     * 
+     * @param jump_conditions Vector of (opcode, flag_index) pairs for conditional jumps
+     *   e.g., {(5, 0)} means opcode 5 (JEQ) ANDed with flag 0 (EQ)
+     * @return true if successful
+     */
+    bool connect_jump_instructions(const std::vector<std::pair<uint16_t, uint16_t>>& jump_conditions);
+    
     /**
      * @brief Trigger a clock cycle (for flag clearing and other sequential logic)
      */
@@ -241,6 +261,11 @@ protected:
     Inverter* halt_inverter;          /**< Inverts halt signal for immediate PC gating (!halt = run) */
     AND_Gate* pc_carry_and_gate;      /**< AND gate to gate PC increment with run flag */
     Signal_Generator* default_no_halt; /**< Default low signal for halt inputs (no halt) */
+    
+    // Jump Instruction Conditions
+    AND_Gate** jump_instruction_and_gates; /**< AND gates for (jump_instruction & flag) pairs */
+    OR_Gate* jump_instructions_or_gate;    /**< ORs all jump conditions for jump_enable */
+    uint16_t num_jump_conditions;          /**< Number of jump conditions configured */
     
     // Stack Management (for function calls) - DISABLED: inputs not connected
     //Register* stack_pointer;          /**< Stack pointer (2*num_bits) */

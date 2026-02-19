@@ -102,19 +102,18 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
         ram->connect_input(&program_memory->get_outputs()[pm_c_field_index], static_cast<uint16_t>(2 * NUM_BITS + i));
     }
     
-    // === Connect RAM data outputs to CPU data inputs ===
-    // RAM output A (bits 0-2) -> CPU data_a
-    // RAM output B (bits 3-5) -> CPU data_b
-    // Store as member variables (must persist for lifetime of Computer_3bit)
+    // === Connect RAM data outputs to CPU ALU inputs ===
+    // RAM port A and B outputs provide operands for ALU operations
+    // These are addressed by the PM A and B fields (already connected to RAM addresses above)
     data_a_ptrs = new const bool*[NUM_BITS];
     data_b_ptrs = new const bool*[NUM_BITS];
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
-        data_a_ptrs[i] = &ram->get_outputs()[i];              // Port A output
-        data_b_ptrs[i] = &ram->get_outputs()[NUM_BITS + i];   // Port B output
+        data_a_ptrs[i] = &ram->get_outputs()[i];              // Port A output (operand 1)
+        data_b_ptrs[i] = &ram->get_outputs()[NUM_BITS + i];   // Port B output (operand 2)
     }
     
-    // Connect PM A field (bits 6-8) to CPU data_c input for MOVL literals
+    // Connect PM A field (bits 6-8) to CPU data_c input for MOVL immediates
     data_c_ptrs = new const bool*[NUM_BITS];
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
@@ -123,6 +122,32 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     }
     
     cpu->connect_data_inputs(data_c_ptrs, data_a_ptrs, data_b_ptrs);
+
+    // === Connect jump address from PM instruction fields ===
+    // For jump instructions, use PM C, A, B fields as immediate address [B:A:C]
+    // This is separate from the data paths used by ALU operations
+    const bool** jump_addr_ptrs = new const bool*[PC_BITS];
+    for (uint16_t i = 0; i < NUM_BITS; ++i)
+    {
+        uint16_t pm_c_field_index = static_cast<uint16_t>(NUM_BITS + i);          // bits 3-5
+        uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);      // bits 6-8
+        uint16_t pm_b_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);      // bits 9-11
+        
+        // Arrange as [B:A:C] for address packing
+        jump_addr_ptrs[i] = &program_memory->get_outputs()[pm_b_field_index];          // bits 0-2: B
+        jump_addr_ptrs[NUM_BITS + i] = &program_memory->get_outputs()[pm_a_field_index];  // bits 3-5: A
+        jump_addr_ptrs[2 * NUM_BITS + i] = &program_memory->get_outputs()[pm_c_field_index];  // bits 6-8: C
+    }
+    cpu->connect_jump_address(jump_addr_ptrs, PC_BITS);
+    delete[] jump_addr_ptrs;
+
+    // === Connect jump conditions with comparator flags ===
+    // JEQ (opcode 5) ANDed with EQ flag (index 0)
+    // JGT (opcode 6) ANDed with GT_U flag (index 3) for unsigned comparison
+    std::vector<std::pair<std::string, uint16_t>> jump_conditions;
+    jump_conditions.push_back({"JEQ", 0});  // JEQ with EQ flag
+    jump_conditions.push_back({"JGT", 3});  // JGT with GT_U flag
+    cpu->connect_jump_conditions(jump_conditions);
 
     // === Create mux for RAM write data input ===
     // MOVL uses PM A field, ADD uses CPU result
@@ -440,7 +465,6 @@ void Computer_3bit::run_interactive()
         if (!running)
         {
             std::cout << "\n=== Program HALTED ===" << std::endl;
-            print_state();
             break;  // Exit loop immediately after halting
         }
     }
@@ -450,8 +474,16 @@ bool Computer_3bit::clock_tick()
 {
     // Two-phase clock cycle:
     
-    // Phase 1: Evaluate (combinational logic computes next values)
-    evaluate();
+    if (is_running)
+    {
+        // Phase 1: Evaluate (combinational logic computes next values)
+        evaluate();
+    }
+    else
+    {
+        std::cout << "Computer is halted. No further execution." << std::endl;
+        return false;  // Remain halted
+    }
     
     // Debug: print RAM inputs after combinational evaluation to trace signals
     // std::cout << "[DBG][Computer_3bit] RAM input signals:" << std::endl;
@@ -463,7 +495,7 @@ bool Computer_3bit::clock_tick()
     // ram->update();
     
     // Check if halted (run/halt flag from control unit)
-    bool is_running = cpu->get_run_halt_flag();
+    is_running = cpu->get_run_halt_flag();
     
     return is_running;
 }

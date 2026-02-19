@@ -135,6 +135,7 @@ private:
     const bool** data_b_ptrs;  // Pointers to RAM port B outputs
     const bool** data_c_ptrs;  // Pointers to PM A field for MOVL literals
     
+    bool is_running;
     /**
      * @brief Toggle RAM read flag and evaluate gating logic
      * @param flag_high If true, set flag HIGH (read phase); if false, set flag LOW (write phase)

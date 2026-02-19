@@ -170,6 +170,10 @@ bool CPU::connect_data_inputs(
         alu->connect_input(data_b_outputs[i], num_bits + i);
     }
     
+    // Note: Jump address is connected separately via CPU::connect_jump_address_direct
+    // or directly via control_unit->connect_jump_address_to_pc
+    // These data inputs are for ALU operands only
+    
     return true;
 }
 
@@ -205,6 +209,46 @@ bool CPU::wire_halt_opcode(uint16_t halt_opcode_value)
     
     bool* decoder_outputs = control_unit->get_decoder_outputs();
     return control_unit->connect_halt_signal(&decoder_outputs[halt_opcode_value]);
+}
+
+bool CPU::connect_jump_conditions(const std::vector<std::pair<std::string, uint16_t>>& jump_operation_flag_pairs)
+{
+    if (jump_operation_flag_pairs.empty())
+        return false;
+    
+    // Convert operation names to opcode indices
+    std::vector<std::pair<uint16_t, uint16_t>> jump_conditions;
+    
+    for (const auto& pair : jump_operation_flag_pairs)
+    {
+        const std::string& operation_name = pair.first;
+        uint16_t flag_index = pair.second;
+        
+        // Look up opcode for this operation
+        auto it = operation_to_opcode.find(operation_name);
+        if (it == operation_to_opcode.end())
+        {
+            std::cerr << "Warning: Jump operation '" << operation_name << "' not found in opcode mapping" << std::endl;
+            continue;  // Skip unknown operations
+        }
+        
+        uint16_t opcode = it->second;
+        jump_conditions.push_back({opcode, flag_index});
+    }
+    
+    if (jump_conditions.empty())
+        return false;
+    
+    // Wire jump conditions in Control Unit
+    return control_unit->connect_jump_instructions(jump_conditions);
+}
+
+bool CPU::connect_jump_address(const bool* const* jump_address_outputs, uint16_t num_address_bits)
+{
+    if (!jump_address_outputs)
+        return false;
+    
+    return control_unit->connect_jump_address_to_pc(jump_address_outputs, num_address_bits);
 }
 
 bool* CPU::get_decoder_outputs() const

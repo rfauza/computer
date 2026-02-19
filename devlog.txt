@@ -59,6 +59,15 @@ clock tick is logic. needs to be gates
 - try architecture with all in RAM (and storage) and no program memory
 
 
+Todo next:
+- change v2 name to v1
+- change main_3bit name
+- make longer test testing all operations
+- break computer into parent class
+- make gui
+
+Feb 18 2026
+1h jump working 
 
 Feb 17 2026 : 2h total 56h
 1h fixing copilot error on writing to ram when reading. let it try for 2 whole days. I fixed it in 1h.
