@@ -36,8 +36,8 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     // Create Program Memory: 9-bit address, 3-bit data
     program_memory = new Program_Memory(PC_BITS, NUM_BITS, "pm_3bit");
     
-    // Create RAM: 3-bit address, 3-bit data, triple-ported (2R1W)
-    ram = new Main_Memory(NUM_BITS, NUM_BITS, "ram_3bit");
+    // Create RAM: 6-bit address, 3-bit data, triple-ported (2R1W)
+    ram = new Main_Memory(NUM_RAM_ADDRESS_BITS, NUM_BITS, "ram_3bit");
     
     // Create control signals
     pm_write_enable = new Signal_Generator("pm_write_enable");
@@ -88,19 +88,31 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     // RAM address B input: PM B field (bits 9-11) - for reading second operand
     // RAM address C input: PM C field (bits 3-5) - for writing result
     
+    // === Connect RAM address inputs ===
+    // PM output bits: [opcode 0-2] [C 3-5] [A 6-8] [B 9-11]
+    // Read port 1: address A (only 3 bits used, high bits tied to 0)
+    // Read port 2: address B (only 3 bits used, high bits tied to 0)
+    // Write port: address = [B:C] = (B << 3) | C (6-bit address for MOVL)
+    
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
         uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);  // bits 6-8
         uint16_t pm_b_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);  // bits 9-11
         uint16_t pm_c_field_index = static_cast<uint16_t>(NUM_BITS + i);      // bits 3-5
         
-        // Connect address A (read port 1)
+        // Read port 1 (address A): bits 0-2 from A field, bits 3-5 tied to 0
         ram->connect_input(&program_memory->get_outputs()[pm_a_field_index], i);
-        // Connect address B (read port 2)
-        ram->connect_input(&program_memory->get_outputs()[pm_b_field_index], static_cast<uint16_t>(NUM_BITS + i));
-        // Connect address C (write port)
-        ram->connect_input(&program_memory->get_outputs()[pm_c_field_index], static_cast<uint16_t>(2 * NUM_BITS + i));
+        // Read port 2 (address B): bits 0-2 from B field, bits 3-5 tied to 0
+        ram->connect_input(&program_memory->get_outputs()[pm_b_field_index], static_cast<uint16_t>(NUM_RAM_ADDRESS_BITS + i));
+        
+        // Write port (address C for MOVL): bits 0-2 from C field
+        ram->connect_input(&program_memory->get_outputs()[pm_c_field_index], static_cast<uint16_t>(2 * NUM_RAM_ADDRESS_BITS + i));
+        // Write port (address C for MOVL): bits 3-5 from B field
+        ram->connect_input(&program_memory->get_outputs()[pm_b_field_index], static_cast<uint16_t>(2 * NUM_RAM_ADDRESS_BITS + NUM_BITS + i));
     }
+    
+    // Read ports only use 3-bit addresses (A and B fields from instruction)
+    // High bits (3-5) of read ports remain unconnected (default to 0)
     
     // === Connect RAM data outputs to CPU ALU inputs ===
     // RAM port A and B outputs provide operands for ALU operations
@@ -188,8 +200,8 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
             ram_data_mux_or[i]->connect_input(&ram_data_mux_and_result[i]->get_outputs()[0], 1);
             ram_data_mux_or[i]->evaluate();
             
-            // Connect mux output to RAM write data input (after 3 address inputs)
-            ram->connect_input(&ram_data_mux_or[i]->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + i));
+            // Connect mux output to RAM write data input
+            ram->connect_input(&ram_data_mux_or[i]->get_outputs()[0], static_cast<uint16_t>(3 * NUM_RAM_ADDRESS_BITS + i));
         }
     }
 
@@ -222,15 +234,15 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     ram_we_gated->evaluate();
     
     // Connect gated write enable to RAM (instead of raw ram_write_or)
-    ram->connect_input(&ram_we_gated->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS));
+    ram->connect_input(&ram_we_gated->get_outputs()[0], static_cast<uint16_t>(3 * NUM_RAM_ADDRESS_BITS + NUM_BITS));
 
     // RAM read enables always high
-    ram->connect_input(&ram_read_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS + 1));  // RE_A
-    ram->connect_input(&ram_write_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_BITS + NUM_BITS + 2));  // RE_B
+    ram->connect_input(&ram_read_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_RAM_ADDRESS_BITS + NUM_BITS + 1));  // RE_A
+    ram->connect_input(&ram_write_enable->get_outputs()[0], static_cast<uint16_t>(3 * NUM_RAM_ADDRESS_BITS + NUM_BITS + 2));  // RE_B
 
     std::cout << "3-bit Computer initialized with ISA v1" << std::endl;
     std::cout << "  Data width: " << NUM_BITS << " bits" << std::endl;
-    std::cout << "  RAM addresses: " << NUM_RAM_ADDRESSES << " (triple-ported: 2R1W)" << std::endl;
+    std::cout << "  RAM addresses: " << NUM_RAM_ADDRESSES << " (6-bit MOVL addressing: [B:C])" << std::endl;
     std::cout << "  PM addresses: " << NUM_PM_ADDRESSES << std::endl;
 
     // Initialize member vector signal generators for PM loading (allocate dynamically)
@@ -533,17 +545,8 @@ void Computer_3bit::print_state() const
               << get_opcode_name(opcode) << " "
               << c_val << " " << a_val << " " << b_val << std::endl;
     
-    // Print RAM contents by reading register values directly (read-only, no connections or evaluations)
-    ram->print_all_registers();
-    // Print RAM select gates (read-only)
-    ram->print_selects();
-
-    // Print RAM write-enable OR gate IO (read-only)
-    // if (ram_write_or)
-    // {
-    //     std::cout << "\n[DBG][Computer_3bit] ram_write_or IO:" << std::endl;
-    //     ram_write_or->print_io();
-    // }
+    // Print RAM contents (8 pages of 8)
+    ram->print_pages(8);
     
     std::cout << std::string(50, '=') << std::endl;
 }

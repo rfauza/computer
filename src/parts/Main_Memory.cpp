@@ -234,6 +234,51 @@ void Main_Memory::update()
     }
 }
 
+uint16_t Main_Memory::get_register_value(uint16_t address) const
+{
+    if (address >= num_addresses)
+        return 0;
+    
+    uint16_t value = 0;
+    for (uint16_t bit = 0; bit < data_bits; ++bit)
+    {
+        value |= (registers[address]->get_output(bit) ? 1 : 0) << bit;
+    }
+    return value;
+}
+
+void Main_Memory::print_pages(uint16_t num_pages) const
+{
+    // Clamp num_pages to actual available pages
+    uint16_t entries_per_page = 1u << data_bits;  // 2^data_bits
+    uint16_t actual_pages = (num_addresses + entries_per_page - 1) / entries_per_page;
+    if (num_pages > actual_pages)
+        num_pages = actual_pages;
+    
+    std::cout << "RAM Contents:" << std::endl;
+    
+    // Print in rows of 4 pages
+    uint16_t pages_per_row = 4;
+    for (uint16_t entry = 0; entry < entries_per_page; ++entry)
+    {
+        for (uint16_t page = 0; page < num_pages; ++page)
+        {
+            uint16_t addr = page * entries_per_page + entry;
+            uint16_t value = get_register_value(addr);
+            
+            // Convert value to binary string
+            std::string binary;
+            for (int i = data_bits - 1; i >= 0; --i)
+            {
+                binary += ((value >> i) & 1) ? '1' : '0';
+            }
+            
+            std::cout << "  [" << entry << "]: " << binary << " (" << value << ")";
+        }
+        std::cout << std::endl;
+    }
+}
+
 void Main_Memory::print_all_registers() const
 {
     std::cout << "\nRAM Contents:" << std::endl;

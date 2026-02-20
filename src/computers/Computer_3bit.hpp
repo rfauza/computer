@@ -88,7 +88,8 @@ public:
 
 private:
     static constexpr uint16_t NUM_BITS = 3;
-    static constexpr uint16_t NUM_RAM_ADDRESSES = 8;     // 2^3
+    static constexpr uint16_t NUM_RAM_ADDRESS_BITS = 6;  // Instruction fields: C (bits 0-2), B (bits 3-5)
+    static constexpr uint16_t NUM_RAM_ADDRESSES = (1u << NUM_RAM_ADDRESS_BITS);  // 2^NUM_RAM_ADDRESS_BITS
     static constexpr uint16_t PC_BITS = 9;               // Use 9-bit PC for 512 PM addresses
     static constexpr uint16_t NUM_PM_ADDRESSES = 512;    // 2^9
     

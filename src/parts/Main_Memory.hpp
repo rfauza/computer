@@ -34,6 +34,20 @@ public:
     
     uint16_t get_address_bits() const { return address_bits; }
     uint16_t get_data_bits() const { return data_bits; }
+    uint16_t get_num_addresses() const { return num_addresses; }
+    
+    /**
+     * @brief Get the value stored in a register at the given address
+     * @param address The address of the register (0 to num_addresses-1)
+     * @return The value stored in that register as a uint16_t
+     */
+    uint16_t get_register_value(uint16_t address) const;
+    
+    /**
+     * @brief Print RAM contents organized by pages in a grid format
+     * @param num_pages Number of pages to print (4 pages per row). If more than available, prints up to what exists.
+     */
+    void print_pages(uint16_t num_pages) const;
     
     /**
      * @brief Debug: Print all register contents without modifying connections or evaluating
