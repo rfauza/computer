@@ -30,6 +30,7 @@
 #include "utilities/main_memory_loader.hpp"
 #include "testing/main_memory_tester.hpp"
 #include <filesystem>
+#include "computers/Computer_3bit.hpp"
 
 // Forward declaration of testMainMemory
 void testMainMemory();
@@ -56,7 +57,12 @@ int main()
     // test_alu_truth_table(4, true);
 
     // Unconditionally run the 3-bit interactive test (no argv required)
-    return run_3bit_test(0, nullptr);
+    // return run_3bit_test(0, nullptr);
+    Computer_3bit* computer = new Computer_3bit("test_computer");
+    std::string program_file = "test_program.txt";
+    computer->load_program(program_file);
+    computer->run_interactive();
+    delete computer;
 }
 
 bool loadPM()

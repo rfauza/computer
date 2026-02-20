@@ -15,12 +15,12 @@
  * 
  * Implements the 3-bit ISA v1:
  *   000 HALT   - Stop execution
- *   001 MOVL   - Move literal: litA -> [C]
+ *   001 MOVL   - Move literal: litA -> [BC]
  *   010 ADD    - Add: [A] + [B] -> [C]
  *   011 SUB    - Subtract: [A] - [B] -> [C]
  *   100 CMP    - Compare: sets flags based on [A] vs [B]
- *   101 JEQ    - Jump if equal: if flag then goto ABC
- *   110 JGT    - Jump if greater: if flag then goto ABC
+ *   101 JEQ    - Jump if equal: if flag then goto CAB
+ *   110 JGT    - Jump if greater: if flag then goto CAB
  *   111 NOP    - No operation
  * 
  * Architecture:

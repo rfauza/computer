@@ -247,3 +247,11 @@ jeq
 jneq
 call
 return
+
+
+to make jne out of jeq:
+cmp A B
+jeq "dont jump" (if A and B are equal, it will skip to real jump you want in case not equal)
+cmp A A (compare value to itself to create unconditional jump)
+jeq "jump to not equal" (unconditional jump to where you want jne to go)
+"dont jump"
