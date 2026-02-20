@@ -258,6 +258,9 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     std::cout << "  RAM addresses: " << NUM_RAM_ADDRESSES << " (6-bit MOVL addressing: [B:C])" << std::endl;
     std::cout << "  PM addresses: " << NUM_PM_ADDRESSES << std::endl;
 
+    // Initialize execution counter
+    execution_count = 0;
+
     // Initialize member vector signal generators for PM loading (allocate dynamically)
     pm_load_addr_sigs = new std::vector<Signal_Generator>();
     pm_load_addr_sigs->resize(PC_BITS);
@@ -524,9 +527,12 @@ bool Computer_3bit::clock_tick()
     // cpu->update();
     // ram->update();
     
+    // Count this executed instruction (one clock tick)
+    execution_count++;
+
     // Check if halted (run/halt flag from control unit)
     is_running = cpu->get_run_halt_flag();
-    
+
     return is_running;
 }
 
@@ -536,8 +542,9 @@ void Computer_3bit::print_state() const
     
     // Print PC derived from Program Memory's selected address
     uint16_t pc_value = program_memory->get_selected_address();
-    std::cout << "PC: " << std::setw(3) << std::setfill('0') << pc_value 
-              << " (" << to_binary(pc_value, PC_BITS) << ")" << std::endl;
+    std::cout << "PC: " << std::setw(3) << std::setfill('0') << pc_value
+              << " (" << to_binary(pc_value, PC_BITS) << ")"
+              << "    Execution Count: " << execution_count << std::endl;
     
     // Print current instruction from PM
     bool* pm_outputs = program_memory->get_outputs();
@@ -611,28 +618,28 @@ void Computer_3bit::evaluate()
     cpu->evaluate();  // CPU computes using RAM outputs
 
     // Print decoder outputs and ALU result
-    bool* dec_out = cpu->get_decoder_outputs();
-    bool* alu_out = cpu->get_result_outputs();
-    if (dec_out)
-    {
-        std::cout << "[DBG] Decoder: ";
-        for (uint16_t i = 0; i < 8; ++i)
-            std::cout << (dec_out[i] ? 1 : 0);
-        std::cout << " ";
-    }
-    if (alu_out)
-    {
-        std::cout << "ALU_Result: ";
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-            std::cout << (alu_out[i] ? 1 : 0);
-        std::cout << " | Flags: ";
-        std::cout << "EQ=" << (alu_out[NUM_BITS + 0] ? 1 : 0) << " ";
-        std::cout << "NEQ=" << (alu_out[NUM_BITS + 1] ? 1 : 0) << " ";
-        std::cout << "LT_U=" << (alu_out[NUM_BITS + 2] ? 1 : 0) << " ";
-        std::cout << "GT_U=" << (alu_out[NUM_BITS + 3] ? 1 : 0) << " ";
-        std::cout << "LT_S=" << (alu_out[NUM_BITS + 4] ? 1 : 0) << " ";
-        std::cout << "GT_S=" << (alu_out[NUM_BITS + 5] ? 1 : 0) << std::endl;
-    }
+    // bool* dec_out = cpu->get_decoder_outputs();
+    // bool* alu_out = cpu->get_result_outputs();
+    // if (dec_out)
+    // {
+    //     std::cout << "[DBG] Decoder: ";
+    //     for (uint16_t i = 0; i < 8; ++i)
+    //         std::cout << (dec_out[i] ? 1 : 0);
+    //     std::cout << " ";
+    // }
+    // if (alu_out)
+    // {
+    //     std::cout << "ALU_Result: ";
+    //     for (uint16_t i = 0; i < NUM_BITS; ++i)
+    //         std::cout << (alu_out[i] ? 1 : 0);
+    //     std::cout << " | Flags: ";
+    //     std::cout << "EQ=" << (alu_out[NUM_BITS + 0] ? 1 : 0) << " ";
+    //     std::cout << "NEQ=" << (alu_out[NUM_BITS + 1] ? 1 : 0) << " ";
+    //     std::cout << "LT_U=" << (alu_out[NUM_BITS + 2] ? 1 : 0) << " ";
+    //     std::cout << "GT_U=" << (alu_out[NUM_BITS + 3] ? 1 : 0) << " ";
+    //     std::cout << "LT_S=" << (alu_out[NUM_BITS + 4] ? 1 : 0) << " ";
+    //     std::cout << "GT_S=" << (alu_out[NUM_BITS + 5] ? 1 : 0) << std::endl;
+    // }
     
     // Evaluate RAM write control logic
     ram_data_mux_not->evaluate();

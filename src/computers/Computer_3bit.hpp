@@ -9,6 +9,7 @@
 #include "../components/Inverter.hpp"
 #include <string>
 #include <vector>
+#include <cstdint>
 
 /**
  * @brief 3-bit Computer with CPU, Program Memory, and RAM
@@ -143,6 +144,8 @@ private:
     const bool** data_c_ptrs;  // Pointers to PM A field for MOVL literals
     
     bool is_running;
+    // Total number of instructions executed so far (clock ticks)
+    uint64_t execution_count;
     /**
      * @brief Toggle RAM read flag and evaluate gating logic
      * @param flag_high If true, set flag HIGH (read phase); if false, set flag LOW (write phase)
