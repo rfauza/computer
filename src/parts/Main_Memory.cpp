@@ -316,3 +316,71 @@ void Main_Memory::print_selects() const
 }
 
 
+
+void Main_Memory::print_inputs() const
+{
+    // Reuse the input-formatting from print_io
+    std::cout << component_name << " inputs: ";
+
+    auto print_range = [&](uint16_t start, uint16_t len)
+    {
+        std::string s;
+        for (int i = static_cast<int>(len) - 1; i >= 0; --i)
+        {
+            uint16_t idx = static_cast<uint16_t>(start + i);
+            bool val = false;
+            if (idx < num_inputs && inputs[idx])
+                val = *inputs[idx];
+            s += (val ? '1' : '0');
+        }
+        std::cout << s;
+    };
+
+    // A
+    print_range(0, address_bits);
+    std::cout << ", ";
+    // B
+    print_range(address_bits, address_bits);
+    std::cout << ", ";
+    // C
+    print_range(2 * address_bits, address_bits);
+    std::cout << ", ";
+    // data
+    print_range(3 * address_bits, data_bits);
+    std::cout << ", ";
+    // flags: WE, RE_A, RE_B (in that order)
+    uint16_t we_idx = static_cast<uint16_t>(3 * address_bits + data_bits);
+    uint16_t rea_idx = static_cast<uint16_t>(3 * address_bits + data_bits + 1);
+    uint16_t reb_idx = static_cast<uint16_t>(3 * address_bits + data_bits + 2);
+    auto bitval = [&](uint16_t idx)->char { if (idx < num_inputs && inputs[idx] && *inputs[idx]) return '1'; return '0'; };
+    std::cout << bitval(we_idx) << bitval(rea_idx) << bitval(reb_idx) << std::endl;
+}
+
+void Main_Memory::print_outputs() const
+{
+    std::cout << component_name << " outputs: ";
+    // Port A
+    std::string outA;
+    for (int i = static_cast<int>(data_bits) - 1; i >= 0; --i)
+    {
+        bool v = false;
+        uint16_t idx = static_cast<uint16_t>(i);
+        if (idx < num_outputs && outputs)
+            v = outputs[idx];
+        outA += (v ? '1' : '0');
+    }
+    std::cout << outA << ", ";
+    // Port B
+    std::string outB;
+    for (int i = static_cast<int>(data_bits) - 1; i >= 0; --i)
+    {
+        bool v = false;
+        uint16_t idx = static_cast<uint16_t>(data_bits + i);
+        if (idx < num_outputs && outputs)
+            v = outputs[idx];
+        outB += (v ? '1' : '0');
+    }
+    std::cout << outB << std::endl;
+}
+
+

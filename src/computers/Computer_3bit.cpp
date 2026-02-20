@@ -84,15 +84,18 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
 
     // === Connect RAM address inputs ===
     // PM output bits: [opcode 0-2] [C 3-5] [A 6-8] [B 9-11]
-    // RAM address A input: PM A field (bits 6-8) - for reading first operand
-    // RAM address B input: PM B field (bits 9-11) - for reading second operand
-    // RAM address C input: PM C field (bits 3-5) - for writing result
-    
-    // === Connect RAM address inputs ===
-    // PM output bits: [opcode 0-2] [C 3-5] [A 6-8] [B 9-11]
     // Read port 1: address A (only 3 bits used, high bits tied to 0)
     // Read port 2: address B (only 3 bits used, high bits tied to 0)
-    // Write port: address = [B:C] = (B << 3) | C (6-bit address for MOVL)
+    // Write port: address bits 0-2 from C field, bits 3-5 from B field only when MOVL
+    
+    // Create AND gates to gate B field with MOVL opcode (so ADD/SUB write to [0:C] not [B:C])
+    ram_write_addr_high_mux = new AND_Gate*[NUM_BITS];
+    bool* cu_decoder = cpu->get_decoder_outputs();
+    
+    // Create constant low signal for read address high bits
+    read_addr_high_low = new Signal_Generator("read_addr_high_low");
+    read_addr_high_low->go_low();
+    read_addr_high_low->evaluate();
     
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
@@ -102,17 +105,28 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
         
         // Read port 1 (address A): bits 0-2 from A field, bits 3-5 tied to 0
         ram->connect_input(&program_memory->get_outputs()[pm_a_field_index], i);
+        ram->connect_input(&read_addr_high_low->get_outputs()[0], static_cast<uint16_t>(NUM_BITS + i));
+        
         // Read port 2 (address B): bits 0-2 from B field, bits 3-5 tied to 0
         ram->connect_input(&program_memory->get_outputs()[pm_b_field_index], static_cast<uint16_t>(NUM_RAM_ADDRESS_BITS + i));
+        ram->connect_input(&read_addr_high_low->get_outputs()[0], static_cast<uint16_t>(NUM_RAM_ADDRESS_BITS + NUM_BITS + i));
         
-        // Write port (address C for MOVL): bits 0-2 from C field
+        // Write port (address C): bits 0-2 from C field
         ram->connect_input(&program_memory->get_outputs()[pm_c_field_index], static_cast<uint16_t>(2 * NUM_RAM_ADDRESS_BITS + i));
-        // Write port (address C for MOVL): bits 3-5 from B field
-        ram->connect_input(&program_memory->get_outputs()[pm_b_field_index], static_cast<uint16_t>(2 * NUM_RAM_ADDRESS_BITS + NUM_BITS + i));
+        
+        // Write port high bits (3-5): AND gate gates B field with MOVL
+        // MOVL=1 → output = B field bit
+        // ADD/SUB=1 → output = 0 (MOVL=0, AND result=0)
+        std::ostringstream gate_name;
+        gate_name << "ram_write_addr_high_" << i;
+        ram_write_addr_high_mux[i] = new AND_Gate(2, gate_name.str());
+        if (cu_decoder)
+        {
+            ram_write_addr_high_mux[i]->connect_input(&cu_decoder[1], 0);  // MOVL enable
+            ram_write_addr_high_mux[i]->connect_input(&program_memory->get_outputs()[pm_b_field_index], 1);  // B field
+        }
+        ram->connect_input(&ram_write_addr_high_mux[i]->get_outputs()[0], static_cast<uint16_t>(2 * NUM_RAM_ADDRESS_BITS + NUM_BITS + i));
     }
-    
-    // Read ports only use 3-bit addresses (A and B fields from instruction)
-    // High bits (3-5) of read ports remain unconnected (default to 0)
     
     // === Connect RAM data outputs to CPU ALU inputs ===
     // RAM port A and B outputs provide operands for ALU operations
@@ -163,7 +177,6 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
 
     // === Create mux for RAM write data input ===
     // MOVL uses PM A field, ADD uses CPU result
-    bool* cu_decoder = cpu->get_decoder_outputs();
     bool* cpu_result = cpu->get_result_outputs();
     
     ram_data_mux_not = new Inverter(1, "movl_not_in_computer_3bit");
@@ -271,6 +284,7 @@ Computer_3bit::~Computer_3bit()
     delete pm_read_enable;
     delete ram_write_enable;
     delete ram_read_enable;
+    delete read_addr_high_low;
     delete ram_write_or;
     delete ram_read_flag;
     delete ram_read_flag_not;
@@ -287,10 +301,12 @@ Computer_3bit::~Computer_3bit()
         delete ram_data_mux_and_literal[i];
         delete ram_data_mux_and_result[i];
         delete ram_data_mux_or[i];
+        delete ram_write_addr_high_mux[i];
     }
     delete[] ram_data_mux_and_literal;
     delete[] ram_data_mux_and_result;
     delete[] ram_data_mux_or;
+    delete[] ram_write_addr_high_mux;
     
     // Delete dynamically allocated vectors
     delete pm_load_addr_sigs;
@@ -547,6 +563,7 @@ void Computer_3bit::print_state() const
     
     // Print RAM contents (8 pages of 8)
     ram->print_pages(8);
+    ram->print_io();
     
     std::cout << std::string(50, '=') << std::endl;
 }
@@ -596,11 +613,22 @@ void Computer_3bit::evaluate()
     ram->evaluate();  // RAM reads with new addresses (WE gated to 0)
     cpu->evaluate();  // CPU computes using RAM outputs
 
-    // Print ALU comparator flags for debugging (EQ, NEQ, LT_U, GT_U, LT_S, GT_S)
+    // Print decoder outputs and ALU result
+    bool* dec_out = cpu->get_decoder_outputs();
     bool* alu_out = cpu->get_result_outputs();
+    if (dec_out)
+    {
+        std::cout << "[DBG] Decoder: ";
+        for (uint16_t i = 0; i < 8; ++i)
+            std::cout << (dec_out[i] ? 1 : 0);
+        std::cout << " ";
+    }
     if (alu_out)
     {
-        std::cout << "[DBG][Compare Flags] ";
+        std::cout << "ALU_Result: ";
+        for (uint16_t i = 0; i < NUM_BITS; ++i)
+            std::cout << (alu_out[i] ? 1 : 0);
+        std::cout << " | Flags: ";
         std::cout << "EQ=" << (alu_out[NUM_BITS + 0] ? 1 : 0) << " ";
         std::cout << "NEQ=" << (alu_out[NUM_BITS + 1] ? 1 : 0) << " ";
         std::cout << "LT_U=" << (alu_out[NUM_BITS + 2] ? 1 : 0) << " ";
@@ -616,6 +644,7 @@ void Computer_3bit::evaluate()
         ram_data_mux_and_literal[i]->evaluate();
         ram_data_mux_and_result[i]->evaluate();
         ram_data_mux_or[i]->evaluate();
+        ram_write_addr_high_mux[i]->evaluate();  // Evaluate address mux (MOVL gates B field)
     }
     // ram_write_or->evaluate();
     // ram_write_or->print_io();  // Debug: print RAM write enable OR gate IO after evaluation

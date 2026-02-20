@@ -59,7 +59,7 @@ int main()
     // Unconditionally run the 3-bit interactive test (no argv required)
     // return run_3bit_test(0, nullptr);
     Computer_3bit* computer = new Computer_3bit("test_computer");
-    std::string program_file = "test_program.txt";
+    std::string program_file = "programs/3bit_v1/add_sub_test.txt";
     computer->load_program(program_file);
     computer->run_interactive();
     delete computer;
@@ -73,7 +73,7 @@ bool loadPM()
     std::cout << "Current working directory: " << std::filesystem::current_path() << "\n";
 
     // Adjust the path to point to the project root directory from the build folder
-    std::string file_path = "../program1.txt";
+    std::string file_path = "../programs/3bit_v1/program1.txt";
     if (!std::filesystem::exists(file_path)) {
         std::cerr << "Error: File not found at " << file_path << "\n";
         return false;

@@ -105,6 +105,7 @@ private:
     Signal_Generator* pm_read_enable;
     Signal_Generator* ram_write_enable;
     Signal_Generator* ram_read_enable;
+    Signal_Generator* read_addr_high_low;  // Constant low signal for read port high address bits
     OR_Gate* ram_write_or;  // Combines MOVL and ADD opcodes for RAM write enable
     
     // RAM write gating: ram_read_flag controls whether writes are allowed
@@ -120,6 +121,11 @@ private:
     AND_Gate** ram_data_mux_and_literal;
     AND_Gate** ram_data_mux_and_result;
     OR_Gate** ram_data_mux_or;
+    
+    // AND gates for write address high bits (bits 3-5): gate B field with MOVL opcode
+    // For ADD/SUB, MOVL=0, so these gates output 0
+    // For MOVL, MOVL=1, so these gates pass B field bits
+    AND_Gate** ram_write_addr_high_mux;  // 3 AND gates (one per address bit 3-5)
     
     // Signal generators for program loading (kept alive to avoid use-after-free)
     // Use pointers to vectors to avoid overflow (vectors are large)

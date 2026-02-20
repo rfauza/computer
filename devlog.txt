@@ -57,12 +57,17 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- write program with looops to test all adds and subs
+- ram print_io
+- copilot broke it, revert
+- write program to add long ints
 - break computer into parent class
 - put each computer in a folder with its programs
 - make gui
 
-Feb 19 2026
+Feb 20 2026 
+12.15p 
+
+Feb 19 2026 : 1.5h total 58.5h
 1h test program tests all 3bit v1 functionality
 .5h ram has pages and writes to addresses beyond the first page
 

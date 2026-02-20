@@ -60,6 +60,13 @@ public:
      */
     void print_selects() const;
 
+    /**
+     * @brief Print grouped IO for debugging: A,B,C,data,flags
+     * Format: A_bits, B_bits, C_bits, data_bits, WEREAREB (e.g. 100000,010000,011000,101,111)
+     */
+    void print_inputs() const override;
+    void print_outputs() const override;
+
 private:
     uint16_t address_bits = 0;
     uint16_t num_addresses = 0;
