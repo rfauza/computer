@@ -36,6 +36,9 @@ public:
     uint16_t get_decoder_bits() const { return decoder_bits; }
     uint16_t get_data_bits() const { return data_bits; }
 
+    // Returns the currently-selected address (the decoder output that is high)
+    uint16_t get_selected_address() const;
+
 private:
     static constexpr uint16_t registers_per_address = 4;
 

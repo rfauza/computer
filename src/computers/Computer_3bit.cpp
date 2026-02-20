@@ -463,7 +463,7 @@ void Computer_3bit::run_interactive()
     std::cout << "\n=== Starting Interactive Execution ===\n" << std::endl;
     std::cout << "Press Enter to execute each instruction..." << std::endl;
     
-    reset();
+    // reset(); // reset PM to 0 and clear RAM if needed (not implemented yet)
     
     // Initial evaluation to sync PM with PC=0
     program_memory->evaluate();
@@ -471,7 +471,7 @@ void Computer_3bit::run_interactive()
     bool running = true;
     while (running)
     {
-        print_state();
+        // print_state();
         
         // Wait for user input
         std::cout << "\nPress Enter to continue (or 'q' to quit): ";
@@ -488,7 +488,9 @@ void Computer_3bit::run_interactive()
         running = clock_tick();
         
         // After update() changes PC, re-evaluate PM to read from new address
-        program_memory->evaluate();
+        // program_memory->evaluate();
+        
+        print_state();
         
         if (!running)
         {
@@ -532,13 +534,8 @@ void Computer_3bit::print_state() const
 {
     std::cout << "\n" << std::string(50, '=') << std::endl;
     
-    // Print PC
-    bool* pc_outputs = cpu->get_pc_outputs();
-    uint16_t pc_value = 0;
-    for (uint16_t i = 0; i < PC_BITS; ++i)
-    {
-        pc_value |= (pc_outputs[i] ? 1 : 0) << i;
-    }
+    // Print PC derived from Program Memory's selected address
+    uint16_t pc_value = program_memory->get_selected_address();
     std::cout << "PC: " << std::setw(3) << std::setfill('0') << pc_value 
               << " (" << to_binary(pc_value, PC_BITS) << ")" << std::endl;
     

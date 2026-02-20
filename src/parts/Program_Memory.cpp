@@ -200,3 +200,14 @@ void Program_Memory::update()
         }
     }
 }
+
+uint16_t Program_Memory::get_selected_address() const
+{
+    bool* dec_outs = decoder.get_outputs();
+    for (uint16_t addr = 0; addr < num_addresses; ++addr)
+    {
+        if (dec_outs[addr])
+            return addr;
+    }
+    return 0;
+}

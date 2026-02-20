@@ -57,8 +57,10 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- ram print_io
-- copilot broke it, revert
+- make cmp A be able to read from other pages, since C is unused (CA cmp B). 
+- NOOP can be changed to RAMpage so we can work with other pages. addr 111 can be transfer buffer
+- copilot broke it, fixed it by adding siggens to computer. investigate
+- write programs for mult and long division
 - write program to add long ints
 - break computer into parent class
 - put each computer in a folder with its programs
