@@ -3,19 +3,19 @@
 
 
 111 001 001 001 # 0 - no op
-001 101 011 000 # 1 - Move literal 3 into RAM address 5
-001 110 010 000 # 2 - Move literal 2 into RAM address 6
-011 111 101 110 # 3 - Sub RAM[5] + RAM[6] and store result in RAM[7]
-010 111 101 110 # 4 - Add RAM[5] + RAM[6] and store result in RAM[7]
-100 010 101 110 # 5 - compare addr 5 (3) and addr 6 (2)
-110 000 001 000 # 6 - jgt addr 5 (3) > addr 6 (2) ? jmp 8
-001 001 001 000 # 7 - Move literal 1 into RAM address 1 (this line should get skipped)
-001 001 010 000 # 8 - Move literal 2 into RAM address 1
+001 011 000 101 # 1 - Move literal 3 into RAM address 5
+001 010 000 110 # 2 - Move literal 2 into RAM address 6
+011 101 110 111 # 3 - Sub RAM[5] - RAM[6] and store result in RAM[7]
+010 101 110 111 # 4 - Add RAM[5] + RAM[6] and store result in RAM[7]
+100 101 110 010 # 5 - compare addr 5 (3) and addr 6 (2)
+110 001 000 000 # 6 - jgt addr 5 (3) > addr 6 (2) ? jmp 8
+001 001 000 001 # 7 - Move literal 1 into RAM address 1 (this line should get skipped)
+001 010 000 001 # 8 - Move literal 2 into RAM address 1
 111 001 001 001 # 9 - no op
-100 010 101 101 # 10 - compare addr 5 == addr 5
-101 000 001 101 # 11 - jeq addr 5 == addr 5 ? jmp 13 (unconditional jump)
-001 001 011 000 # 12 - Move literal 3 into RAM address 1 (this line should get skipped)
-110 000 001 111 # 13 - jgt 15
-001 001 100 000 # 14 - Move literal 4 into RAM address 1
-001 001 111 001 # 15 - Move literal 7 into RAM address 9 (page 2 addr 1)
+100 101 101 010 # 10 - compare addr 5 == addr 5
+101 001 101 000 # 11 - jeq addr 5 == addr 5 ? jmp 13 (unconditional jump)
+001 011 000 001 # 12 - Move literal 3 into RAM address 1 (this line should get skipped)
+110 001 111 000 # 13 - jgt 15
+001 100 000 001 # 14 - Move literal 4 into RAM address 1
+001 111 001 001 # 15 - Move literal 7 into RAM address 9 (page 2 addr 1)
 000 000 000 000 # 16 - Halt execution

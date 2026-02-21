@@ -373,10 +373,10 @@ bool Computer_3bit::load_program(const std::string& filename)
             continue;
 
         std::istringstream iss(line);
-        std::string opcode_str, c_str, a_str, b_str;
+        std::string opcode_str, a_str, b_str, c_str;
 
-        // Parse line: opcode C A B
-        if (!(iss >> opcode_str >> c_str >> a_str >> b_str))
+        // Parse line: opcode A B C
+        if (!(iss >> opcode_str >> a_str >> b_str >> c_str))
         {
             std::cerr << "Warning: Malformed line at address " << address << ": " << line << std::endl;
             continue;
@@ -384,13 +384,13 @@ bool Computer_3bit::load_program(const std::string& filename)
 
         // Convert to integers
         uint16_t opcode = from_binary(opcode_str);
-        uint16_t c_val = from_binary(c_str);
         uint16_t a_val = from_binary(a_str);
         uint16_t b_val = from_binary(b_str);
+        uint16_t c_val = from_binary(c_str);
 
         // Validate bit widths
-        if (opcode >= (1u << NUM_BITS) || c_val >= (1u << NUM_BITS) || 
-            a_val >= (1u << NUM_BITS) || b_val >= (1u << NUM_BITS))
+        if (opcode >= (1u << NUM_BITS) || a_val >= (1u << NUM_BITS) || 
+            b_val >= (1u << NUM_BITS) || c_val >= (1u << NUM_BITS))
         {
             std::cerr << "Error: Value out of range at address " << address << std::endl;
             continue;
@@ -398,11 +398,11 @@ bool Computer_3bit::load_program(const std::string& filename)
 
         std::cout << "  [" << std::setw(3) << std::setfill('0') << address << "] "
               << to_binary(opcode, NUM_BITS) << " "
-              << to_binary(c_val, NUM_BITS) << " "
               << to_binary(a_val, NUM_BITS) << " "
-              << to_binary(b_val, NUM_BITS) << " ; "
+              << to_binary(b_val, NUM_BITS) << " "
+              << to_binary(c_val, NUM_BITS) << " ; "
               << get_opcode_name(opcode) << " "
-              << c_val << " " << a_val << " " << b_val << std::endl;
+              << a_val << " " << b_val << " " << c_val << std::endl;
 
         // Drive address inputs using member signal generators (temporary)
         for (uint16_t i = 0; i < decoder_bits; ++i)
@@ -414,6 +414,7 @@ bool Computer_3bit::load_program(const std::string& filename)
         }
 
         // Drive data inputs (opcode, C, A, B) using member signal generators
+        // Keep internal PM storage order unchanged for hardware compatibility
         uint16_t values[4] = { opcode, c_val, a_val, b_val };
         for (uint16_t reg = 0; reg < 4; ++reg)
         {
@@ -559,11 +560,11 @@ void Computer_3bit::print_state() const
     }
     
     std::cout << "Instruction: " << to_binary(opcode, NUM_BITS) << " "
-              << to_binary(c_val, NUM_BITS) << " "
               << to_binary(a_val, NUM_BITS) << " "
-              << to_binary(b_val, NUM_BITS) << " ; "
+              << to_binary(b_val, NUM_BITS) << " "
+              << to_binary(c_val, NUM_BITS) << " ; "
               << get_opcode_name(opcode) << " "
-              << c_val << " " << a_val << " " << b_val << std::endl;
+              << a_val << " " << b_val << " " << c_val << std::endl;
     
     // Print RAM contents (8 pages of 8)
     ram->print_pages(8);

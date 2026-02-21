@@ -179,7 +179,7 @@ static bool load_program_memory_from_file(
         
         if (!(iss >> addr_str >> opcode_str >> c_str >> a_str >> b_str))
         {
-            std::cerr << "Error on line " << line_number << ": Invalid format. Expected: pm_addr opcode c a b\n";
+            std::cerr << "Error on line " << line_number << ": Invalid format. Expected: pm_addr opcode a b c\n";
             std::cerr << "  Line: " << line << "\n";
             return false;
         }

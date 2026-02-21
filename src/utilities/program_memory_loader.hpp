@@ -8,11 +8,11 @@ class Program_Memory;
  * @brief Load and verify Program Memory from a text file
  * 
  * The text file format is one instruction per line with space-separated binary values:
- *   pm_addr opcode c a b
+ *   pm_addr opcode a b c
  * 
  * Example line:
  *   00111010 1001 1100 1111 0010
- *   (address: 58, opcode: 9, C: 12, A: 15, B: 2)
+ *   (address: 58, opcode: 9, A: 12, B: 15, C: 2)
  * 
  * The function will:
  *   1. Parse the file and write each instruction to Program Memory

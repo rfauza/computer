@@ -6,20 +6,20 @@
 # 010 ADD    - Add: [A] + [B] -> [C]
 # 011 SUB    - Subtract: [A] - [B] -> [C]
 # 100 CMP    - Compare: sets flags based on [A] vs [B]
-# 101 JEQ    - Jump if equal: if flag then goto CAB
-# 110 JGT    - Jump if greater: if flag then goto CAB
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
 # 111 NOP    - No operation
 
 001 000 000 000 # 0 - move literal 0 into RAM addr 0 (A)
-001 001 000 000 # 1 - move literal 0 into RAM addr 1 (B)
-001 010 001 000 # 2 - move literal 1 into RAM addr 2 (1 for incrementing)
-001 011 000 000 # 3 - move literal 0 into RAM addr 3 (0 for jumping when B overflows)
-010 100 000 001 # 4 - ADD #0 + #1 -> #4
-011 101 000 001 # 5 - SUB #0 - #1 -> #5
-010 001 001 010 # 6 - ADD #1 + #2 -> #1 (increment B)
-100 000 001 011 # 7 - CMP #1 to #3 (zero)
-110 000 000 100 # 8 - JMP to #4 if B>0 (inner loop)
-010 000 000 010 # 9 - ADD #0 + #2 -> #0 (increment A)
-100 000 000 011 # 10 - CMP #0 to #3 (zero)
-110 000 000 100 # 11 - JMP to #4 if A>0 (outer loop)
+001 000 000 001 # 1 - move literal 0 into RAM addr 1 (B)
+001 001 000 010 # 2 - move literal 1 into RAM addr 2 (1 for incrementing)
+001 000 000 011 # 3 - move literal 0 into RAM addr 3 (0 for jumping when B overflows)
+010 000 001 100 # 4 - ADD #0 + #1 -> #4
+011 000 001 101 # 5 - SUB #0 - #1 -> #5
+010 001 010 001 # 6 - ADD #1 + #2 -> #1 (increment B)
+100 001 011 000 # 7 - CMP #1 to #3 (zero)
+110 000 100 000 # 8 - JMP to #4 if B>0 (inner loop)
+010 000 010 000 # 9 - ADD #0 + #2 -> #0 (increment A)
+100 000 011 000 # 10 - CMP #0 to #3 (zero)
+110 000 100 000 # 11 - JMP to #4 if A>0 (outer loop)
 000 000 000 000 # 12 - Halt execution
