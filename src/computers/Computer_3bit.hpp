@@ -20,15 +20,15 @@
  *   010 ADD    - Add: [A] + [B] -> [C]
  *   011 SUB    - Subtract: [A] - [B] -> [C]
  *   100 CMP    - Compare: sets flags based on [A] vs [B]
- *   101 JEQ    - Jump if equal: if flag then goto CAB
- *   110 JGT    - Jump if greater: if flag then goto CAB
+ *   101 JEQ    - Jump if equal: if flag then goto ABC
+ *   110 JGT    - Jump if greater: if flag then goto ABC
  *   111 NOP    - No operation
  * 
  * Architecture:
  *   - 3-bit data (values 0-7)
  *   - 8 RAM addresses (3-bit addressing)
  *   - 512 Program Memory addresses (9-bit PC)
- *   - Program format per line: "opcode C A B" (binary or decimal)
+ *   - Program format per line: "opcode A B C" (binary or decimal)
  */
 class Computer_3bit : public Part
 {
@@ -46,11 +46,11 @@ public:
      * @brief Load a program from file into Program Memory
      * 
      * File format (one instruction per line):
-     *   opcode C A B
+     *   opcode A B C
      * 
      * Example:
-     *   001 101 011 000  # MOVL 3 -> [5]
-     *   010 111 101 110  # ADD [5] + [6] -> [7]
+     *   001 011 000 101  # MOVL 3 -> [5] (A=data, B=page, C=addr)
+     *   010 101 110 111  # ADD [5] + [6] -> [7]
      *   000 000 000 000  # HALT
      * 
      * @param filename Path to program file

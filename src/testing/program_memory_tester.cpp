@@ -11,13 +11,13 @@ void program_memory_tester(Program_Memory& pm, const std::string& input_str)
     uint16_t data_bits = pm.get_data_bits();
     uint16_t num_inputs = decoder_bits + 4 * data_bits + 2;
     
-    // Parse input string: "addr opcode C A B WE RE"
+    // Parse input string: "addr opcode A B C WE RE"
     std::istringstream iss(input_str);
     int addr, opcode, c, a, b, we, re;
     
     if (!(iss >> addr >> opcode >> c >> a >> b >> we >> re))
     {
-        std::cout << "Error: Invalid input format. Expected: addr opcode C A B WE RE\n";
+        std::cout << "Error: Invalid input format. Expected: addr opcode A B C WE RE\n";
         return;
     }
     

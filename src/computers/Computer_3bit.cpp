@@ -83,7 +83,7 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     program_memory->connect_input(&pm_read_enable->get_outputs()[0], pm_re_index);
 
     // === Connect RAM address inputs ===
-    // PM output bits: [opcode 0-2] [C 3-5] [A 6-8] [B 9-11]
+    // PM output bits: [opcode 0-2] [A 3-5] [B 6-8] [C 9-11]
     // Read port 1: address A (only 3 bits used, high bits tied to 0)
     // Read port 2: address B (only 3 bits used, high bits tied to 0)
     // Write port: address bits 0-2 from C field, bits 3-5 from B field only when MOVL
@@ -99,9 +99,9 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
-        uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);  // bits 6-8
-        uint16_t pm_b_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);  // bits 9-11
-        uint16_t pm_c_field_index = static_cast<uint16_t>(NUM_BITS + i);      // bits 3-5
+        uint16_t pm_a_field_index = static_cast<uint16_t>(NUM_BITS + i);      // bits 3-5
+        uint16_t pm_b_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);  // bits 6-8
+        uint16_t pm_c_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);  // bits 9-11
         
         // Read port 1 (address A): bits 0-2 from A field, bits 3-5 tied to 0
         ram->connect_input(&program_memory->get_outputs()[pm_a_field_index], i);
@@ -139,30 +139,31 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
         data_b_ptrs[i] = &ram->get_outputs()[NUM_BITS + i];   // Port B output (operand 2)
     }
     
-    // Connect PM A field (bits 6-8) to CPU data_c input for MOVL immediates
+    // Connect PM A field (bits 3-5) to CPU data_c input for MOVL immediates
     data_c_ptrs = new const bool*[NUM_BITS];
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
-        uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);  // bits 6-8
+        uint16_t pm_a_field_index = static_cast<uint16_t>(NUM_BITS + i);  // bits 3-5
         data_c_ptrs[i] = &program_memory->get_outputs()[pm_a_field_index];
     }
     
     cpu->connect_data_inputs(data_c_ptrs, data_a_ptrs, data_b_ptrs);
 
     // === Connect jump address from PM instruction fields ===
-    // For jump instructions, use PM C, A, B fields as immediate address [B:A:C]
-    // This is separate from the data paths used by ALU operations
+    // For jump instructions, assemble address [A:B:C] (A is MSBs, C is LSBs)
+    // Instruction `opcode A B C` → address [A:B:C]
+    // Example: `110 000 000 100` → address 0b000000100 = 4
     const bool** jump_addr_ptrs = new const bool*[PC_BITS];
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
-        uint16_t pm_c_field_index = static_cast<uint16_t>(NUM_BITS + i);          // bits 3-5
-        uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);      // bits 6-8
-        uint16_t pm_b_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);      // bits 9-11
+        uint16_t pm_a_field_index = static_cast<uint16_t>(NUM_BITS + i);          // bits 3-5
+        uint16_t pm_b_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);      // bits 6-8
+        uint16_t pm_c_field_index = static_cast<uint16_t>(3 * NUM_BITS + i);      // bits 9-11
         
-        // Arrange as [B:A:C] for address packing
-        jump_addr_ptrs[i] = &program_memory->get_outputs()[pm_b_field_index];          // bits 0-2: B
-        jump_addr_ptrs[NUM_BITS + i] = &program_memory->get_outputs()[pm_a_field_index];  // bits 3-5: A
-        jump_addr_ptrs[2 * NUM_BITS + i] = &program_memory->get_outputs()[pm_c_field_index];  // bits 6-8: C
+        // Address bits: [A:B:C] → bits [8:6] [5:3] [2:0]
+        jump_addr_ptrs[i] = &program_memory->get_outputs()[pm_c_field_index];          // bits 0-2: C
+        jump_addr_ptrs[NUM_BITS + i] = &program_memory->get_outputs()[pm_b_field_index];  // bits 3-5: B
+        jump_addr_ptrs[2 * NUM_BITS + i] = &program_memory->get_outputs()[pm_a_field_index];  // bits 6-8: A
     }
     cpu->connect_jump_address(jump_addr_ptrs, PC_BITS);
     delete[] jump_addr_ptrs;
@@ -202,7 +203,7 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
             ram_data_mux_or[i] = new OR_Gate(2, or_name.str());
             
             // Mux: select PM A field when MOVL, CPU result otherwise
-            uint16_t pm_a_field_index = static_cast<uint16_t>(2 * NUM_BITS + i);
+            uint16_t pm_a_field_index = static_cast<uint16_t>(NUM_BITS + i);  // bits 3-5
             ram_data_mux_and_literal[i]->connect_input(&cu_decoder[1], 0);  //MOVL enable
             ram_data_mux_and_literal[i]->connect_input(&program_memory->get_outputs()[pm_a_field_index], 1);  // PM A field
             
@@ -373,10 +374,10 @@ bool Computer_3bit::load_program(const std::string& filename)
             continue;
 
         std::istringstream iss(line);
-        std::string opcode_str, c_str, a_str, b_str;
+        std::string opcode_str, a_str, b_str, c_str;
 
-        // Parse line: opcode C A B
-        if (!(iss >> opcode_str >> c_str >> a_str >> b_str))
+        // Parse line: opcode A B C
+        if (!(iss >> opcode_str >> a_str >> b_str >> c_str))
         {
             std::cerr << "Warning: Malformed line at address " << address << ": " << line << std::endl;
             continue;
@@ -384,13 +385,13 @@ bool Computer_3bit::load_program(const std::string& filename)
 
         // Convert to integers
         uint16_t opcode = from_binary(opcode_str);
-        uint16_t c_val = from_binary(c_str);
         uint16_t a_val = from_binary(a_str);
         uint16_t b_val = from_binary(b_str);
+        uint16_t c_val = from_binary(c_str);
 
         // Validate bit widths
-        if (opcode >= (1u << NUM_BITS) || c_val >= (1u << NUM_BITS) || 
-            a_val >= (1u << NUM_BITS) || b_val >= (1u << NUM_BITS))
+        if (opcode >= (1u << NUM_BITS) || a_val >= (1u << NUM_BITS) || 
+            b_val >= (1u << NUM_BITS) || c_val >= (1u << NUM_BITS))
         {
             std::cerr << "Error: Value out of range at address " << address << std::endl;
             continue;
@@ -398,11 +399,11 @@ bool Computer_3bit::load_program(const std::string& filename)
 
         std::cout << "  [" << std::setw(3) << std::setfill('0') << address << "] "
               << to_binary(opcode, NUM_BITS) << " "
-              << to_binary(c_val, NUM_BITS) << " "
               << to_binary(a_val, NUM_BITS) << " "
-              << to_binary(b_val, NUM_BITS) << " ; "
+              << to_binary(b_val, NUM_BITS) << " "
+              << to_binary(c_val, NUM_BITS) << " ; "
               << get_opcode_name(opcode) << " "
-              << c_val << " " << a_val << " " << b_val << std::endl;
+              << a_val << " " << b_val << " " << c_val << std::endl;
 
         // Drive address inputs using member signal generators (temporary)
         for (uint16_t i = 0; i < decoder_bits; ++i)
@@ -413,8 +414,9 @@ bool Computer_3bit::load_program(const std::string& filename)
             program_memory->connect_input(&(*pm_load_addr_sigs)[i].get_outputs()[0], i);
         }
 
-        // Drive data inputs (opcode, C, A, B) using member signal generators
-        uint16_t values[4] = { opcode, c_val, a_val, b_val };
+        // Drive data inputs (opcode, A, B, C) using member signal generators
+        // Write order matches new PM layout: opcode at 0-2, A at 3-5, B at 6-8, C at 9-11
+        uint16_t values[4] = { opcode, a_val, b_val, c_val };
         for (uint16_t reg = 0; reg < 4; ++reg)
         {
             for (uint16_t b = 0; b < data_bits; ++b)
@@ -548,22 +550,22 @@ void Computer_3bit::print_state() const
     
     // Print current instruction from PM
     bool* pm_outputs = program_memory->get_outputs();
-    uint16_t opcode = 0, c_val = 0, a_val = 0, b_val = 0;
+    uint16_t opcode = 0, a_val = 0, b_val = 0, c_val = 0;
     
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
         opcode |= (pm_outputs[i] ? 1 : 0) << i;
-        c_val |= (pm_outputs[NUM_BITS + i] ? 1 : 0) << i;
-        a_val |= (pm_outputs[2 * NUM_BITS + i] ? 1 : 0) << i;
-        b_val |= (pm_outputs[3 * NUM_BITS + i] ? 1 : 0) << i;
+        a_val |= (pm_outputs[NUM_BITS + i] ? 1 : 0) << i;
+        b_val |= (pm_outputs[2 * NUM_BITS + i] ? 1 : 0) << i;
+        c_val |= (pm_outputs[3 * NUM_BITS + i] ? 1 : 0) << i;
     }
     
     std::cout << "Instruction: " << to_binary(opcode, NUM_BITS) << " "
-              << to_binary(c_val, NUM_BITS) << " "
               << to_binary(a_val, NUM_BITS) << " "
-              << to_binary(b_val, NUM_BITS) << " ; "
+              << to_binary(b_val, NUM_BITS) << " "
+              << to_binary(c_val, NUM_BITS) << " ; "
               << get_opcode_name(opcode) << " "
-              << c_val << " " << a_val << " " << b_val << std::endl;
+              << a_val << " " << b_val << " " << c_val << std::endl;
     
     // Print RAM contents (8 pages of 8)
     ram->print_pages(8);

@@ -8,7 +8,7 @@ class Program_Memory;
  * @brief Test Program Memory with a specific input string
  * 
  * Input format (space-separated):
- *   addr opcode C A B WE RE
+ *   addr opcode A B C WE RE
  * 
  * @param pm Reference to the Program_Memory to test
  * @param input_str Input specification string
