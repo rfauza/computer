@@ -52,11 +52,13 @@ clock tick is logic. needs to be gates
     - 256x256 
 - make function call and return and pointers (store addr in ram registers and dereference)
 - make 8-bit version with Operating System and graphcis
+- figure negatives and floats
 - make 16-bit version with OS and graphcis
 - try architecture with all in RAM (and storage) and no program memory
 
 
 Todo next:
+- change opcodes to be ABC instead of CAB?
 - make cmp A be able to read from other pages, since C is unused (CA cmp B). 
 - NOOP can be changed to RAMpage so we can work with other pages. addr 111 can be transfer buffer
 - copilot broke it, fixed it by adding siggens to computer. investigate
@@ -66,8 +68,12 @@ Todo next:
 - put each computer in a folder with its programs
 - make gui
 
+Feb 21 2026
+1p
+
 Feb 20 2026 
-12.15p 
+1.5h fixed sub, improved prints
+3.50p 
 
 Feb 19 2026 : 1.5h total 58.5h
 1h test program tests all 3bit v1 functionality
