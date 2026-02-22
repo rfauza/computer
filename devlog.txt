@@ -76,7 +76,7 @@ V2
 
 Feb 22 2026 : 
 1h broke up Computer_3bit_v1 constructor into functions
-2p
+1.5h make cmp A be able to read from other pages, since C is unused (CA cmp B)
 
 Feb 21 2026 : 5h total 65h
 1h changing machine code order from OP CAB to OP ABC

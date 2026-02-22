@@ -11,7 +11,7 @@
  *   001 MOVL  - Move literal: A -> [B:C]
  *   010 ADD   - Add:      [A] + [B] -> [C]
  *   011 SUB   - Subtract: [A] - [B] -> [C]
- *   100 CMP   - Compare: set flags from [A] vs [B]
+ *   100 CMP   - Compare: set flags from [A] vs [B:C]  (B = page, C = addr)
  *   101 JEQ   - Jump if EQ:  goto [A:B:C]
  *   110 JGT   - Jump if GT:  goto [A:B:C]
  *   111 NOP   - No operation
@@ -29,14 +29,14 @@ protected:
     std::string get_opcode_name(uint16_t opcode) const override;
 
 private:
-    static constexpr uint16_t NUM_BITS            = 3;
-    static constexpr uint16_t NUM_RAM_ADDR_BITS   = 6;
-    static constexpr uint16_t PC_BITS             = 9;
+    static constexpr uint16_t NUM_BITS = 3;
+    static constexpr uint16_t NUM_RAM_ADDR_BITS = 6;
+    static constexpr uint16_t PC_BITS = 9;
 
     static const std::string ISA_V1_OPCODES;
     
     bool* cu_decoder;  ///< Pointer to CPU decoder outputs for opcode-based control signals
-    
+
     // constructor helper functions
     void _connect_program_memory_to_CPU_decoder();
     void _connect_ram_address_inputs();

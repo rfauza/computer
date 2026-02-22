@@ -36,7 +36,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     
     // === RAM address inputs ===
     // PM output layout: [opcode 0-2] [A 3-5] [B 6-8] [C 9-11]
-    // Read port 1: [0:A]   Read port 2: [0:B]   Write: [0:C] (high bits gated with MOVL)
+    // Read port 1: [0:A]   Read port 2: CMP→[B:C], others→[0:B]   Write: [0:C] (high bits gated with MOVL)
     _connect_ram_address_inputs();
     
     // === Connect RAM outputs to CPU ALU inputs ===
@@ -87,9 +87,24 @@ void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
 
 void Computer_3bit_v1::_connect_ram_address_inputs()
 {
-    // Get references to the CPU's opcode decoder outputs for control logic
+    // Get references to the CPU's opcode decoder outputs for control logic (MOVL, ADD, SUB write enables)
     ram_write_addr_high_mux = new AND_Gate*[NUM_BITS];
     cu_decoder = cpu->get_decoder_outputs();
+
+    // === Decode CMP directly from PM opcode bits (independent of CPU decoder) ===
+    // CMP opcode is 100 binary → bit[2]=1, bit[1]=0, bit[0]=0
+    // This avoids staleness issues: PM outputs update immediately, then the CMP mux sees
+    // the current instruction's opcode before CPU evaluates (which only happens later).
+    pm_opcode_bit1_not = new Inverter(1, "pm_opcode_bit1_not");
+    pm_opcode_bit0_not = new Inverter(1, "pm_opcode_bit0_not");
+    pm_cmp_opcode_and = new AND_Gate(3, "pm_cmp_opcode_and");  // opbit[2] AND NOT(opbit[1]) AND NOT(opbit[0])
+
+    // Connect PM opcode bits to the decoders
+    pm_opcode_bit1_not->connect_input(&program_memory->get_outputs()[1], 0);
+    pm_opcode_bit0_not->connect_input(&program_memory->get_outputs()[0], 0);
+    pm_cmp_opcode_and->connect_input(&program_memory->get_outputs()[2], 0);  // bit[2]
+    pm_cmp_opcode_and->connect_input(&pm_opcode_bit1_not->get_outputs()[0], 1);  // NOT(bit[1])
+    pm_cmp_opcode_and->connect_input(&pm_opcode_bit0_not->get_outputs()[0], 2);  // NOT(bit[0])
 
     // === Configure RAM address inputs for both read ports and write address ===
     for (uint16_t i = 0; i < NUM_BITS; ++i)
@@ -104,10 +119,56 @@ void Computer_3bit_v1::_connect_ram_address_inputs()
         ram->connect_input(&program_memory->get_outputs()[pm_a], i);
         ram->connect_input(&read_addr_high_low->get_outputs()[0], static_cast<uint16_t>(NUM_BITS + i));
 
-        // === Read port 2: Fetch operand B from RAM ===
-        // Low address bits come from PM B field, high bits (page) tied to 0
-        ram->connect_input(&program_memory->get_outputs()[pm_b], static_cast<uint16_t>(NUM_RAM_ADDR_BITS + i));
-        ram->connect_input(&read_addr_high_low->get_outputs()[0], static_cast<uint16_t>(NUM_RAM_ADDR_BITS + NUM_BITS + i));
+        // === Read port 2 address mux ===
+        // ADD/SUB: address = [0:B]   (page 0, addr = B field)
+        // CMP:     address = [B:C]   (page = B field, addr = C field)
+        //
+        // Low bits  mux: (CMP AND C) OR (!CMP AND B)
+        // High bits mux: CMP AND B      (stays 0 when not CMP)
+        {
+            std::ostringstream n0, n1, n2, n3;
+            n0 << "cmp_not_bit" << i;               // reuse same inverter for bit 0 only
+            n1 << "cmp_r2_low_and_cmp_" << i;
+            n2 << "cmp_r2_low_and_not_" << i;
+            n3 << "cmp_r2_low_or_"      << i;
+
+            // allocate only once (first iteration supplies the shared inverter)
+            if (i == 0)
+            {
+                cmp_not = new Inverter(1, "cmp_not_in_computer_3bit_v1");
+                cmp_not->connect_input(&pm_cmp_opcode_and->get_outputs()[0], 0);  // NOT(CMP decoded from PM)
+                cmp_not->evaluate();
+                cmp_read2_low_and_cmp  = new AND_Gate*[NUM_BITS];
+                cmp_read2_low_and_not  = new AND_Gate*[NUM_BITS];
+                cmp_read2_low_or       = new OR_Gate*[NUM_BITS];
+                cmp_read2_high_and     = new AND_Gate*[NUM_BITS];
+            }
+
+            // Low bit mux
+            cmp_read2_low_and_cmp[i] = new AND_Gate(2, n1.str());
+            cmp_read2_low_and_not[i] = new AND_Gate(2, n2.str());
+            cmp_read2_low_or[i]      = new OR_Gate(2,  n3.str());
+            cmp_read2_low_and_cmp[i]->connect_input(&pm_cmp_opcode_and->get_outputs()[0], 0);          // CMP from opcode decode
+            cmp_read2_low_and_cmp[i]->connect_input(&program_memory->get_outputs()[pm_c], 1); // C field
+
+            cmp_read2_low_and_not[i]->connect_input(&cmp_not->get_outputs()[0], 0); // !CMP
+            cmp_read2_low_and_not[i]->connect_input(&program_memory->get_outputs()[pm_b], 1); // B field
+            cmp_read2_low_or[i]->connect_input(&cmp_read2_low_and_cmp[i]->get_outputs()[0], 0);
+            cmp_read2_low_or[i]->connect_input(&cmp_read2_low_and_not[i]->get_outputs()[0], 1);
+
+            // High bit mux: CMP AND B  (non-CMP contribution is 0, so no OR needed)
+            std::ostringstream n4;
+            n4 << "cmp_r2_high_and_" << i;
+            cmp_read2_high_and[i] = new AND_Gate(2, n4.str());
+            cmp_read2_high_and[i]->connect_input(&pm_cmp_opcode_and->get_outputs()[0], 0);          // CMP from opcode decode
+            cmp_read2_high_and[i]->connect_input(&program_memory->get_outputs()[pm_b], 1); // B field
+
+            // Feed mux outputs into RAM read port 2
+            ram->connect_input(&cmp_read2_low_or[i]->get_outputs()[0],
+                               static_cast<uint16_t>(NUM_RAM_ADDR_BITS + i));
+            ram->connect_input(&cmp_read2_high_and[i]->get_outputs()[0],
+                               static_cast<uint16_t>(NUM_RAM_ADDR_BITS + NUM_BITS + i));
+        }
 
         // === Write address low bits: Destination from PM C field ===
         // C field specifies the low 3 bits of the write address

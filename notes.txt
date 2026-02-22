@@ -51,8 +51,8 @@ V2
 011 jeq
 100 jne
 101 jgt A>B
-110 goto ABC (2^9=512 PM lines. can page with incrementer by goto last addr, or have a PM page opcode =262k lines of code but that'd be overkill for 3-bit)
-111
+110 jlt A<B (used to compare with data in other pages, can't just revers jgt then)
+111 goto ABC (2^9=512 PM lines. can page with incrementer by goto last addr, or have a PM page opcode =262k lines of code but that'd be overkill for 3-bit)
 - page 4 - system
 000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
 001 CALL (function call)

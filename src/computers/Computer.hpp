@@ -112,6 +112,24 @@ protected:
 
     // ── Write-address high-bits mux (gates B field with MOVL enable) ─────────
     AND_Gate**  ram_write_addr_high_mux;
+    
+    // Attributes used for CMP to be able to compare to other pages
+    // ── Read-port-2 address mux (optional; used by CMP-style instructions) ────
+    // When wired by a subclass, read port 2 can address any RAM page instead of
+    // always page 0.  All five pointers default to nullptr; the subclass wires
+    // them in its _connect_ram_address_inputs() if needed.
+    Inverter*   cmp_not;                  ///< NOT(CMP enable signal)
+    AND_Gate**  cmp_read2_low_and_cmp;    ///< CMP AND C  → low addr bits when CMP
+    AND_Gate**  cmp_read2_low_and_not;    ///< !CMP AND B → low addr bits when not CMP
+    OR_Gate**   cmp_read2_low_or;         ///< combined read-port-2 low address bits
+    AND_Gate**  cmp_read2_high_and;       ///< CMP AND B  → high addr bits when CMP
+
+    // ── Standalone CMP opcode decoder (optional; extracts CMP directly from PM bits) ──
+    // When used, these gates decode CMP opcode (100 binary) independently from CPU decoder,
+    // avoiding 1-cycle staleness. All three pointers default to nullptr.
+    Inverter*   pm_opcode_bit1_not;       ///< NOT(PM opcode bit 1)
+    Inverter*   pm_opcode_bit0_not;       ///< NOT(PM opcode bit 0)
+    AND_Gate*   pm_cmp_opcode_and;        ///< PM_bit[2] AND NOT(bit[1]) AND NOT(bit[0])
 
     // ── PM loading signal generators (kept alive to avoid use-after-free) ─────
     std::vector<Signal_Generator>*          pm_load_addr_sigs;
