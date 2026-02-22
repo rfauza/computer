@@ -1,4 +1,4 @@
-#include "Computer_3bit.hpp"
+#include "Computer_3bit_v1.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Define 3-bit ISA v1 opcodes
-const std::string Computer_3bit::ISA_V1_OPCODES = 
+const std::string Computer_3bit_v1::ISA_V1_OPCODES = 
     "000 HALT\n"
     "001 MOVL\n"
     "010 ADD\n"
@@ -17,10 +17,10 @@ const std::string Computer_3bit::ISA_V1_OPCODES =
     "110 JGT\n"
     "111 NOP\n";
 
-Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
+Computer_3bit_v1::Computer_3bit_v1(const std::string& name) : Part(NUM_BITS, name)
 {
     std::ostringstream oss;
-    oss << "Computer_3bit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    oss << "Computer_3bit_v1 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     if (!name.empty())
     {
         oss << " - " << name;
@@ -28,31 +28,31 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     component_name = oss.str();
     
     // Create CPU with 3-bit ISA v1 and request PC width = PC_BITS (9)
-    cpu = new CPU(NUM_BITS, ISA_V1_OPCODES, "cpu_3bit", PC_BITS);
+    cpu = new CPU(NUM_BITS, ISA_V1_OPCODES, "cpu_3bit_v1", PC_BITS);
     
     // Wire HALT opcode (000 = 0) to Control Unit halt signal
     cpu->wire_halt_opcode(0);
     
     // Create Program Memory: 9-bit address, 3-bit data
-    program_memory = new Program_Memory(PC_BITS, NUM_BITS, "pm_3bit");
+    program_memory = new Program_Memory(PC_BITS, NUM_BITS, "pm_3bit_v1");
     
     // Create RAM: 6-bit address, 3-bit data, triple-ported (2R1W)
-    ram = new Main_Memory(NUM_RAM_ADDRESS_BITS, NUM_BITS, "ram_3bit");
+    ram = new Main_Memory(NUM_RAM_ADDRESS_BITS, NUM_BITS, "ram_3bit_v1");
     
     // Create control signals
     pm_write_enable = new Signal_Generator("pm_write_enable");
     pm_write_enable->go_low();  // PM is read-only during execution
     pm_write_enable->evaluate();
     
-    pm_read_enable = new Signal_Generator("pm_read_enable");
+    pm_read_enable = new Signal_Generator("ram_read_enable_a");
     pm_read_enable->go_high();  // PM always readable
     pm_read_enable->evaluate();
     
-    ram_read_enable = new Signal_Generator("ram_read_enable_a");
+    ram_read_enable = new Signal_Generator("ram_read_enable_b");
     ram_read_enable->go_high();  // RAM always readable
     ram_read_enable->evaluate();
     
-    ram_write_enable = new Signal_Generator("ram_read_enable_b");
+    ram_write_enable = new Signal_Generator("ram_write_enable");
     ram_write_enable->go_high();  // RAM read port B always enabled
     ram_write_enable->evaluate();
     
@@ -279,7 +279,7 @@ Computer_3bit::Computer_3bit(const std::string& name) : Part(NUM_BITS, name)
     // Don't delete data_a/b/c_ptrs - they're member variables that persist
 }
 
-Computer_3bit::~Computer_3bit()
+Computer_3bit_v1::~Computer_3bit_v1()
 {
     delete cpu;
     delete program_memory;
@@ -318,7 +318,7 @@ Computer_3bit::~Computer_3bit()
     delete ram_addr_sigs;
 }
 
-bool Computer_3bit::load_program(const std::string& filename)
+bool Computer_3bit_v1::load_program(const std::string& filename)
 {
     std::ifstream file(filename);
     std::string resolved_path = filename;
@@ -463,7 +463,7 @@ bool Computer_3bit::load_program(const std::string& filename)
     return true;
 }
 
-void Computer_3bit::run_interactive()
+void Computer_3bit_v1::run_interactive()
 {
     std::cout << "\n=== Starting Interactive Execution ===\n" << std::endl;
     std::cout << "Press Enter to execute each instruction..." << std::endl;
@@ -505,7 +505,7 @@ void Computer_3bit::run_interactive()
     }
 }
 
-bool Computer_3bit::clock_tick()
+bool Computer_3bit_v1::clock_tick()
 {
     // Two-phase clock cycle:
     
@@ -538,7 +538,7 @@ bool Computer_3bit::clock_tick()
     return is_running;
 }
 
-void Computer_3bit::print_state() const
+void Computer_3bit_v1::print_state() const
 {
     std::cout << "\n" << std::string(50, '=') << std::endl;
     
@@ -574,7 +574,7 @@ void Computer_3bit::print_state() const
     std::cout << std::string(50, '=') << std::endl;
 }
 
-void Computer_3bit::reset()
+void Computer_3bit_v1::reset()
 {
     // Reset PC to 0
     // TODO: Implement PC reset through control unit
@@ -585,7 +585,7 @@ void Computer_3bit::reset()
     std::cout << "Computer reset to initial state" << std::endl;
 }
 
-void Computer_3bit::toggle_ram_read_flag(bool flag_high)
+void Computer_3bit_v1::toggle_ram_read_flag(bool flag_high)
 {
     if (flag_high)
     {
@@ -600,7 +600,7 @@ void Computer_3bit::toggle_ram_read_flag(bool flag_high)
     ram_we_gated->evaluate();
 }
 
-void Computer_3bit::evaluate()
+void Computer_3bit_v1::evaluate()
 {
     // Evaluation order for single-cycle 2R1W operation:
     // 1. PM provides instruction (opcode + addresses)
@@ -686,7 +686,7 @@ void Computer_3bit::evaluate()
     ram->evaluate();  // RAM evaluates with WE now controlled by ram_write_or
 }
 
-void Computer_3bit::update()
+void Computer_3bit_v1::update()
 {
     // Called when this component is a downstream of another
     // We don't need to do anything special here since clock_tick() handles the full cycle
@@ -702,7 +702,7 @@ void Computer_3bit::update()
     }
 }
 
-std::string Computer_3bit::to_binary(uint16_t value, uint16_t bits) const
+std::string Computer_3bit_v1::to_binary(uint16_t value, uint16_t bits) const
 {
     std::string result;
     for (int i = bits - 1; i >= 0; --i)
@@ -712,7 +712,7 @@ std::string Computer_3bit::to_binary(uint16_t value, uint16_t bits) const
     return result;
 }
 
-uint16_t Computer_3bit::from_binary(const std::string& binary) const
+uint16_t Computer_3bit_v1::from_binary(const std::string& binary) const
 {
     // Try parsing as binary first
     if (binary.find_first_not_of("01") == std::string::npos)
@@ -729,7 +729,7 @@ uint16_t Computer_3bit::from_binary(const std::string& binary) const
     return static_cast<uint16_t>(std::stoi(binary));
 }
 
-std::string Computer_3bit::get_opcode_name(uint16_t opcode) const
+std::string Computer_3bit_v1::get_opcode_name(uint16_t opcode) const
 {
     switch (opcode)
     {

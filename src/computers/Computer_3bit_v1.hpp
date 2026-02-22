@@ -12,7 +12,7 @@
 #include <cstdint>
 
 /**
- * @brief 3-bit Computer with CPU, Program Memory, and RAM
+ * @brief 3-bit v1 Computer with CPU, Program Memory, and RAM
  * 
  * Implements the 3-bit ISA v1:
  *   000 HALT   - Stop execution
@@ -30,17 +30,17 @@
  *   - 512 Program Memory addresses (9-bit PC)
  *   - Program format per line: "opcode A B C" (binary or decimal)
  */
-class Computer_3bit : public Part
+class Computer_3bit_v1 : public Part
 {
 public:
     /**
-     * @brief Constructs a 3-bit computer
+     * @brief Constructs a 3-bit v1 computer
      * 
      * @param name Optional component name
      */
-    Computer_3bit(const std::string& name = "");
+    Computer_3bit_v1(const std::string& name = "");
     
-    ~Computer_3bit() override;
+    ~Computer_3bit_v1() override;
     
     /**
      * @brief Load a program from file into Program Memory
