@@ -63,8 +63,9 @@ Todo next:
 
 - copilot broke it, fixed it by adding siggens to computer. investigate. everything should be connected to PM instead
 - write program to add long ints?
-- v1.1 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
-- v1.2 NOOP becomes movA - copy data from one address to another (to transfer across pages)
+- v1.1 NOOP becomes movA - copy data from one address to another (to transfer across pages)
+- v1.1 jeq becomes movB
+- v1.2 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
 
 V2
 - create stack pointer, function call and return ability (pointers)
@@ -72,6 +73,10 @@ V2
 - make assembler
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
+
+Feb 22 2026 : 
+1h broke up Computer_3bit_v1 constructor into functions
+2p
 
 Feb 21 2026 : 5h total 65h
 1h changing machine code order from OP CAB to OP ABC
