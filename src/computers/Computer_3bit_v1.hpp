@@ -38,10 +38,8 @@ private:
     bool* cu_decoder;  ///< Pointer to CPU decoder outputs for opcode-based control signals
     
     // constructor helper functions
-    void _create_namestring(const std::string& name);
     void _connect_program_memory_to_CPU_decoder();
     void _connect_ram_address_inputs();
     void _connect_ram_data_outputs();
     void _connect_jump_logic();
-    void _print_architecture_details() const;
 };

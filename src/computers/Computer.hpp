@@ -126,6 +126,12 @@ protected:
     bool     is_running;
     uint64_t execution_count;
 
+    // Human-readable version strings for the computer instance and ISA.
+    // Subclasses or external code may set these to document the build/version
+    // of the computer and the instruction set architecture in use.
+    std::string computer_version;
+    std::string ISA_version;
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     void toggle_ram_read_flag(bool flag_high);
 
@@ -135,4 +141,10 @@ protected:
     /// Returns the human-readable mnemonic for the given opcode value.
     /// Must be overridden by each ISA subclass.
     virtual std::string get_opcode_name(uint16_t opcode) const = 0;
+
+    /// Create a unique component name string with memory address and optional name.
+    void _create_namestring(const std::string& name);
+    
+    /// Print architecture details using computer_version and ISA_version.
+    void _print_architecture_details() const;
 };

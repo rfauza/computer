@@ -16,6 +16,10 @@ const std::string Computer_3bit_v1::ISA_V1_OPCODES =
 Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     : Computer(NUM_BITS, NUM_RAM_ADDR_BITS, PC_BITS, name)
 {
+    // Set version strings for this computer variant
+    computer_version = "3-bit v1";
+    ISA_version = "ISA v1";
+
     // create component name string with ISA suffix
     _create_namestring(name);
     
@@ -266,27 +270,6 @@ void Computer_3bit_v1::_connect_jump_logic()
     // JGT: Jump if Greater Than (unsigned) flag is set (result of CMP instruction)
     jump_conditions.push_back({"JGT", 3});  // GT_U (greater than unsigned) flag index
     cpu->connect_jump_conditions(jump_conditions);
-}
-
-void Computer_3bit_v1::_create_namestring(const std::string& name)
-{
-    // === Create component name string ===
-    std::ostringstream oss;
-    oss << "Computer_3bit_v1 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
-    if (!name.empty())
-    {
-        oss << " - " << name;
-    }
-    component_name = oss.str();
-}
-
-void Computer_3bit_v1::_print_architecture_details() const
-{
-    // print success message with architecture details
-    std::cout << "\n3-bit Computer v1 initialized with ISA v1" << std::endl;
-    std::cout << "  Data width: "    << NUM_BITS           << " bits" << std::endl;
-    std::cout << "  RAM addresses: " << num_ram_addresses  << " (6-bit [page:addr])" << std::endl;
-    std::cout << "  PM addresses: "  << num_pm_addresses   << "\n" << std::endl;
 }
 
 std::string Computer_3bit_v1::get_opcode_name(uint16_t opcode) const

@@ -37,7 +37,9 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
       data_b_ptrs(nullptr),
       data_c_ptrs(nullptr),
       is_running(true),
-      execution_count(0)
+    execution_count(0),
+    computer_version(""),
+    ISA_version("")
 {
     // Signal generators for PM loading are sized here since pc_bits / num_bits
     // are already known. Subclass constructors do not need to create them.
@@ -399,4 +401,33 @@ uint16_t Computer::from_binary(const std::string& binary) const
         return value;
     }
     return static_cast<uint16_t>(std::stoi(binary));
+}
+
+void Computer::_create_namestring(const std::string& name)
+{
+    // Create a unique component name string with memory address and optional name
+    std::ostringstream oss;
+    oss << "Computer 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
+    if (!name.empty())
+    {
+        oss << " - " << name;
+    }
+    component_name = oss.str();
+}
+
+void Computer::_print_architecture_details() const
+{
+    // Print success message with architecture details
+    std::cout << "\nComputer initialized" << std::endl;
+    if (!computer_version.empty())
+    {
+        std::cout << "  Version: " << computer_version << std::endl;
+    }
+    if (!ISA_version.empty())
+    {
+        std::cout << "  ISA: " << ISA_version << std::endl;
+    }
+    std::cout << "  Data width: " << num_bits << " bits" << std::endl;
+    std::cout << "  RAM addresses: " << num_ram_addresses << std::endl;
+    std::cout << "  PM addresses: " << num_pm_addresses << "\n" << std::endl;
 }
