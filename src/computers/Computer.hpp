@@ -51,9 +51,12 @@ public:
     bool load_program(const std::string& filename);
 
     /**
-     * @brief Run the loaded program interactively (press Enter per cycle).
+     * @brief Run the loaded program.
+     *
+     * When `interactive` is true (default) the runner prompts per cycle;
+     * otherwise it executes continuously until a HALT instruction.
      */
-    void run_interactive();
+    void run(bool interactive = true);
 
     /**
      * @brief Advance one clock cycle.

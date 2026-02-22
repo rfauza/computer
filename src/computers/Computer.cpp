@@ -49,6 +49,28 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
     
     ram_addr_sigs = new std::vector<Signal_Generator>();
     ram_addr_sigs->resize(num_bits);
+    
+    // Create control signals for PM and RAM
+    pm_write_enable = new Signal_Generator("pm_write_enable");
+    pm_write_enable->go_low();
+    pm_write_enable->evaluate();
+    
+    pm_read_enable = new Signal_Generator("pm_read_enable");
+    pm_read_enable->go_high();
+    pm_read_enable->evaluate();
+    
+    ram_read_enable = new Signal_Generator("ram_read_enable");
+    ram_read_enable->go_high();
+    ram_read_enable->evaluate();
+    
+    ram_write_enable = new Signal_Generator("ram_write_enable");
+    ram_write_enable->go_high();
+    ram_write_enable->evaluate();
+    
+    // Constant low signal for tying read address high bits to 0
+    read_addr_high_low = new Signal_Generator("read_addr_high_low");
+    read_addr_high_low->go_low();
+    read_addr_high_low->evaluate();
 }
 
 Computer::~Computer()
@@ -225,35 +247,32 @@ bool Computer::load_program(const std::string& filename)
     return true;
 }
 
-void Computer::run_interactive()
+void Computer::run(bool interactive)
 {
-    std::cout << "\n=== Starting Interactive Execution ===\n" << std::endl;
-    std::cout << "Press Enter to execute each instruction..." << std::endl;
-    
+    std::cout << "\n=== Starting Execution";
+
     program_memory->evaluate();
-    
-    bool running = true;
-    while (running)
+
+    while (is_running)
     {
-        std::cout << "\nPress Enter to continue (or 'q' to quit): ";
-        std::string input;
-        std::getline(std::cin, input);
-        
-        if (input == "q" || input == "Q")
+        if (interactive) // Prompt user to press Enter once per cycle
         {
-            std::cout << "Execution stopped by user." << std::endl;
-            break;
+            std::cout << "\nPress Enter to continue (or 'q' to quit): ";
+            std::string input;
+            std::getline(std::cin, input);
+            if (input == "q" || input == "Q")
+            {
+                std::cout << "Execution stopped by user." << std::endl;
+                break;
+            }
         }
-        
-        running = clock_tick();
+
+        clock_tick();
         print_state();
-        
-        if (!running)
-        {
-            std::cout << "\n=== Program HALTED ===" << std::endl;
-            break;
-        }
     }
+
+    std::cout << "\n=== Program HALTED ===" << std::endl;
+    print_state();
 }
 
 bool Computer::clock_tick()

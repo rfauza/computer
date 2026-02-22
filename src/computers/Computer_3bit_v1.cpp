@@ -31,23 +31,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // Create Program Memory (9-bit address, 3-bit data) and RAM (6-bit address, 3-bit data)
     program_memory = new Program_Memory(PC_BITS, NUM_BITS, "pm_3bit_v1");
     ram = new Main_Memory(NUM_RAM_ADDR_BITS, NUM_BITS, "ram_3bit_v1");
-    
-    // Control signals
-    pm_write_enable = new Signal_Generator("pm_write_enable");
-    pm_write_enable->go_low();
-    pm_write_enable->evaluate();
-    
-    pm_read_enable = new Signal_Generator("pm_read_enable");
-    pm_read_enable->go_high();
-    pm_read_enable->evaluate();
-    
-    ram_read_enable = new Signal_Generator("ram_read_enable_a");
-    ram_read_enable->go_high();
-    ram_read_enable->evaluate();
-    
-    ram_write_enable = new Signal_Generator("ram_write_enable");
-    ram_write_enable->go_high();
-    ram_write_enable->evaluate();
+
     
     // Connect PM opcode outputs to CPU decoder
     const bool** pm_opcode_ptrs = new const bool*[NUM_BITS];
@@ -74,10 +58,6 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // Read port 1: [0:A]   Read port 2: [0:B]   Write: [0:C] (high bits gated with MOVL)
     ram_write_addr_high_mux = new AND_Gate*[NUM_BITS];
     bool* cu_decoder = cpu->get_decoder_outputs();
-    
-    read_addr_high_low = new Signal_Generator("read_addr_high_low");
-    read_addr_high_low->go_low();
-    read_addr_high_low->evaluate();
     
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
@@ -108,6 +88,10 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
         ram->connect_input(&ram_write_addr_high_mux[i]->get_outputs()[0],
                            static_cast<uint16_t>(2 * NUM_RAM_ADDR_BITS + NUM_BITS + i));
     }
+    
+    // Clean up temporary arrays
+    delete[] pm_opcode_ptrs;
+    delete[] pm_address_inputs;
     
     // === Connect RAM outputs to CPU ALU inputs ===
     data_a_ptrs = new const bool*[NUM_BITS];
@@ -142,7 +126,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     jump_conditions.push_back({"JEQ", 0});  // EQ flag
     jump_conditions.push_back({"JGT", 3});  // GT_U flag
     cpu->connect_jump_conditions(jump_conditions);
-    
+
     // === RAM write data mux: MOVL literal vs. CPU result ===
     bool* cpu_result = cpu->get_result_outputs();
     
@@ -218,9 +202,6 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     std::cout << "  Data width: "    << NUM_BITS           << " bits" << std::endl;
     std::cout << "  RAM addresses: " << num_ram_addresses  << " (6-bit [page:addr])" << std::endl;
     std::cout << "  PM addresses: "  << num_pm_addresses   << std::endl;
-    
-    delete[] pm_opcode_ptrs;
-    delete[] pm_address_inputs;
 }
 
 std::string Computer_3bit_v1::get_opcode_name(uint16_t opcode) const
