@@ -54,8 +54,6 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- make cmp A be able to read from other pages, since C is unused (CA cmp B). other pages can hold constants or be registers for other devices
-- test cmp on other pages
 - write programs for mult and long division
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
@@ -77,6 +75,8 @@ V2
 Feb 22 2026 : 
 1h broke up Computer_3bit_v1 constructor into functions
 1.5h make cmp A be able to read from other pages, since C is unused (CA cmp B)
+6.30p division program
+jump no longer clears compare flag
 
 Feb 21 2026 : 5h total 65h
 1h changing machine code order from OP CAB to OP ABC

@@ -14,7 +14,7 @@
  *   100 CMP   - Compare: set flags from [A] vs [B:C]  (B = page, C = addr)
  *   101 JEQ   - Jump if EQ:  goto [A:B:C]
  *   110 JGT   - Jump if GT:  goto [A:B:C]
- *   111 NOP   - No operation
+ *   111 NOP   - No operation (options: CMP-in, MOVA-out)
  *
  * Architecture: 3-bit data, 6-bit RAM addressing ([page:addr]),
  * 9-bit PC (512 PM addresses).

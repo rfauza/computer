@@ -154,7 +154,7 @@ protected:
     void toggle_ram_read_flag(bool flag_high);
 
     std::string to_binary(uint16_t value, uint16_t bits) const;
-    uint16_t    from_binary(const std::string& binary) const;
+    uint16_t from_binary(const std::string& binary) const;
 
     /// Returns the human-readable mnemonic for the given opcode value.
     /// Must be overridden by each ISA subclass.

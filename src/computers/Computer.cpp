@@ -305,7 +305,7 @@ void Computer::run(bool interactive)
     }
 
     std::cout << "\n=== Program HALTED ===" << std::endl;
-    print_state();
+    // print_state();
 }
 
 bool Computer::clock_tick()
