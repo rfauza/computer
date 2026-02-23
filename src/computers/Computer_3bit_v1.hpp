@@ -11,10 +11,10 @@
  *   001 MOVL  - Move literal: A -> [B:C]
  *   010 ADD   - Add:      [A] + [B] -> [C]
  *   011 SUB   - Subtract: [A] - [B] -> [C]
- *   100 CMP   - Compare: set flags from [A] vs [B:C]  (B = page, C = addr)
+ *   100 CMP   - Compare Out: set flags from [A] vs [B:C]  (B = page, C = addr)
  *   101 JEQ   - Jump if EQ:  goto [A:B:C]
  *   110 JGT   - Jump if GT:  goto [A:B:C]
- *   111 NOP   - No operation (options: CMP-in, MOVA-out)
+ *   111 NOP   - No operation (options: CMP-in, MOVA-out, MOVA-in, rampage)
  *
  * Architecture: 3-bit data, 6-bit RAM addressing ([page:addr]),
  * 9-bit PC (512 PM addresses).

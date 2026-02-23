@@ -54,15 +54,17 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- write programs for mult and long division
+- understand and break up _connect_ram_address_inputs (shouldnt need siggens)
+- jump no longer clear compare flag (only cmp writes to cmp flags)
+- write programs for mult
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers? in v2 make graphics processor)
 
 - copilot broke it, fixed it by adding siggens to computer. investigate. everything should be connected to PM instead
 - write program to add long ints?
-- v1.1 NOOP becomes movA - copy data from one address to another (to transfer across pages)
-- v1.1 jeq becomes movB
+- v1.1 NOOP becomes movOUT - copy data from one address to another (to transfer across pages)
+- v1.1 jeq becomes movIN
 - v1.2 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
 
 V2
@@ -72,11 +74,12 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Feb 22 2026 : 
+Feb 22 2026 : 4h total 69h
 1h broke up Computer_3bit_v1 constructor into functions
 1.5h make cmp A be able to read from other pages, since C is unused (CA cmp B)
-6.30p division program
-jump no longer clears compare flag
+.5h division program
+1h threw away copilot trying to not clear cmp flag
+
 
 Feb 21 2026 : 5h total 65h
 1h changing machine code order from OP CAB to OP ABC

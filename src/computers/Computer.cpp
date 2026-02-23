@@ -61,10 +61,12 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
     ram_addr_sigs->resize(num_bits);
     
     // Create control signals for PM and RAM
+    // PM W/E used for loading program
     pm_write_enable = new Signal_Generator("pm_write_enable");
     pm_write_enable->go_low();
     pm_write_enable->evaluate();
     
+    // PM should be always readable
     pm_read_enable = new Signal_Generator("pm_read_enable");
     pm_read_enable->go_high();
     pm_read_enable->evaluate();
