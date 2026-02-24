@@ -25,6 +25,7 @@ windows powershell to call up linux terminal
 111 AND/jeq A==B enables jump flag (OR, this can be and AND A&B->C op, that writes to jmp flag if result is 111. also works with XOR result 0)
 
 V2
+000 should be halt so it stops if it hits empty pm, 001 opcode page, so 6 ops per page
 3-bit ISA with opcode paging (currently 32 opcodes (2^5=32))
 - page 1 - Moving Data / Arithmetic
 000 page opcode ABC (can have 2^9=512 pages of opcodes, each with 7 codes = 3584 opcodes)
@@ -57,11 +58,11 @@ V2
 000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
 001 CALL (function call)
 010 RET (return)
-011 NOOP - no op, can be used to page PM
-100 HALT
+011 write to transfer buffer (to transfer value between rampages) (not needed with movin/out)
+100 read from transfer buffer (to transfer value between rampages)
 101 PMPage?
 110 RAMPage
-111
+111 HALT
 - page 5 - graphics
 000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
 001 Graphics Write (A=horizontal, B=vertical, C=data) (can't have more bc we're operating on 3-bit data, so to calculate pos)
@@ -80,7 +81,7 @@ V2
 100 mulL
 101 
 110 
-111
+111 NOOP - no op, can fill rest of page to page PM (separating relevant code together)
 
 - using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
 - add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.
