@@ -55,13 +55,12 @@ clock tick is logic. needs to be gates
 
 Todo next:
 - understand and break up _connect_ram_address_inputs (shouldnt need siggens)
-- write programs for mult
+- write programs for long mult, shift mult, shift div
 - tag main -
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers? in v2 make graphics processor)
 
-- copilot broke it, fixed it by adding siggens to computer. investigate. everything should be connected to PM instead
 - write program to add long ints?
 - v1.1 NOOP becomes movOUT - copy data from one address to another (to transfer across pages)
 - v1.1 jeq becomes movIN
