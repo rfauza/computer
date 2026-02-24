@@ -31,11 +31,11 @@ void test_component(Component* device, const std::string& binary_input)
             sig_gens[i]->go_high();
         else
             sig_gens[i]->go_low();
-        sig_gens[i]->update();
+        sig_gens[i]->evaluate();
     }
     
-    // Update device
-    device->update();
+    // evaluate device
+    device->evaluate();
     
     // Print results
     std::cout << "Input:  " << binary_input << std::endl;
@@ -91,7 +91,7 @@ void test_truth_table(Component* component, int start_index)
         }
         
         // Evaluate the component
-        component->update();
+        component->evaluate();
         component->print_io();
         std::cout << std::endl;
     }
@@ -116,7 +116,7 @@ void flip_flop_tester(Flip_Flop& device)
     
     // Initial state
     std::cout << "Initial state (Set=0, Reset=0):" << std::endl;
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl; 
     
@@ -124,7 +124,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=1, Reset=0:" << std::endl;
     siggen1.go_high();
     siggen2.go_low();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl; 
     
@@ -132,7 +132,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=0, Reset=0:" << std::endl;
     siggen1.go_low();
     siggen2.go_low();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl;
     
@@ -140,7 +140,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=0, Reset=1:" << std::endl;
     siggen1.go_low();
     siggen2.go_high();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl;
     
@@ -148,7 +148,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=0, Reset=0:" << std::endl;
     siggen1.go_low();
     siggen2.go_low();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl;
     
@@ -156,7 +156,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=1, Reset=0:" << std::endl;
     siggen1.go_high();
     siggen2.go_low();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl; 
     
@@ -164,7 +164,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=0, Reset=0:" << std::endl;
     siggen1.go_low();
     siggen2.go_low();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl;
     
@@ -172,7 +172,7 @@ void flip_flop_tester(Flip_Flop& device)
     std::cout << "Set=1, Reset=1 (invalid state):" << std::endl;
     siggen1.go_high();
     siggen2.go_high();
-    device.update();
+    device.evaluate();
     device.print_io();
     std::cout << std::endl;
 }
@@ -226,7 +226,7 @@ void memory_bit_tester(Memory_Bit& device)
             if (test_sequence[i][1]) write_sig.go_high(); else write_sig.go_low();
             if (read_enable) read_sig.go_high(); else read_sig.go_low();
             
-            device.update();
+            device.evaluate();
             device.print_io();
             std::cout << std::endl;
         }
@@ -268,7 +268,7 @@ void test_adder_subtractor(Adder_Subtractor& device, int start_index)
         }
 
         // Evaluate the device
-        device.update();
+        device.evaluate();
 
         // Decode inputs (LSB first)
         int a = 0;

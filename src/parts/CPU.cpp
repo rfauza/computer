@@ -256,6 +256,11 @@ bool* CPU::get_decoder_outputs() const
     return control_unit->get_decoder_outputs();
 }
 
+bool* CPU::get_stored_flags() const
+{
+    return control_unit->get_stored_flags();
+}
+
 void CPU::clock_tick()
 {
     control_unit->clock_tick();

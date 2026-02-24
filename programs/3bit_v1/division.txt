@@ -21,7 +21,7 @@
 010 111 010 111 # 6 - increment &7 (add &2(1) to &7)
 100 000 000 001 # 7 - compare &0 and &1 
 110 000 000 101 # 8 - jump back to line 5 if &0 > &1
-100 000 000 001 # 7 - compare &0 and &1 
+# 100 000 000 001 # 7 - compare &0 and &1 
 101 000 000 101 # 9 - jump back to line 5 if &0 == &1
 000 000 000 000 # 10 - halt
 

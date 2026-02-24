@@ -133,7 +133,7 @@ void Multiplier_Sequential::start()
         multiplicand->connect_input(&zero_signal->get_outputs()[0], i);
     }
     multiplicand->connect_input(&write_enable->get_outputs()[0], 2 * num_bits);
-    multiplicand->update();
+    multiplicand->evaluate();
     
     // Load B into multiplier
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -141,7 +141,7 @@ void Multiplier_Sequential::start()
         multiplier_reg->connect_input(inputs[num_bits + i], i);
     }
     multiplier_reg->connect_input(&write_enable->get_outputs()[0], num_bits);
-    multiplier_reg->update();
+    multiplier_reg->evaluate();
     
     // Clear accumulator
     for (uint16_t i = 0; i < 2 * num_bits; ++i)
@@ -149,12 +149,12 @@ void Multiplier_Sequential::start()
         accumulator->connect_input(&zero_signal->get_outputs()[0], i);
     }
     accumulator->connect_input(&write_enable->get_outputs()[0], 2 * num_bits);
-    accumulator->update();
+    accumulator->evaluate();
     
     // Set busy flag
     busy_flag->connect_input(&one_signal->get_outputs()[0], 0);  // Set
     busy_flag->connect_input(&zero_signal->get_outputs()[0], 1);  // Reset (inactive)
-    busy_flag->update();
+    busy_flag->evaluate();
     
     write_enable->go_low();
     cycle_count = 0;
@@ -191,7 +191,7 @@ void Multiplier_Sequential::evaluate()
             accumulator->connect_input(&adder->get_outputs()[i], i);
         }
         accumulator->connect_input(&write_enable->get_outputs()[0], 2 * num_bits);
-        accumulator->update();
+        accumulator->evaluate();
     }
     
     // Shift multiplicand left
@@ -207,7 +207,7 @@ void Multiplier_Sequential::evaluate()
         multiplicand->connect_input(&shift_left->get_outputs()[i], i);
     }
     multiplicand->connect_input(&write_enable->get_outputs()[0], 2 * num_bits);
-    multiplicand->update();
+    multiplicand->evaluate();
     
     // Shift multiplier right
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -222,7 +222,7 @@ void Multiplier_Sequential::evaluate()
         multiplier_reg->connect_input(&shift_right->get_outputs()[i], i);
     }
     multiplier_reg->connect_input(&write_enable->get_outputs()[0], num_bits);
-    multiplier_reg->update();
+    multiplier_reg->evaluate();
     
     // Increment counter and check if done
     cycle_count++;
@@ -231,7 +231,7 @@ void Multiplier_Sequential::evaluate()
         // Clear busy flag
         busy_flag->connect_input(&zero_signal->get_outputs()[0], 0);  // Set (inactive)
         busy_flag->connect_input(&one_signal->get_outputs()[0], 1);   // Reset (active)
-        busy_flag->update();
+        busy_flag->evaluate();
     }
     
     // Evaluate AND gates and copy outputs

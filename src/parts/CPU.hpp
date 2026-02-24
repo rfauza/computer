@@ -118,6 +118,7 @@ public:
      * @return Pointer to decoder output array (2^opcode_bits)
      */
     bool* get_decoder_outputs() const;
+    bool* get_stored_flags() const;
     
     /**
      * @brief Get number of opcode bits

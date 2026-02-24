@@ -57,6 +57,7 @@ Todo next:
 - understand and break up _connect_ram_address_inputs (shouldnt need siggens)
 - jump no longer clear compare flag (only cmp writes to cmp flags)
 - write programs for mult
+- tag main -
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers? in v2 make graphics processor)

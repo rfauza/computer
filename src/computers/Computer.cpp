@@ -257,7 +257,7 @@ bool Computer::load_program(const std::string& filename)
         pm_write_enable->go_high();
         pm_write_enable->evaluate();
         program_memory->evaluate();
-        program_memory->update();
+        // program_memory->update();
         pm_write_enable->go_low();
         pm_write_enable->evaluate();
 
@@ -353,6 +353,21 @@ void Computer::print_state() const
               << to_binary(c_val,  num_bits) << " ; "
               << get_opcode_name(opcode) << " "
               << a_val << " " << b_val << " " << c_val << std::endl;
+    // Print comparator flags from CPU's stored flag register (labelled)
+    if (cpu)
+    {
+        bool* stored_flags = cpu->get_stored_flags();
+        if (stored_flags)
+        {
+            std::cout << "Compare Flags: "
+                      << "EQ="  << (stored_flags[0] ? '1' : '0') << ", "
+                      << "NEQ=" << (stored_flags[1] ? '1' : '0') << ", "
+                      << "LT_U="<< (stored_flags[2] ? '1' : '0') << ", "
+                      << "GT_U="<< (stored_flags[3] ? '1' : '0') << ", "
+                      << "LT_S="<< (stored_flags[4] ? '1' : '0') << ", "
+                      << "GT_S="<< (stored_flags[5] ? '1' : '0') << std::endl;
+        }
+    }
     
     ram->print_pages(8);
     ram->print_io();
