@@ -353,6 +353,7 @@ void Computer::print_state() const
               << to_binary(c_val,  num_bits) << " ; "
               << get_opcode_name(opcode) << " "
               << a_val << " " << b_val << " " << c_val << std::endl;
+              
     // Print comparator flags from CPU's stored flag register (labelled)
     if (cpu)
     {

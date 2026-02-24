@@ -331,6 +331,13 @@ void Computer_3bit_v1::_connect_jump_logic()
     // JGT: Jump if Greater Than (unsigned) flag is set (result of CMP instruction)
     jump_conditions.push_back({"JGT", 3});  // GT_U (greater than unsigned) flag index
     cpu->connect_jump_conditions(jump_conditions);
+    
+     // === Wire flag write-enable to CMP opcode output ===
+    // Flags should only update when CMP instruction is executed (opcode 4 = 0b100)
+    if (cu_decoder && (1u << cpu->get_opcode_bits()) > 4)
+    {
+        cpu->wire_flag_write_enable(&cu_decoder[4]);  // CMP is opcode 4 (0b100)
+    }
 }
 
 std::string Computer_3bit_v1::get_opcode_name(uint16_t opcode) const

@@ -128,6 +128,19 @@ public:
      * @return true if successful
      */
     bool connect_ram_page_write_enable(const bool* page_write_enable);
+
+    /**
+     * @brief Evaluate the flag register (called by CPU after ALU runs)
+     */
+    void evaluate_flag_register();
+
+    /**
+     * @brief Connect flag write-enable to an external signal (e.g., CMP decoder output)
+     *
+     * @param signal_ptr Pointer to signal that controls when flags are written
+     * @return true if successful
+     */
+    bool connect_flag_write_enable(const bool* signal_ptr);
     
     /**
      * @brief Get pointer to PC outputs

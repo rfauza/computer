@@ -261,6 +261,13 @@ bool* CPU::get_stored_flags() const
     return control_unit->get_stored_flags();
 }
 
+bool CPU::wire_flag_write_enable(const bool* signal_ptr)
+{
+    if (!control_unit)
+        return false;
+    return control_unit->connect_flag_write_enable(signal_ptr);
+}
+
 void CPU::clock_tick()
 {
     control_unit->clock_tick();
@@ -269,8 +276,10 @@ void CPU::clock_tick()
 void CPU::evaluate()
 {
     // Evaluate in dependency order
-    control_unit->evaluate();
-    alu->evaluate();
+    control_unit->evaluate();  // decodes opcode, computes PC, sets write-enable for flags
+    alu->evaluate();            // runs comparator to produce fresh flag outputs
+    // Evaluate flag register AFTER ALU so it reads fresh comparator outputs
+    control_unit->evaluate_flag_register();
 }
 
 void CPU::update()

@@ -119,6 +119,14 @@ public:
      */
     bool* get_decoder_outputs() const;
     bool* get_stored_flags() const;
+
+    /**
+     * @brief Wire the flag write-enable to an external signal
+     *
+     * @param signal_ptr Pointer to signal (e.g., decoder output for CMP)
+     * @return true if successful
+     */
+    bool wire_flag_write_enable(const bool* signal_ptr);
     
     /**
      * @brief Get number of opcode bits

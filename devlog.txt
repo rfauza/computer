@@ -55,7 +55,6 @@ clock tick is logic. needs to be gates
 
 Todo next:
 - understand and break up _connect_ram_address_inputs (shouldnt need siggens)
-- jump no longer clear compare flag (only cmp writes to cmp flags)
 - write programs for mult
 - tag main -
 - make gui faceplate/RAM (LED version)
@@ -74,6 +73,9 @@ V2
 - make assembler
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
+
+Feb 23 2026 : 1.5h total 70.5h
+1.5h only cmp writes to cmp flags now (all ops were feeding the ALU and writing to cmp flags)
 
 Feb 22 2026 : 4h total 69h
 1h broke up Computer_3bit_v1 constructor into functions

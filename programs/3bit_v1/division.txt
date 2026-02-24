@@ -12,7 +12,7 @@
 #divide 7 by 2
 
 
-001 111 000 000 # 0 - write 6 into &0-0
+001 110 000 000 # 0 - write 6 into &0-0
 001 010 000 001 # 1 - write 2 into &0-1
 001 001 000 010 # 2 - write 1 into &0-2
 100 001 000 000 # 3 - compare &1 and &0 (initial check that dividend is larger than divisior)
@@ -21,7 +21,6 @@
 010 111 010 111 # 6 - increment &7 (add &2(1) to &7)
 100 000 000 001 # 7 - compare &0 and &1 
 110 000 000 101 # 8 - jump back to line 5 if &0 > &1
-# 100 000 000 001 # 7 - compare &0 and &1 
 101 000 000 101 # 9 - jump back to line 5 if &0 == &1
 000 000 000 000 # 10 - halt
 

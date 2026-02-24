@@ -150,7 +150,7 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     // === Comparator Flags Storage ===
     flag_register = new Register(num_flags, "flag_register_in_control_unit");
     flag_write_enable = new Signal_Generator("flag_write_enable_in_control_unit");
-    flag_write_enable->go_high();  // Flags always write when provided
+    flag_write_enable->go_low();  // Flags write enabled by cmp decoder output, so default to low
     flag_register->connect_input(&flag_write_enable->get_outputs()[0], num_flags);
     
     flag_read_enable = new Signal_Generator("flag_read_enable_in_control_unit");
@@ -272,13 +272,11 @@ void Control_Unit::evaluate()
 {
     // Evaluate in dependency order
     
-    // 0. Decode opcode early so HALT detection uses current instruction
+    // 0. Decode opcode early so decoder outputs are current for ALL downstream logic
     opcode_decoder->evaluate();
 
-    // 0.5. Evaluate flags EARLY so jump instruction conditions can use them
-    flag_write_enable->evaluate();
-    flag_read_enable->evaluate();
-    flag_register->evaluate();
+    // 0.5. Flag register is evaluated by CPU::evaluate() AFTER alu->evaluate(),
+    //      so comparator outputs are fresh. See CPU::evaluate_flag_register().
 
     // 1. Evaluate run/halt flag and halt detection (used in PC increment gating)
     halt_or_gate->evaluate();
@@ -317,8 +315,8 @@ void Control_Unit::evaluate()
     // 3. Update PC
     pc->evaluate();
     
-    // 4. Decode opcode
-    opcode_decoder->evaluate();
+    // 4. (Already done at top) Decode opcode
+    // opcode_decoder->evaluate();
     
     // 6. Evaluate other registers
     ram_page_read_enable->evaluate();
@@ -434,6 +432,25 @@ bool Control_Unit::connect_ram_page_write_enable(const bool* page_write_enable)
         return false;
     
     ram_page_register->connect_input(page_write_enable, pc_bits);
+    return true;
+}
+
+void Control_Unit::evaluate_flag_register()
+{
+    // Called by CPU::evaluate() after ALU runs so comparator outputs are fresh
+    flag_write_enable->evaluate();
+    flag_read_enable->evaluate();
+    flag_register->evaluate();
+}
+
+bool Control_Unit::connect_flag_write_enable(const bool* signal_ptr)
+{
+    if (!signal_ptr)
+        return false;
+    
+    // Directly reconnect the flag register's write input to the decoder output signal
+    // This bypasses the flag_write_enable Signal_Generator and wires the signal directly
+    flag_register->connect_input(signal_ptr, num_flags);
     return true;
 }
 
