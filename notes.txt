@@ -25,62 +25,65 @@ windows powershell to call up linux terminal
 111 AND/jeq A==B enables jump flag (OR, this can be and AND A&B->C op, that writes to jmp flag if result is 111. also works with XOR result 0)
 
 V2
+000 should be halt so it stops if it hits empty pm, 001 opcode page, so 6 ops per page
 3-bit ISA with opcode paging (currently 32 opcodes (2^5=32))
+probably better to have most used ops on page 1, backwards compatible with v1, so most likely to be on page 0 for halt
+or put halt on the jump op page (3)
 - page 1 - Moving Data / Arithmetic
-000 page opcode ABC (can have 2^9=512 pages of opcodes, each with 7 codes = 3584 opcodes)
-001 movL litA->[B][C]
-010 movA A->BC (needed bc alu can only operate on 3 x 3-bit addr on same rampage)
-011 movB AB->C to move data back into current page
-100 add (could use long ints (6-bit) if we first set the 2nd mem addr of the MSB's, OR have a carry register to add back to some addr later)
-101 sub
-110 >> A->C
-111 << A->C
+000 movLit litA->[B][C]
+001 movOUT A->BC (needed bc alu can only operate on 3 x 3-bit addr on same rampage)
+010 movIN AB->C to move data back into current page
+011 add (could use long ints (6-bit) if we first set the 2nd mem addr of the MSB's, OR have a carry register to add back to some addr later)
+100 sub
+101 >> A->C
+110 << A->C
+111 page opcode ABC (can have 2^9=512 pages of opcodes, each with 7 codes = 3584 opcodes)
 - page 2 - Logic
-000 page opcode ABC
+000 
 001 AND A&B->C
 010 OR A|B->C
 011 XOR
 100 ! A->C
-101 NAND
-110 NOR
-111 
+101 
+110 
+111 page opcode ABC
 - page 3 - gotos
-000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
-001 cmpA A cmp BC
-010 cmpB AB cmp C
-011 jeq
-100 jne
-101 jgt A>B
-110 jlt A<B (used to compare with data in other pages, can't just revers jgt then)
-111 goto ABC (2^9=512 PM lines. can page with incrementer by goto last addr, or have a PM page opcode =262k lines of code but that'd be overkill for 3-bit)
+000 cmpA A cmp BC
+001 cmpB AB cmp C
+010 jeq
+011 jne
+100 jgt A>B
+101 jlt A<B (used to compare with data in other pages, can't just revers jgt then)
+110 goto ABC (2^9=512 PM lines. can page with incrementer by goto last addr, or have a PM page opcode =262k lines of code but that'd be overkill for 3-bit)
+111 page opcode ABC
 - page 4 - system
-000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
+000 HALT
 001 CALL (function call)
 010 RET (return)
-011 NOOP - no op, can be used to page PM
-100 HALT
+011 write to transfer buffer (to transfer value between rampages) (not needed with movin/out ops)
+100 read from transfer buffer (to transfer value between rampages) (not needed with movin/out ops)
 101 PMPage?
 110 RAMPage
-111
+111 page opcode ABC
 - page 5 - graphics
-000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
+000 
 001 Graphics Write (A=horizontal, B=vertical, C=data) (can't have more bc we're operating on 3-bit data, so to calculate pos)
     so screen is 8x8. OR, use fractal? 8x8 of 8x8?
 010 Graph Letter? (26 letters, 10 digits, space,':.) 2^6=64
 011 
 100 
-101 
-110 
-111 
+101 NAND
+110 NOR
+111 page opcode ABC
 - page 6 - Literal Arithmetic
-000 page opcode ABC (can have 2^9=64 pages of opcodes, each with 7 codes = 448 opcodes)
+000 NOOP - no op, can fill rest of page to page PM (separating relevant code together)
 001 addL (use for inc)
 010 subL (use for dec)
 011 mul
 100 mulL
 101 
 110 
-111
+111 page opcode ABC
 
 - using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
 - add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.

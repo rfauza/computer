@@ -1,0 +1,66 @@
+# Long Multiplication test
+# decrements smaller of the multiplicands to zero while adding the other to answer
+# iterates through all numbers until A and B both overflow
+# no bitshifting, execution countL: 991 
+
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: sets flags based on [A] vs [B]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+# a = &0
+# b = &1
+# c = 1 ref = &2
+# d = 0 ref = &3
+# temp = &5
+# ans = &7
+
+# START
+001 001 000 000 # 0 - a = 1 store zero to &0 (a)
+001 001 000 001 # 1 - b = 1 store zero to &1 (b)
+001 001 000 010 # 2 - c = 1 store 1 to &2 (increment ref)
+001 000 000 011 # 3 - d = 0  store zero to &3 (zero cmp ref)
+001 000 000 111 # 4 - f = 0 (ans) store zero to answer &7
+
+# CHECK if either number is zero. if so, jump to next iteration
+100 000 000 011 # 5 - cmp a to zero
+101 000 010 101 # 6 - jeq -NEXT A- (PM21)
+
+# WHICH (find which operand is larger, jump to code that decrements the other)
+001 000 000 111 # 7 - f = 0 (ans) store zero to answer
+100 001 000 000 # 8 - cmp b to a
+110 000 010 000 # 9 - jgt -B init- (PM18)
+
+#A init
+010 001 011 101 # 10 - copy b into temp (&1 + 0 -> &5)
+# A
+010 000 111 111 # 11 - a + f -> f (add one a to answer)
+011 101 010 101 # 12 - temp - c -> temp (decrement temp)
+100 101 000 011 # 13 - cmp temp to d (check if temp == 0)
+110 000 001 011 # 14 - jgt -A- (if temp>0, loop)
+101 000 010 101 # 15 - jeq -NEXT A- (if b==0, jump to PM23)
+
+# B init
+010 000 011 101 # 16 - copy a into temp (&0 + 0 -> &5)
+# B
+010 001 111 111 # 17 - b + f -> f (add one b to answer)
+011 101 010 101 # 18 - temp - c -> temp (decrement a)
+100 101 000 011 # 19 - cmp temp to d (check if temp == 0)
+110 000 010 001 # 20 - jgt -B-
+#  - jeq -NEXT A- (if a==0, fall through)
+
+# NEXT A (increment multipliers)
+010 000 010 000 # 21 - a + c -> a (increment a) (inner loop)
+100 000 000 011 # 22 - cmp a to d (check if a has overflown)
+110 000 000 111 # 23 - jgt WHICH (if a>0, loop again)
+# NEXT B
+010 001 010 001 # 24 - b + c -> b (if a overflowed, increment b) (outer loop)
+100 001 000 011 # 25 - cmp b to d (check if b has overflown)
+110 000 000 101 # 26 - jgt CHECK (if b>0, loop again)
+001 000 000 111 # 27 - f = 0 (ans) store zero to answer (now a and b are both zero)
+000 000 000 000 # 28 - HALT
