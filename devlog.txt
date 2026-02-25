@@ -56,10 +56,12 @@ clock tick is logic. needs to be gates
 Todo next:
 - understand and break up _connect_ram_address_inputs (shouldnt need siggens)
 - write programs for mult
+- retest all programs
+- make assembler and disassembler (which allows us to check the behavior of the program programatically)
 - tag main -
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
-- 8x8 LED display added to faceplate (in v1 wire to RAM registers? in v2 make graphics processor)
+- 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
 
 - copilot broke it, fixed it by adding siggens to computer. investigate. everything should be connected to PM instead
 - write program to add long ints?
@@ -74,8 +76,9 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Feb 23 2026 : 1.5h total 70.5h
+Feb 23 2026 : 1.5h total 71h
 1.5h only cmp writes to cmp flags now (all ops were feeding the ALU and writing to cmp flags)
+.5h Multiplication test
 
 Feb 22 2026 : 4h total 69h
 1h broke up Computer_3bit_v1 constructor into functions
