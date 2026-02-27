@@ -1,6 +1,7 @@
 #include "Computer_3bit_v1.hpp"
 #include <iostream>
 #include <sstream>
+#include <cstdlib>
 
 // Define 3-bit ISA v1 opcodes
 const std::string Computer_3bit_v1::ISA_V1_OPCODES =
@@ -34,10 +35,10 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // Connect PM opcode outputs to CPU decoder
     _connect_program_memory_to_CPU_decoder();
     
-    // === RAM address inputs ===
+    // === RAM setup (addressing + write-phase control + data mux) ===
     // PM output layout: [opcode 0-2] [A 3-5] [B 6-8] [C 9-11]
     // Read port 1: [0:A]   Read port 2: CMP→[B:C], others→[0:B]   Write: [0:C] (high bits gated with MOVL)
-    _connect_ram_address_inputs();
+    _connect_ram();
     
     // === Connect RAM outputs to CPU ALU inputs ===
     _connect_ram_data_outputs();
@@ -85,11 +86,29 @@ void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
     delete[] pm_address_inputs;
 }
 
+void Computer_3bit_v1::_connect_ram()
+{
+    // Connect RAM Addressing logic to the PM output
+    _connect_ram_address_inputs();
+    
+    // === Implement two-phase write gating to prevent read/write contention ===
+    _phase_ram_write_enable();
+
+    // === MULTIPLEX RAM INPUT BETWEEN MOVL LITERAL AND CPU RESULT ===
+    _multiplex_RAM_inputs();
+}
+
 void Computer_3bit_v1::_connect_ram_address_inputs()
 {
+    /* Connect RAM Addressing logic to the PM output */
     // Get references to the CPU's opcode decoder outputs for control logic (MOVL, ADD, SUB write enables)
     ram_write_addr_high_mux = new AND_Gate*[NUM_BITS];
     cu_decoder = cpu->get_decoder_outputs();
+    if (!cu_decoder)
+    {
+        std::cerr << "Error: CPU decoder outputs null in Computer_3bit_v1::_connect_ram_address_inputs()" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
     // === Decode CMP directly from PM opcode bits (independent of CPU decoder) ===
     // CMP opcode is 100 binary → bit[2]=1, bit[1]=0, bit[0]=0
@@ -180,11 +199,8 @@ void Computer_3bit_v1::_connect_ram_address_inputs()
         std::ostringstream gate_name;
         gate_name << "ram_write_addr_high_" << i;
         ram_write_addr_high_mux[i] = new AND_Gate(2, gate_name.str());
-        if (cu_decoder)
-        {
-            ram_write_addr_high_mux[i]->connect_input(&cu_decoder[1], 0);  // MOVL decoder output
-            ram_write_addr_high_mux[i]->connect_input(&program_memory->get_outputs()[pm_b], 1);  // B field
-        }
+        ram_write_addr_high_mux[i]->connect_input(&cu_decoder[1], 0);  // MOVL decoder output
+        ram_write_addr_high_mux[i]->connect_input(&program_memory->get_outputs()[pm_b], 1);  // B field
         ram->connect_input(&ram_write_addr_high_mux[i]->get_outputs()[0],
                            static_cast<uint16_t>(2 * NUM_RAM_ADDR_BITS + NUM_BITS + i));
     }
@@ -192,14 +208,18 @@ void Computer_3bit_v1::_connect_ram_address_inputs()
     // === Configure RAM write enable from instruction decoder ===
     // Create OR gate that enables write when MOVL, ADD, or SUB instruction is decoded
     ram_write_or = new OR_Gate(3, "ram_write_or_in_computer_3bit_v1");
-    if (cu_decoder && (1u << cpu->get_opcode_bits()) > 2)
+    if ((1u << cpu->get_opcode_bits()) > 2)
     {
         ram_write_or->connect_input(&cu_decoder[1], 0);  // MOVL
         ram_write_or->connect_input(&cu_decoder[2], 1);  // ADD
         ram_write_or->connect_input(&cu_decoder[3], 2);  // SUB
         ram_write_or->evaluate();
     }
+    
+}
 
+void Computer_3bit_v1::_phase_ram_write_enable()
+{
     // === Implement two-phase write gating ===
     // This prevents simultaneous read and write operations to avoid contention
     ram_read_flag = new Signal_Generator("ram_read_flag_in_computer_3bit_v1");
@@ -225,56 +245,38 @@ void Computer_3bit_v1::_connect_ram_address_inputs()
                        static_cast<uint16_t>(3 * NUM_RAM_ADDR_BITS + NUM_BITS + 1));
     ram->connect_input(&ram_write_enable->get_outputs()[0],
                        static_cast<uint16_t>(3 * NUM_RAM_ADDR_BITS + NUM_BITS + 2));
+}
 
-    // === Configure RAM write data source multiplexer ===
-    // Select between two data sources: MOVL literal (from PM A field) or computation result from CPU
-    bool* cpu_result = cpu->get_result_outputs();
-
-    // Create inverter for MOVL signal to gate the result data
-    ram_data_mux_not = new Inverter(1, "movl_not_in_computer_3bit_v1");
-    ram_data_mux_and_literal = new AND_Gate*[NUM_BITS];  // Gate for MOVL literal data
-    ram_data_mux_and_result  = new AND_Gate*[NUM_BITS];  // Gate for CPU result data
-    ram_data_mux_or = new OR_Gate*[NUM_BITS];            // Combine gated data sources
-
-    if (cu_decoder)
+void Computer_3bit_v1::_multiplex_RAM_inputs()
+{
+    /* Select between ALU result and PM literal for RAM write data */
+    
+    // Create multiplexer (source 0 for ALU, source 1 for literal)
+    int num_sources = 2;
+    ram_data_mux = new Multiplexer(NUM_BITS, num_sources, "ram_data_mux_in_computer_3bit_v1");
+    
+    // get data sources: ALU result from CPU and literal from PM
+    const bool* alu_result = cpu->get_result_outputs();
+    const bool* pm_literal = &program_memory->get_outputs()[static_cast<uint16_t>(NUM_BITS)];
+    
+    // create sources array
+    const bool* sources[] = { alu_result, pm_literal };
+    
+    // invert MOVL decoder output to indicate to use CPU result when not MOVL
+    Inverter* movl_not = new Inverter(1, "movl_not_for_mux");
+    movl_not->connect_input(&cu_decoder[1], 0);
+    movl_not->evaluate();
+    
+    // control signals: MOVL and !MOVL (use literal when MOVL, use ALU result otherwise)
+    const bool* controls[] = { &movl_not->get_outputs()[0], &cu_decoder[1] };
+    
+    // Connect sources and controls to the multiplexer
+    ram_data_mux->connect_sources_from_values(sources, controls);
+    
+    // Connect multiplexed output to RAM input
+    for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
-        // Create inverted MOVL signal (!MOVL) to select result data when not MOVL
-        ram_data_mux_not->connect_input(&cu_decoder[1], 0);  // Gate on MOVL decoder output
-        ram_data_mux_not->evaluate();
-
-        // For each data bit, build a 2-to-1 multiplexer
-        for (uint16_t i = 0; i < NUM_BITS; ++i)
-        {
-            std::ostringstream and_lit_name, and_res_name, or_name;
-            and_lit_name << "ram_data_mux_and_literal_" << i;
-            and_res_name << "ram_data_mux_and_result_" << i;
-            or_name      << "ram_data_mux_or_" << i;
-
-            // Create AND and OR gates for this bit's multiplexer
-            ram_data_mux_and_literal[i] = new AND_Gate(2, and_lit_name.str());
-            ram_data_mux_and_result[i]  = new AND_Gate(2, and_res_name.str());
-            ram_data_mux_or[i]          = new OR_Gate(2, or_name.str());
-
-            // Get the A field bit for MOVL literal value
-            uint16_t pm_a = static_cast<uint16_t>(NUM_BITS + i);
-
-            // Gate 0: Enable literal path when MOVL instruction is active
-            ram_data_mux_and_literal[i]->connect_input(&cu_decoder[1], 0);  // MOVL enable
-            ram_data_mux_and_literal[i]->connect_input(&program_memory->get_outputs()[pm_a], 1);  // A field literal
-
-            // Gate 1: Enable result path when MOVL is NOT active (ADD/SUB)
-            ram_data_mux_and_result[i]->connect_input(&ram_data_mux_not->get_outputs()[0], 0);  // !MOVL
-            ram_data_mux_and_result[i]->connect_input(&cpu_result[i], 1);  // CPU result bit
-
-            // Combine: output is high if either gate is active
-            ram_data_mux_or[i]->connect_input(&ram_data_mux_and_literal[i]->get_outputs()[0], 0);
-            ram_data_mux_or[i]->connect_input(&ram_data_mux_and_result[i]->get_outputs()[0], 1);
-            ram_data_mux_or[i]->evaluate();
-
-            // Connect multiplexed data bit to RAM input
-            ram->connect_input(&ram_data_mux_or[i]->get_outputs()[0],
-                               static_cast<uint16_t>(3 * NUM_RAM_ADDR_BITS + i));
-        }
+        ram->connect_input(&ram_data_mux->get_outputs()[i], static_cast<uint16_t>(3 * NUM_RAM_ADDR_BITS + i));
     }
 }
 

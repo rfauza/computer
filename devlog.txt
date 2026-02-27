@@ -82,8 +82,10 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Feb 26 2026
-6.50p removed all redundant update() functions, inheriting component::update()
+Feb 26 2026 : 3h
+0.5h removed all redundant update() functions in entire project, inheriting component::update()
+1h created multiplexer class and replaced loose components in Computer for multiplexing RAM inputs (movL/ALU output)
+1.5h broke up Computer_3bit_v1 connect_ram function and fixed it to use the multiplexer
 
 Feb 24 2026
 2h multiplication code and testing (can't do shift with v1 ISA)
