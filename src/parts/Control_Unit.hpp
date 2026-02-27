@@ -161,7 +161,7 @@ public:
      * 
      * @return Pointer to flag register outputs
      */
-    bool* get_stored_flags() const;
+    bool* get_cmp_flags() const;
     
     /**
      * @brief Get pointer to RAM page register outputs

@@ -256,9 +256,9 @@ bool* CPU::get_decoder_outputs() const
     return control_unit->get_decoder_outputs();
 }
 
-bool* CPU::get_stored_flags() const
+bool* CPU::get_cmp_flags() const
 {
-    return control_unit->get_stored_flags();
+    return control_unit->get_cmp_flags();
 }
 
 bool CPU::wire_flag_write_enable(const bool* signal_ptr)

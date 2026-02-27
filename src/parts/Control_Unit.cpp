@@ -474,7 +474,7 @@ bool* Control_Unit::get_decoder_outputs() const
     return opcode_decoder->get_outputs();
 }
 
-bool* Control_Unit::get_stored_flags() const
+bool* Control_Unit::get_cmp_flags() const
 {
     return flag_register->get_outputs();
 }

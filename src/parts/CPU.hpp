@@ -113,7 +113,13 @@ public:
      * @return Pointer to decoder output array (2^opcode_bits)
      */
     bool* get_decoder_outputs() const;
-    bool* get_stored_flags() const;
+    
+    /**
+     * @brief Get pointer to stored comparator flags
+     * 
+     * @return Pointer to stored comparator flags array
+     */
+    bool* get_cmp_flags() const;
 
     /**
      * @brief Wire the flag write-enable to an external signal
