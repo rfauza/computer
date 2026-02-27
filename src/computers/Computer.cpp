@@ -25,10 +25,7 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
       ram_read_flag(nullptr),
       ram_read_flag_not(nullptr),
       ram_we_gated(nullptr),
-      ram_data_mux_not(nullptr),
-      ram_data_mux_and_literal(nullptr),
-      ram_data_mux_and_result(nullptr),
-      ram_data_mux_or(nullptr),
+      ram_data_mux(nullptr),
       ram_write_addr_high_mux(nullptr),
       pm_load_addr_sigs(nullptr),
       pm_load_data_sigs(nullptr),
@@ -99,26 +96,19 @@ Computer::~Computer()
     delete ram_read_flag;
     delete ram_read_flag_not;
     delete ram_we_gated;
-    delete ram_data_mux_not;
+    delete ram_data_mux;
     
     delete[] data_a_ptrs;
     delete[] data_b_ptrs;
     delete[] data_c_ptrs;
     
-    if (ram_data_mux_and_literal && ram_data_mux_and_result &&
-        ram_data_mux_or && ram_write_addr_high_mux)
+    if (ram_write_addr_high_mux)
     {
         for (uint16_t i = 0; i < num_bits; ++i)
         {
-            delete ram_data_mux_and_literal[i];
-            delete ram_data_mux_and_result[i];
-            delete ram_data_mux_or[i];
             delete ram_write_addr_high_mux[i];
         }
     }
-    delete[] ram_data_mux_and_literal;
-    delete[] ram_data_mux_and_result;
-    delete[] ram_data_mux_or;
     delete[] ram_write_addr_high_mux;
     
     delete pm_load_addr_sigs;
@@ -257,7 +247,6 @@ bool Computer::load_program(const std::string& filename)
         pm_write_enable->go_high();
         pm_write_enable->evaluate();
         program_memory->evaluate();
-        // program_memory->update();
         pm_write_enable->go_low();
         pm_write_enable->evaluate();
 
@@ -428,13 +417,20 @@ void Computer::evaluate()
     cpu->evaluate();   // compute next values
     
     // Evaluate write-path logic
-    ram_data_mux_not->evaluate();
-    for (uint16_t i = 0; i < num_bits; ++i)
+    // New design: a single `Multiplexer` device provides the write-data outputs.
+    if (ram_data_mux)
     {
-        ram_data_mux_and_literal[i]->evaluate();
-        ram_data_mux_and_result[i]->evaluate();
-        ram_data_mux_or[i]->evaluate();
-        ram_write_addr_high_mux[i]->evaluate();
+        ram_data_mux->evaluate();
+    }
+
+    // Evaluate any per-bit write-address high-bit gates if allocated by subclass
+    if (ram_write_addr_high_mux)
+    {
+        for (uint16_t i = 0; i < num_bits; ++i)
+        {
+            if (ram_write_addr_high_mux[i])
+                ram_write_addr_high_mux[i]->evaluate();
+        }
     }
     
     // Phase 2: read flag LOW → WE follows ram_write_or
@@ -442,15 +438,6 @@ void Computer::evaluate()
     toggle_ram_read_flag(false);
     
     ram->evaluate();   // latch writes
-}
-
-void Computer::update()
-{
-    evaluate();
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream) downstream->update();
-    }
 }
 
 std::string Computer::to_binary(uint16_t value, uint16_t bits) const

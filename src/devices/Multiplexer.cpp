@@ -29,6 +29,10 @@ Multiplexer::Multiplexer(uint16_t num_bits_, uint16_t num_sources_, const std::s
         or_name << name << "_or_" << bit;
         or_gates[bit] = new OR_Gate(num_sources, or_name.str());
     }
+
+    // Provide outputs for the multiplexer (one output per bit)
+    num_outputs = num_bits;
+    allocate_IO_arrays();
 }
 
 Multiplexer::~Multiplexer()
@@ -75,6 +79,30 @@ void Multiplexer::connect_sources(const bool* const* const* sources, const bool*
     }
 
     // For each bit, connect all source AND outputs to the OR gate
+    for (uint16_t bit = 0; bit < num_bits; ++bit)
+    {
+        for (uint16_t source = 0; source < num_sources; ++source)
+        {
+            or_gates[bit]->connect_input(&source_and_gates[source][bit]->get_outputs()[0], source);
+        }
+    }
+}
+
+void Multiplexer::connect_sources_from_values(const bool* const* sources_values, const bool* const* control_sigs)
+{
+    // sources_values[source] -> pointer to array of bool (num_bits entries)
+    for (uint16_t source = 0; source < num_sources; ++source)
+    {
+        for (uint16_t bit = 0; bit < num_bits; ++bit)
+        {
+            // connect AND gate input0 to the address of the bool element
+            source_and_gates[source][bit]->connect_input(&sources_values[source][bit], 0);
+            // connect control signal input1
+            source_and_gates[source][bit]->connect_input(control_sigs[source], 1);
+        }
+    }
+
+    // connect AND outputs into OR gates
     for (uint16_t bit = 0; bit < num_bits; ++bit)
     {
         for (uint16_t source = 0; source < num_sources; ++source)

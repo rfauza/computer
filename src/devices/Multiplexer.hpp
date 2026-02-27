@@ -20,6 +20,9 @@ public:
     // control_sigs: array of control signal pointers (num_sources signals)
     // For each bit: output[bit] = OR(source[0][bit] AND control[0], source[1][bit] AND control[1], ...)
     void connect_sources(const bool* const* const* sources, const bool* const* control_sigs);
+    // Convenience: connect sources provided as arrays of bool values (one array per source)
+    // Example: const bool* sources[] = { cpu_result, program_memory->get_outputs() };
+    void connect_sources_from_values(const bool* const* sources_values, const bool* const* control_sigs);
 
 private:
     uint16_t num_sources;

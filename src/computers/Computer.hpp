@@ -3,6 +3,7 @@
 #include "../parts/CPU.hpp"
 #include "../parts/Program_Memory.hpp"
 #include "../parts/Main_Memory.hpp"
+#include "../devices/Multiplexer.hpp"
 #include "../components/Signal_Generator.hpp"
 #include "../components/OR_Gate.hpp"
 #include "../components/AND_Gate.hpp"
@@ -17,7 +18,7 @@
  * Holds all shared infrastructure (CPU, PM, RAM, control gates, signal
  * generators) and implements every method that is independent of the ISA:
  * load_program, run_interactive, clock_tick, print_state, reset,
- * evaluate, update, toggle_ram_read_flag, to_binary, from_binary.
+ * evaluate, toggle_ram_read_flag, to_binary, from_binary.
  *
  * Subclasses must:
  *   1. Call Computer(num_bits, num_ram_address_bits, pc_bits, name) from
@@ -75,7 +76,6 @@ public:
     void reset();
 
     void evaluate() override;
-    void update() override;
 
 protected:
     // ── Runtime dimensions (set once by the constructor) ──────────────────────
@@ -105,10 +105,7 @@ protected:
     AND_Gate*         ram_we_gated;
 
     // ── RAM data-input mux (MOVL literal vs. CPU result) ─────────────────────
-    Inverter*   ram_data_mux_not;
-    AND_Gate**  ram_data_mux_and_literal;
-    AND_Gate**  ram_data_mux_and_result;
-    OR_Gate**   ram_data_mux_or;
+    Multiplexer* ram_data_mux;
 
     // ── Write-address high-bits mux (gates B field with MOVL enable) ─────────
     AND_Gate**  ram_write_addr_high_mux;
