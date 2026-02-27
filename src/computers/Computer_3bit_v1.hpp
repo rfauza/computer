@@ -39,10 +39,10 @@ private:
 
     // constructor helper functions
     void _connect_program_memory_to_CPU_decoder();
-    void _connect_ram();
+    void _connect_ram_inputs();
     void _connect_ram_address_inputs();
     void _phase_ram_write_enable();
-    void _multiplex_RAM_inputs();
+    void _multiplex_RAM_data_inputs();
     void _connect_ram_data_outputs();
     void _connect_jump_logic();
 };
