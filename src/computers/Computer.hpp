@@ -4,6 +4,7 @@
 #include "../parts/Program_Memory.hpp"
 #include "../parts/Main_Memory.hpp"
 #include "../devices/Multiplexer.hpp"
+#include "../devices/Register.hpp"
 #include "../components/Signal_Generator.hpp"
 #include "../components/OR_Gate.hpp"
 #include "../components/AND_Gate.hpp"
@@ -89,6 +90,10 @@ protected:
     CPU*             cpu;
     Program_Memory*  program_memory;
     Main_Memory*     ram;
+
+    // ── Page registers (numbits in size, initialized to all 0's) ──────────────
+    Register*        rampage;              ///< RAM page selector for ALU operations
+    Register*        opcodepage;           ///< Extension bits for CPU decoder
 
     // ── Control signals ───────────────────────────────────────────────────────
     Signal_Generator* pm_write_enable;

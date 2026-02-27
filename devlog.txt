@@ -54,10 +54,9 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- add registers for rampage, oppage
-- create mux class and replace it in ram
+- connect rampage and opcodepage registers
+- break up control unit initializer
 - make assembler and disassembler (which allows us to check the behavior of the program programatically)
-- understand and break up _connect_ram_address_inputs (shouldnt need siggens)
 - retest all programs
 - tag main -
 - add MovOUT op
@@ -82,12 +81,13 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Feb 26 2026 : 3h
+Feb 26 2026 : 4h total 77h
 0.5h removed all redundant update() functions in entire project, inheriting component::update()
 1h created multiplexer class and replaced loose components in Computer for multiplexing RAM inputs (movL/ALU output)
 1.5h broke up Computer_3bit_v1 connect_ram function and fixed it to use the multiplexer
+1h created rampage and opcodepage registers. copilot makes a mess when trying to connect these
 
-Feb 24 2026
+Feb 24 2026 : 2h total 73h
 2h multiplication code and testing (can't do shift with v1 ISA)
 
 Feb 23 2026 : 1.5h total 71h

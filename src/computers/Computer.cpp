@@ -16,6 +16,8 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
       cpu(nullptr),
       program_memory(nullptr),
       ram(nullptr),
+      rampage(nullptr),
+      opcodepage(nullptr),
       pm_write_enable(nullptr),
       pm_read_enable(nullptr),
       ram_write_enable(nullptr),
@@ -80,6 +82,10 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
     read_addr_high_low = new Signal_Generator("read_addr_high_low");
     read_addr_high_low->go_low();
     read_addr_high_low->evaluate();
+
+    // Create page registers (initially all 0's)
+    rampage = new Register(num_bits, "rampage");
+    opcodepage = new Register(num_bits, "opcodepage");
 }
 
 Computer::~Computer()
@@ -87,6 +93,8 @@ Computer::~Computer()
     delete cpu;
     delete program_memory;
     delete ram;
+    delete rampage;
+    delete opcodepage;
     delete pm_write_enable;
     delete pm_read_enable;
     delete ram_write_enable;
@@ -346,7 +354,7 @@ void Computer::print_state() const
     // Print comparator flags from CPU's stored flag register (labelled)
     if (cpu)
     {
-        bool* stored_flags = cpu->get_stored_flags();
+        bool* stored_flags = cpu->get_cmp_flags();
         if (stored_flags)
         {
             std::cout << "Compare Flags: "
