@@ -70,11 +70,6 @@ public:
      * Checks enable signals and evaluates the appropriate unit.
      */
     void evaluate() override;
-    
-    /**
-     * @brief Updates the ALU and propagates to downstream components
-     */
-    void update() override;
 
     /**
      * @brief Debug helper: print the comparator IO inside the ALU

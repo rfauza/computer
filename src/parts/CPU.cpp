@@ -282,18 +282,3 @@ void CPU::evaluate()
     control_unit->evaluate_flag_register();
 }
 
-void CPU::update()
-{
-    // Update internal storage elements
-    control_unit->update();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

@@ -167,19 +167,3 @@ void Logic_Unit::evaluate()
         }
     }
 }
-
-void Logic_Unit::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

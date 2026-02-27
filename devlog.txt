@@ -54,9 +54,11 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
+- add registers for rampage, oppage
+- create mux class and replace it in ram
+- make assembler and disassembler (which allows us to check the behavior of the program programatically)
 - understand and break up _connect_ram_address_inputs (shouldnt need siggens)
 - retest all programs
-- make assembler and disassembler (which allows us to check the behavior of the program programatically)
 - tag main -
 - add MovOUT op
 - make gui faceplate/RAM (LED version)
@@ -79,6 +81,9 @@ V2
 - make assembler
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
+
+Feb 26 2026
+6.50p removed all redundant update() functions, inheriting component::update()
 
 Feb 24 2026
 2h multiplication code and testing (can't do shift with v1 ISA)

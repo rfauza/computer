@@ -61,7 +61,7 @@ int main()
     Computer_3bit_v1* computer = new Computer_3bit_v1("test_computer");
     std::string program_file = "programs/3bit_v1/long_mult.txt";
     computer->load_program(program_file);
-    computer->run(false);
+    computer->run();
     delete computer;
 }
 

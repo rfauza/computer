@@ -109,12 +109,4 @@ void Decoder::evaluate()
     }
 }
 
-void Decoder::update()
-{
-    evaluate();
-    
-    for (auto& component : downstream_components)
-    {
-        component->update();
-    }
-}
+

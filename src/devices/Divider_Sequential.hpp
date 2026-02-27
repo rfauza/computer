@@ -100,11 +100,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates the divider and propagates to downstream components
-     */
-    void update() override;
-    
     // Sequential control
     
     /**

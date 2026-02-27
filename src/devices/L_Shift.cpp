@@ -19,7 +19,7 @@ L_Shift::L_Shift(uint16_t num_bits, const std::string& name) : Device(num_bits, 
 
 L_Shift::~L_Shift() = default;
 
-void L_Shift::update()
+void L_Shift::evaluate()
 {
     // Left shift: output[i] = input[i+1], output[num_bits-1] = 0
     // Since LSB is at index 0, this shifts left (towards lower indices)
@@ -31,13 +31,4 @@ void L_Shift::update()
         }
     }
     outputs[num_inputs - 1] = 0;  // MSB becomes 0
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
 }

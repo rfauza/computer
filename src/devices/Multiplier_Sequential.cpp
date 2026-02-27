@@ -253,13 +253,3 @@ void Multiplier_Sequential::evaluate()
         }
     }
 }
-
-void Multiplier_Sequential::update()
-{
-    evaluate();
-    
-    for (auto& component : downstream_components)
-    {
-        component->update();
-    }
-}

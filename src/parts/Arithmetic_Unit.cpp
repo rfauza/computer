@@ -238,20 +238,6 @@ void Arithmetic_Unit::evaluate()
     }
 }
 
-void Arithmetic_Unit::update()
-{
-    evaluate();
-    
-    // Propagate to downstream components
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-
 void Arithmetic_Unit::print_adder_inputs() const
 {
     std::cout << "Adder_Subtractor inputs: ";

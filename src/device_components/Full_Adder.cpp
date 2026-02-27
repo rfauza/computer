@@ -64,18 +64,3 @@ void Full_Adder::evaluate()
     outputs[1] = or_gate_1.get_output(0);
 }
 
-void Full_Adder::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

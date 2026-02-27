@@ -13,8 +13,3 @@ Memory_Address::Memory_Address(uint16_t num_bits, const std::string& name) : Dev
     component_name = oss.str();
 }
 Memory_Address::~Memory_Address() = default;
-
-void Memory_Address::update()
-{
-}
-

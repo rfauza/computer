@@ -25,11 +25,13 @@ void Component::evaluate()
 
 void Component::update()
 {
-    // Default update: evaluate this component only.
-    // Do not automatically propagate updates to downstream components
-    // because the system orchestrates Phase 2 update propagation explicitly
-    // to avoid infinite recursion through feedback loops.
+    // Default update: evaluate this component and propagate to downstream components.
+    // Most components follow the pattern: compute outputs then notify dependents.
     evaluate();
+    for (Component* downstream : downstream_components)
+    {
+        if (downstream) downstream->update();
+    }
 }
 
 void Component::print_outputs() const

@@ -48,11 +48,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates the decoder and propagates to downstream components
-     */
-    void update() override;
-    
 private:
     Inverter** input_inverters; // one per input
     AND_Gate** output_ands; // array of pointers to AND_Gate objects (one per output)

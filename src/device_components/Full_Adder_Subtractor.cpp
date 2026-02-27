@@ -70,18 +70,3 @@ void Full_Adder_Subtractor::evaluate()
     outputs[1] = full_adder.get_output(1);
 }
 
-void Full_Adder_Subtractor::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

@@ -75,11 +75,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates the logic unit and propagates to downstream components
-     */
-    void update() override;
-    
 private:
     AND_Gate* and_gates;
     OR_Gate* or_gates;

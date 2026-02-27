@@ -131,18 +131,3 @@ void XOR_Gate::evaluate()
     outputs[0] = output_or_gate->get_output(0);
 }
 
-void XOR_Gate::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

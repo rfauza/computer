@@ -73,11 +73,6 @@ public:
     void evaluate() override;
     
     /**
-     * @brief Updates the arithmetic unit and propagates to downstream components
-     */
-    void update() override;
-    
-    /**
      * @brief Debug: Print adder_subtractor inputs
      */
     void print_adder_inputs() const;

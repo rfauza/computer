@@ -86,11 +86,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates the multiplier and propagates to downstream components
-     */
-    void update() override;
-    
     // Sequential control
     
     /**

@@ -38,11 +38,6 @@ void Bus::evaluate()
     }
 }
 
-void Bus::update()
-{
-    evaluate();
-}
-
 void Bus::attach_input(bool* input_signal)
 {
     if (input_signal != nullptr) {

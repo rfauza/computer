@@ -64,11 +64,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates the multiplier and propagates to downstream components
-     */
-    void update() override;
-    
 private:
     AND_Gate*** and_array;        // [num_bits][num_bits] AND gates for partial products
     Adder** adder_array;         // [num_bits-1] adders of increasing width

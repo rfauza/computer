@@ -46,11 +46,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates CPU and propagates signals
-     */
-    void update() override;
-    
     // === External Connection Methods ===
     
     /**
