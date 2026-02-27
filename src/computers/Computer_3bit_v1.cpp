@@ -38,7 +38,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // === RAM setup (addressing + write-phase control + data mux) ===
     // PM output layout: [opcode 0-2] [A 3-5] [B 6-8] [C 9-11]
     // Read port 1: [0:A]   Read port 2: CMP→[B:C], others→[0:B]   Write: [0:C] (high bits gated with MOVL)
-    _connect_ram();
+    _connect_ram_inputs();
     
     // === Connect RAM outputs to CPU ALU inputs ===
     _connect_ram_data_outputs();
@@ -86,7 +86,7 @@ void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
     delete[] pm_address_inputs;
 }
 
-void Computer_3bit_v1::_connect_ram()
+void Computer_3bit_v1::_connect_ram_inputs()
 {
     // Connect RAM Addressing logic to the PM output
     _connect_ram_address_inputs();
@@ -95,7 +95,7 @@ void Computer_3bit_v1::_connect_ram()
     _phase_ram_write_enable();
 
     // === MULTIPLEX RAM INPUT BETWEEN MOVL LITERAL AND CPU RESULT ===
-    _multiplex_RAM_inputs();
+    _multiplex_RAM_data_inputs();
 }
 
 void Computer_3bit_v1::_connect_ram_address_inputs()
@@ -247,7 +247,7 @@ void Computer_3bit_v1::_phase_ram_write_enable()
                        static_cast<uint16_t>(3 * NUM_RAM_ADDR_BITS + NUM_BITS + 2));
 }
 
-void Computer_3bit_v1::_multiplex_RAM_inputs()
+void Computer_3bit_v1::_multiplex_RAM_data_inputs()
 {
     /* Select between ALU result and PM literal for RAM write data */
     
