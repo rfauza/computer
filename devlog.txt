@@ -54,14 +54,15 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- connect rampage and opcodepage registers
+- replace mux in connect ram inputs
 - break up control unit initializer
-- make assembler and disassembler (which allows us to check the behavior of the program programatically)
+- make assembler
+- make disassembler (which allows us to check the behavior of the program programatically)
 - retest all programs
 - tag main -
-- add MovOUT op
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
+- add MovOUT op
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
 - write program to light one LED at a time, going down the rows and cols
 - watch-only pong?
@@ -74,6 +75,7 @@ Todo next:
 - v1.2 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
 
 V2
+- connect rampage and opcodepage registers
 - write programs for shift mult, shift div
 - create stack pointer, function call and return ability (pointers)
 - graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
