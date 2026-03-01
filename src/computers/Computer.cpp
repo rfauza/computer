@@ -39,14 +39,10 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
       execution_count(0),
       computer_version(""),
       ISA_version(""),
+      pm_decoder(nullptr),
       cmp_not(nullptr),
-      cmp_read2_low_and_cmp(nullptr),
-      cmp_read2_low_and_not(nullptr),
-      cmp_read2_low_or(nullptr),
-      cmp_read2_high_and(nullptr),
-      pm_opcode_bit1_not(nullptr),
-      pm_opcode_bit0_not(nullptr),
-      pm_cmp_opcode_and(nullptr)
+      ram_read2_addr_mux_low(nullptr),
+      ram_read2_addr_mux_high(nullptr)
 {
     // Signal generators for PM loading are sized here since pc_bits / num_bits
     // are already known. Subclass constructors do not need to create them.
@@ -123,28 +119,11 @@ Computer::~Computer()
     delete pm_load_data_sigs;
     delete ram_addr_sigs;
 
-    // Delete CMP read-port-2 address mux gates (null-safe; only allocated if wired)
+    // Delete PM opcode decoder and read-port-2 address muxes (null-safe)
+    delete pm_decoder;
     delete cmp_not;
-    if (cmp_read2_low_and_cmp && cmp_read2_low_and_not &&
-        cmp_read2_low_or && cmp_read2_high_and)
-    {
-        for (uint16_t i = 0; i < num_bits; ++i)
-        {
-            delete cmp_read2_low_and_cmp[i];
-            delete cmp_read2_low_and_not[i];
-            delete cmp_read2_low_or[i];
-            delete cmp_read2_high_and[i];
-        }
-    }
-    delete[] cmp_read2_low_and_cmp;
-    delete[] cmp_read2_low_and_not;
-    delete[] cmp_read2_low_or;
-    delete[] cmp_read2_high_and;
-
-    // Delete standalone CMP opcode decoder gates (null-safe; only allocated if wired)
-    delete pm_opcode_bit1_not;
-    delete pm_opcode_bit0_not;
-    delete pm_cmp_opcode_and;
+    delete ram_read2_addr_mux_low;
+    delete ram_read2_addr_mux_high;
 }
 
 bool Computer::load_program(const std::string& filename)
@@ -393,30 +372,20 @@ void Computer::evaluate()
 {
     program_memory->evaluate();
 
-    // Evaluate standalone CMP opcode decoder gates (if wired by subclass)
-    // Extracts CMP directly from PM bits, independent of CPU decoder, avoiding staleness
-    if (pm_opcode_bit1_not && pm_opcode_bit0_not && pm_cmp_opcode_and)
-    {
-        pm_opcode_bit1_not->evaluate();
-        pm_opcode_bit0_not->evaluate();
-        pm_cmp_opcode_and->evaluate();
-    }
+    // Evaluate PM opcode decoder (if wired by subclass).
+    // Must run immediately after program_memory so all downstream opcode-based
+    // gates see stable one-hot outputs before RAM reads.
+    if (pm_decoder)
+        pm_decoder->evaluate();
 
-    // Evaluate CMP read-port-2 address mux gates (if wired by subclass)
-    // Must run before ram->evaluate() so RAM sees the correct read address
-    if (cmp_not && cmp_read2_low_and_cmp)
-    {
-        // Decoder gates are evaluated here as well; they decode CMP from current PM opcode bits
-        // which are now stable after program_memory->evaluate() above
+    // Evaluate read-port-2 address mux (if wired by subclass).
+    // Must run before ram->evaluate() so RAM sees the correct address.
+    if (cmp_not)
         cmp_not->evaluate();
-        for (uint16_t i = 0; i < num_bits; ++i)
-        {
-            cmp_read2_low_and_cmp[i]->evaluate();
-            cmp_read2_low_and_not[i]->evaluate();
-            cmp_read2_low_or[i]->evaluate();
-            cmp_read2_high_and[i]->evaluate();
-        }
-    }
+    if (ram_read2_addr_mux_low)
+        ram_read2_addr_mux_low->evaluate();
+    if (ram_read2_addr_mux_high)
+        ram_read2_addr_mux_high->evaluate();
 
     // Phase 1: read flag HIGH → WE gated to 0, safe to read RAM
     toggle_ram_read_flag(true);

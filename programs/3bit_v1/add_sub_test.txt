@@ -1,4 +1,5 @@
 # Add/Sub 3-bit v1 test program
+# filename: add_sub_test
 # tests all integer adds and subs using loops
 # 3-bit v1 ISA:
 # 000 HALT   - Stop execution

@@ -54,7 +54,6 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- replace mux in connect ram inputs
 - break up control unit initializer
 - make assembler
 - make disassembler (which allows us to check the behavior of the program programatically)
@@ -82,6 +81,9 @@ V2
 - make assembler
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
+
+Feb 27 2026 : 
+1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
 
 Feb 26 2026 : 4h total 77h
 0.5h removed all redundant update() functions in entire project, inheriting component::update()

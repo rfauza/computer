@@ -3,6 +3,7 @@
 #include "../parts/CPU.hpp"
 #include "../parts/Program_Memory.hpp"
 #include "../parts/Main_Memory.hpp"
+#include "../devices/Decoder.hpp"
 #include "../devices/Multiplexer.hpp"
 #include "../devices/Register.hpp"
 #include "../components/Signal_Generator.hpp"
@@ -115,23 +116,19 @@ protected:
     // ── Write-address high-bits mux (gates B field with MOVL enable) ─────────
     AND_Gate**  ram_write_addr_high_mux;
     
-    // Attributes used for CMP to be able to compare to other pages
-    // ── Read-port-2 address mux (optional; used by CMP-style instructions) ────
-    // When wired by a subclass, read port 2 can address any RAM page instead of
-    // always page 0.  All five pointers default to nullptr; the subclass wires
-    // them in its _connect_ram_address_inputs() if needed.
-    Inverter*   cmp_not;                  ///< NOT(CMP enable signal)
-    AND_Gate**  cmp_read2_low_and_cmp;    ///< CMP AND C  → low addr bits when CMP
-    AND_Gate**  cmp_read2_low_and_not;    ///< !CMP AND B → low addr bits when not CMP
-    OR_Gate**   cmp_read2_low_or;         ///< combined read-port-2 low address bits
-    AND_Gate**  cmp_read2_high_and;       ///< CMP AND B  → high addr bits when CMP
+    // ── PM opcode decoder (decodes opcode bits before the CPU evaluates) ──────
+    // Created by the subclass after program_memory is wired. Provides one-hot
+    // outputs so subclasses can reference any opcode directly without manual
+    // AND/NOT logic. Defaults to nullptr; subclass initialises it.
+    Decoder*    pm_decoder;               ///< one-hot decoder for PM opcode bits
 
-    // ── Standalone CMP opcode decoder (optional; extracts CMP directly from PM bits) ──
-    // When used, these gates decode CMP opcode (100 binary) independently from CPU decoder,
-    // avoiding 1-cycle staleness. All three pointers default to nullptr.
-    Inverter*   pm_opcode_bit1_not;       ///< NOT(PM opcode bit 1)
-    Inverter*   pm_opcode_bit0_not;       ///< NOT(PM opcode bit 0)
-    AND_Gate*   pm_cmp_opcode_and;        ///< PM_bit[2] AND NOT(bit[1]) AND NOT(bit[0])
+    // ── Read-port-2 address mux (used by CMP-style instructions) ─────────────
+    // Multiplexes RAM read-port-2 address between the normal [0:B] layout and
+    // the CMP-specific [B:C] layout. Both default to nullptr; wired by the
+    // subclass inside _connect_ram_address_inputs() when it needs CMP support.
+    Inverter*    cmp_not;                  ///< NOT(CMP enable signal)
+    Multiplexer* ram_read2_addr_mux_low;   ///< selects B vs C for read-port-2 low address bits
+    Multiplexer* ram_read2_addr_mux_high;  ///< selects 0 vs B for read-port-2 high address bits
 
     // ── PM loading signal generators (kept alive to avoid use-after-free) ─────
     std::vector<Signal_Generator>*          pm_load_addr_sigs;
