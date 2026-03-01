@@ -54,14 +54,16 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- break up control unit initializer
+- make call/ret
+- make rampage
+- make opcodepage
+- make MovOut/MovIn
 - make assembler
 - make disassembler (which allows us to check the behavior of the program programatically)
 - retest all programs
 - tag main -
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
-- add MovOUT op
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
 - write program to light one LED at a time, going down the rows and cols
 - watch-only pong?
@@ -78,14 +80,13 @@ V2
 - write programs for shift mult, shift div
 - create stack pointer, function call and return ability (pointers)
 - graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
-- make assembler
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Mar 1 2026
-12.45p
+Mar 1 2026 : 
+1h break up control unit initializer
 
-Feb 28 2026 : 
+Feb 28 2026 : 2h total 79h
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
 1h replace mux in CU init
 

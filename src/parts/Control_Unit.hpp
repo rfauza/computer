@@ -58,16 +58,27 @@ public:
     virtual ~Control_Unit();
     
     /**
-     * @brief Intentionally overriding. Updates the control unit and propagates to downstream
-     */
-    void update() override;
-    
-    /**
      * @brief Evaluates internal components
      */
     void evaluate() override;
     
+    /**
+     * @brief Intentionally overriding. Updates the control unit and propagates to downstream
+     */
+    void update() override;
+    
     // === Connection Methods for Different Subsystems ===
+    
+    void _create_program_counter();
+    void _setup_run_halt_logic();
+    void _setup_compare_flags();
+    void _setup_rampage();
+    void _setup_opcode_page();
+    
+    /**
+     * @brief sets up stack pointer and return address registers for function calling
+     */
+    void _setup_function_calling();
     
     /**
      * @brief Connect PC output to Program Memory address input
@@ -108,10 +119,10 @@ public:
      * @brief Connect comparator flags from ALU
      * 
      * @param flag_outputs Pointer array to flag outputs (EQ, NEQ, LT_U, GT_U, LT_S, GT_S)
-     * @param num_flags Number of flag signals (typically 6)
+     * @param num_cmp_flags Number of flag signals (typically 6)
      * @return true if successful
      */
-    bool connect_comparator_flags(const bool* const* flag_outputs, uint16_t num_flags);
+    bool connect_comparator_flags(const bool* const* flag_outputs, uint16_t num_cmp_flags);
     
     /**
      * @brief Connect RAM page register data input
@@ -257,8 +268,7 @@ protected:
     Flip_Flop* flag_clear_counter;    /**< Flip-flop for 1-cycle delay */
     Signal_Generator* clear_set;      /**< Used to set the clear counter */
     Signal_Generator* clear_reset;    /**< Used to reset the clear counter */
-    Inverter* clear_inverter;         /**< Inverts clear signal to clear flags */
-    uint16_t num_flags;               /**< Number of comparator flags */
+    uint16_t num_cmp_flags;               /**< Number of comparator flags */
     
     // RAM Page Register
     Register* ram_page_register;      /**< RAM paging register (2*num_bits) */
