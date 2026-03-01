@@ -155,9 +155,9 @@ bool CPU::connect_program_memory(const bool* const* pm_opcode_outputs, bool** pm
 }
 
 bool CPU::connect_data_inputs(
-    const bool* const* data_c_outputs,
     const bool* const* data_a_outputs,
-    const bool* const* data_b_outputs)
+    const bool* const* data_b_outputs,
+    const bool* const* data_c_outputs)
 {
     if (!data_a_outputs || !data_b_outputs)
         return false;

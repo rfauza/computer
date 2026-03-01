@@ -58,7 +58,7 @@ public:
     virtual ~Control_Unit();
     
     /**
-     * @brief Updates the control unit and propagates to downstream
+     * @brief Intentionally overriding. Updates the control unit and propagates to downstream
      */
     void update() override;
     

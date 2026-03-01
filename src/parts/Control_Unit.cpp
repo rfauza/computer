@@ -315,9 +315,10 @@ void Control_Unit::evaluate()
 
 void Control_Unit::update()
 {
-    // DO NOT CALL EVALUATE HERE!
-    // update() should only latch storage elements, not re-compute combinational logic
+    /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
+    (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
     
+    // update() should only latch storage elements, not re-compute combinational logic
     // Update internal storage elements (flip-flops and registers)
     run_halt_flag->update();
     flag_register->update();

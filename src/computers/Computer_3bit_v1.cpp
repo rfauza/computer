@@ -39,12 +39,14 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // === RAM setup (addressing + write-phase control + data mux) ===
     // PM output layout: [opcode 0-2] [A 3-5] [B 6-8] [C 9-11]
     // Read port 1: [0:A]   Read port 2: CMP→[B:C], others→[0:B]   Write: [0:C] (high bits gated with MOVL)
+    
+    // multiplex inputs for MOVL vs ADD/SUB, multiplex outputs for CMP vs non-CMP
     _connect_ram_inputs();
     
-    // === Connect RAM outputs to CPU ALU inputs ===
+    // Connect RAM outputs to CPU ALU inputs
     _connect_ram_outputs();
     
-    // === Jump address: [A:B:C] ===
+    // Jump address: [A:B:C]
     _connect_jump_logic();
     
     // Print constructor success
@@ -102,13 +104,14 @@ void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
 
 void Computer_3bit_v1::_connect_ram_inputs()
 {
-    // Connect RAM Addressing logic to the PM output
+    // Connect RAM Addressing logic to the PM output,
+    // multiplexing high bits between 000 for add/sub, and B/C for CMP to allo other pages
     _connect_ram_address_inputs();
     
     // === Implement two-phase write gating to prevent read/write contention ===
     _phase_ram_write_enable();
 
-    // === MULTIPLEX RAM INPUT BETWEEN MOVL LITERAL AND CPU RESULT ===
+    // === Multiplex RAM data inputs between MOVL and ALU result ===
     _multiplex_RAM_data_inputs();
 }
 
@@ -306,7 +309,7 @@ void Computer_3bit_v1::_connect_ram_outputs()
 
     // === Connect all data sources to CPU ===
     // The CPU uses data_c for MOVL literal, data_a and data_b for ALU operations
-    cpu->connect_data_inputs(data_c_ptrs, data_a_ptrs, data_b_ptrs);
+    cpu->connect_data_inputs(data_a_ptrs, data_b_ptrs, data_c_ptrs);
 }
 
 void Computer_3bit_v1::_connect_jump_logic()

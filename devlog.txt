@@ -82,7 +82,10 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Feb 27 2026 : 
+Mar 1 2026
+12.45p
+
+Feb 28 2026 : 
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
 1h replace mux in CU init
 
