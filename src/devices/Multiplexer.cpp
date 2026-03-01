@@ -33,6 +33,16 @@ Multiplexer::Multiplexer(uint16_t num_bits_, uint16_t num_sources_, const std::s
     // Provide outputs for the multiplexer (one output per bit)
     num_outputs = num_bits;
     allocate_IO_arrays();
+
+    // Wire OR gates to AND gate outputs (fixed internal structure; data/control
+    // inputs are connected later via connect_sources* or the piecemeal helpers).
+    for (uint16_t bit = 0; bit < num_bits; ++bit)
+    {
+        for (uint16_t source = 0; source < num_sources; ++source)
+        {
+            or_gates[bit]->connect_input(&source_and_gates[source][bit]->get_outputs()[0], source);
+        }
+    }
 }
 
 Multiplexer::~Multiplexer()
@@ -78,14 +88,7 @@ void Multiplexer::connect_sources(const bool* const* const* sources, const bool*
         }
     }
 
-    // For each bit, connect all source AND outputs to the OR gate
-    for (uint16_t bit = 0; bit < num_bits; ++bit)
-    {
-        for (uint16_t source = 0; source < num_sources; ++source)
-        {
-            or_gates[bit]->connect_input(&source_and_gates[source][bit]->get_outputs()[0], source);
-        }
-    }
+    // OR-gate wiring is done in the constructor; nothing to repeat here.
 }
 
 void Multiplexer::connect_sources_from_values(const bool* const* sources_values, const bool* const* control_sigs)
@@ -95,20 +98,23 @@ void Multiplexer::connect_sources_from_values(const bool* const* sources_values,
     {
         for (uint16_t bit = 0; bit < num_bits; ++bit)
         {
-            // connect AND gate input0 to the address of the bool element
             source_and_gates[source][bit]->connect_input(&sources_values[source][bit], 0);
-            // connect control signal input1
             source_and_gates[source][bit]->connect_input(control_sigs[source], 1);
         }
     }
+    // OR-gate wiring is done in the constructor; nothing to repeat here.
+}
 
-    // connect AND outputs into OR gates
+void Multiplexer::connect_source_data_bit(uint16_t source_idx, uint16_t bit_idx, const bool* data_signal)
+{
+    source_and_gates[source_idx][bit_idx]->connect_input(data_signal, 0);
+}
+
+void Multiplexer::connect_source_control(uint16_t source_idx, const bool* control_signal)
+{
     for (uint16_t bit = 0; bit < num_bits; ++bit)
     {
-        for (uint16_t source = 0; source < num_sources; ++source)
-        {
-            or_gates[bit]->connect_input(&source_and_gates[source][bit]->get_outputs()[0], source);
-        }
+        source_and_gates[source_idx][bit]->connect_input(control_signal, 1);
     }
 }
 

@@ -33,7 +33,7 @@ public:
      * @param name Optional name suffix used to create per-component names.
      */
     Computer_3bit_v1(const std::string& name = "");
-    ~Computer_3bit_v1() override = default;
+    ~Computer_3bit_v1() override;
 
 protected:
     /**
@@ -52,6 +52,7 @@ private:
     static const std::string ISA_V1_OPCODES;
     
     bool* cu_decoder;  ///< Pointer to CPU decoder outputs for opcode-based control signals
+    Inverter* movl_not; ///< Inverter for MOVL control used by RAM data mux
 
     // constructor helper functions
     /**

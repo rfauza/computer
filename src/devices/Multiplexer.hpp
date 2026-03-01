@@ -24,6 +24,12 @@ public:
     // Example: const bool* sources[] = { cpu_result, program_memory->get_outputs() };
     void connect_sources_from_values(const bool* const* sources_values, const bool* const* control_sigs);
 
+    // Piecemeal wiring helpers (allow post-construction reconnection of individual wires)
+    // Connect the data input for a specific source and bit position.
+    void connect_source_data_bit(uint16_t source_idx, uint16_t bit_idx, const bool* data_signal);
+    // Connect the control signal for a specific source (applied to all bits of that source).
+    void connect_source_control(uint16_t source_idx, const bool* control_signal);
+
 private:
     uint16_t num_sources;
     

@@ -84,6 +84,7 @@ V2
 
 Feb 27 2026 : 
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
+1h replace mux in CU init
 
 Feb 26 2026 : 4h total 77h
 0.5h removed all redundant update() functions in entire project, inheriting component::update()

@@ -15,7 +15,8 @@ const std::string Computer_3bit_v1::ISA_V1_OPCODES =
     "111 NOP\n";
 
 Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
-    : Computer(NUM_BITS, NUM_RAM_ADDR_BITS, PC_BITS, name)
+        : Computer(NUM_BITS, NUM_RAM_ADDR_BITS, PC_BITS, name),
+            movl_not(nullptr)
 {
     // Set version strings for this computer variant
     computer_version = "3-bit v1";
@@ -48,6 +49,11 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     
     // Print constructor success
     _print_architecture_details();
+}
+
+Computer_3bit_v1::~Computer_3bit_v1()
+{
+    delete movl_not;
 }
 
 void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
@@ -259,11 +265,11 @@ void Computer_3bit_v1::_multiplex_RAM_data_inputs()
     const bool* sources[] = { alu_result, pm_literal };
     
     // invert MOVL decoder output to indicate to use CPU result when not MOVL
-    Inverter* movl_not = new Inverter(1, "movl_not_for_mux");
+    movl_not = new Inverter(1, "movl_not_for_mux");
     movl_not->connect_input(&cu_decoder[1], 0);
     movl_not->evaluate();
-    
-    // control signals: MOVL and !MOVL (use literal when MOVL, use ALU result otherwise)
+
+    // control signals: !MOVL (source 0) and MOVL (source 1) (use literal when MOVL, use ALU result otherwise)
     const bool* controls[] = { &movl_not->get_outputs()[0], &cu_decoder[1] };
     
     // Connect sources and controls to the multiplexer

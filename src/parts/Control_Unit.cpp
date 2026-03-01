@@ -52,11 +52,10 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
         pc_incrementer->connect_input(&increment_signals[i]->get_outputs()[0], pc_bits + i);  // B inputs = 0001
     }
     
-    // === PC Write Control (Mux between increment and jump) ===
+    // === PC Write Control (Mux between halt-gated increment and jump address) ===
     jump_enable_inverter = new Inverter(1, "jump_enable_inverter_in_control_unit");
-    pc_increment_and_gates = new AND_Gate*[pc_bits];
-    pc_jump_and_gates = new AND_Gate*[pc_bits];
-    pc_write_mux = new OR_Gate*[pc_bits];
+    pc_halt_and_gates = new AND_Gate*[pc_bits];
+    pc_write_mux = new Multiplexer(pc_bits, 2, "pc_write_mux_in_control_unit");
     
     // Create default low signal for optional/unconnected inputs
     default_low_signal = new Signal_Generator("default_low_in_control_unit");
@@ -107,33 +106,24 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        std::ostringstream and_inc_name, and_jmp_name, or_name;
-        and_inc_name << "pc_increment_and_gate_" << i << "_in_control_unit";
-        and_jmp_name << "pc_jump_and_gate_" << i << "_in_control_unit";
-        or_name << "pc_write_mux_" << i << "_in_control_unit";
+        std::ostringstream and_halt_name;
+        and_halt_name << "pc_halt_and_gate_" << i << "_in_control_unit";
         
-        // 3-input AND gate: incrementer & !jump_enable & run_flag
-        pc_increment_and_gates[i] = new AND_Gate(3, and_inc_name.str());
-        pc_jump_and_gates[i] = new AND_Gate(2, and_jmp_name.str());
-        pc_write_mux[i] = new OR_Gate(2, or_name.str());
+        // 2-input AND gate: incrementer[i] & !halt
+        pc_halt_and_gates[i] = new AND_Gate(2, and_halt_name.str());
+        pc_halt_and_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
+        pc_halt_and_gates[i]->connect_input(&halt_inverter->get_outputs()[0], 1);
         
-        // Wire: incrementer_output & !jump_enable & !halt -> AND gate
-        pc_increment_and_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
-        pc_increment_and_gates[i]->connect_input(&jump_enable_inverter->get_outputs()[0], 1);
-        pc_increment_and_gates[i]->connect_input(&halt_inverter->get_outputs()[0], 2);  // Immediate !halt signal (no latency)
+        // Source[0]: halt-gated increment; source[1]: jump address (default low)
+        pc_write_mux->connect_source_data_bit(0, i, &pc_halt_and_gates[i]->get_outputs()[0]);
+        pc_write_mux->connect_source_data_bit(1, i, &default_low_signal->get_outputs()[0]);
         
-        // Wire: jump_address & jump_enable -> OR gate
-        // (jump address will be connected externally via connect_jump_address_to_pc)
-        // Default: connect jump address to low (no jump)
-        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 0);
-        // Default: connect jump enable to low (no jump)
-        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 1);
-        
-        // Wire OR outputs to PC data inputs
-        pc_write_mux[i]->connect_input(&pc_increment_and_gates[i]->get_outputs()[0], 0);
-        pc_write_mux[i]->connect_input(&pc_jump_and_gates[i]->get_outputs()[0], 1);
-        pc->connect_input(&pc_write_mux[i]->get_outputs()[0], i);
+        // Wire mux output to PC data input
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
     }
+    // Source controls: [0]=!jump_enable, [1]=low by default (updated by connect_jump_enable)
+    pc_write_mux->connect_source_control(0, &jump_enable_inverter->get_outputs()[0]);
+    pc_write_mux->connect_source_control(1, &default_low_signal->get_outputs()[0]);
     
     // PC always writes and reads
     pc_write_enable = new Signal_Generator("pc_write_enable_in_control_unit");
@@ -220,14 +210,11 @@ Control_Unit::~Control_Unit()
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
         delete increment_signals[i];
-        delete pc_increment_and_gates[i];
-        delete pc_jump_and_gates[i];
-        delete pc_write_mux[i];
+        delete pc_halt_and_gates[i];
     }
     delete[] increment_signals;
-    delete[] pc_increment_and_gates;
-    delete[] pc_jump_and_gates;
-    delete[] pc_write_mux;
+    delete[] pc_halt_and_gates;
+    delete pc_write_mux;
     
     delete jump_enable_inverter;
     delete default_low_signal;
@@ -307,10 +294,9 @@ void Control_Unit::evaluate()
     jump_enable_inverter->evaluate();
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_increment_and_gates[i]->evaluate();
-        pc_jump_and_gates[i]->evaluate();
-        pc_write_mux[i]->evaluate();
+        pc_halt_and_gates[i]->evaluate();
     }
+    pc_write_mux->evaluate();
     
     // 3. Update PC
     pc->evaluate();
@@ -368,7 +354,7 @@ bool Control_Unit::connect_jump_address_to_pc(const bool* const* jump_address_ou
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_jump_and_gates[i]->connect_input(jump_address_output[i], 0);
+        pc_write_mux->connect_source_data_bit(1, i, jump_address_output[i]);
     }
     return true;
 }
@@ -381,11 +367,8 @@ bool Control_Unit::connect_jump_enable(const bool* jump_enable_signal)
     // Connect to inverter
     jump_enable_inverter->connect_input(jump_enable_signal, 0);
     
-    // Connect to all jump gates
-    for (uint16_t i = 0; i < pc_bits; ++i)
-    {
-        pc_jump_and_gates[i]->connect_input(jump_enable_signal, 1);
-    }
+    // Update jump source control in the mux
+    pc_write_mux->connect_source_control(1, jump_enable_signal);
     
     return true;
 }
