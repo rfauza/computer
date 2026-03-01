@@ -164,4 +164,12 @@ protected:
     
     /// Print architecture details using computer_version and ISA_version.
     void _print_architecture_details() const;
+
+    /**
+     * @brief Evaluate ISA-specific logic gates (called during phase 2 before
+     * write-address gates). Subclasses may override to evaluate gates like
+     * instruction-decode OR gates that control write addressing.
+     * Default implementation is a no-op.
+     */
+    virtual void evaluate_isa_write_gates();
 };

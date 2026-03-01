@@ -34,7 +34,7 @@ ToDo:
 - keyboard inputs (writes direclty to a register, only one is stored at a time, ignores other inputs until processed)
 - make 3-bit pong and snake
 
-rampage write enable should be opcode
+
 return addr and stack pointer. sp should point in ram to ra, so can have call from call
 clock tick is logic. needs to be gates
 
@@ -54,14 +54,11 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- make call/ret
-- make rampage
-- make opcodepage
-- make MovOut/MovIn
 - make assembler
 - make disassembler (which allows us to check the behavior of the program programatically)
 - retest all programs
 - tag main -
+
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
@@ -70,21 +67,27 @@ Todo next:
 - keyboard inputs and MS paint? 
 - tag main -
 
-- write program to add long ints?
+- write program to add long ints
 - v1.1 NOOP becomes movOUT - copy data from one address to another (to transfer across pages)
 - v1.1 jeq becomes movIN
 - v1.2 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
 
 V2
-- connect rampage and opcodepage registers
+- make MovIn
+- connect opcodepage
+- connect rampage
+- make call/ret (create stack pointer, function call and return ability (pointers))
+    (stack of registers (or page in ram) that store pm when func call, counter to know which to pop)
+- address pointers (where to store func results)
+    (or better: save arguments to new rampage, page, then call func. page back on ret, retrieve result from that page)
 - write programs for shift mult, shift div
-- create stack pointer, function call and return ability (pointers)
 - graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
 Mar 1 2026 : 
 1h break up control unit initializer
+1h added MovOut instruction for 3-bit v1
 
 Feb 28 2026 : 2h total 79h
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs

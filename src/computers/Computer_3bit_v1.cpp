@@ -12,11 +12,12 @@ const std::string Computer_3bit_v1::ISA_V1_OPCODES =
     "100 CMP\n"
     "101 JEQ\n"
     "110 JGT\n"
-    "111 NOP\n";
+    "111 MOVOUT\n";
 
 Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
         : Computer(NUM_BITS, NUM_RAM_ADDR_BITS, PC_BITS, name),
-            movl_not(nullptr)
+            movl_not(nullptr),
+            movl_or_movout(nullptr)
 {
     // Set version strings for this computer variant
     computer_version = "3-bit v1";
@@ -32,6 +33,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
     // Create Program Memory (9-bit address, 3-bit data) and RAM (6-bit address, 3-bit data)
     program_memory = new Program_Memory(PC_BITS, NUM_BITS, "pm_3bit_v1");
     ram = new Main_Memory(NUM_RAM_ADDR_BITS, NUM_BITS, "ram_3bit_v1");
+    
     
     // Connect PM opcode outputs to CPU decoder
     _connect_program_memory_to_CPU_decoder();
@@ -56,6 +58,7 @@ Computer_3bit_v1::Computer_3bit_v1(const std::string& name)
 Computer_3bit_v1::~Computer_3bit_v1()
 {
     delete movl_not;
+    delete movl_or_movout;
 }
 
 void Computer_3bit_v1::_connect_program_memory_to_CPU_decoder()
@@ -133,7 +136,7 @@ void Computer_3bit_v1::_setup_ram_read_muxes()
     cmp_not = new Inverter(1, "cmp_not_in_computer_3bit_v1");
     cmp_not->connect_input(&pm_decoder->get_outputs()[4], 0);  // NOT(CMP)
 
-    // === Read-port-2 address mux ===
+    // === Read-port-2 address address low-bits mux ===
     // ADD/SUB: read port 2 address = [0 : B]   (page 0, addr = B field)
     // CMP:     read port 2 address = [B : C]   (page = B field, addr = C field)
     //
@@ -177,6 +180,13 @@ void Computer_3bit_v1::_wire_ram_address_and_write_controls()
     // Get references to the CPU's opcode decoder outputs for control logic (MOVL, ADD, SUB write enables)
     cu_decoder = cpu->get_decoder_outputs();
     ram_write_addr_high_mux = new AND_Gate*[NUM_BITS];
+
+    // MOVL and MOVOUT both write to a page given by the B field.
+    // Gate the write-address high bits with (MOVL | MOVOUT).
+    movl_or_movout = new OR_Gate(2, "movl_or_movout_in_computer_3bit_v1");
+    movl_or_movout->connect_input(&cu_decoder[1], 0);  // MOVL
+    movl_or_movout->connect_input(&cu_decoder[7], 1);  // MOVOUT
+    movl_or_movout->evaluate();
     
     for (uint16_t i = 0; i < NUM_BITS; ++i)
     {
@@ -205,20 +215,21 @@ void Computer_3bit_v1::_wire_ram_address_and_write_controls()
         std::ostringstream gate_name;
         gate_name << "ram_write_addr_high_" << i;
         ram_write_addr_high_mux[i] = new AND_Gate(2, gate_name.str());
-        ram_write_addr_high_mux[i]->connect_input(&cu_decoder[1], 0);  // MOVL decoder output
+        ram_write_addr_high_mux[i]->connect_input(&movl_or_movout->get_outputs()[0], 0);  // MOVL|MOVOUT
         ram_write_addr_high_mux[i]->connect_input(&program_memory->get_outputs()[pm_b], 1);  // B field
         ram->connect_input(&ram_write_addr_high_mux[i]->get_outputs()[0],
                            static_cast<uint16_t>(2 * NUM_RAM_ADDR_BITS + NUM_BITS + i));
     }
 
     // === Configure RAM write enable from instruction decoder ===
-    // OR gate enables write when MOVL, ADD, or SUB instruction is decoded.
-    ram_write_or = new OR_Gate(3, "ram_write_or_in_computer_3bit_v1");
-    if ((1u << cpu->get_opcode_bits()) > 2)
+    // OR gate enables write when MOVL, ADD, SUB, or MOVOUT instruction is decoded.
+    ram_write_or = new OR_Gate(4, "ram_write_or_in_computer_3bit_v1");
+    if ((1u << cpu->get_opcode_bits()) > 7)
     {
         ram_write_or->connect_input(&cu_decoder[1], 0);  // MOVL
         ram_write_or->connect_input(&cu_decoder[2], 1);  // ADD
         ram_write_or->connect_input(&cu_decoder[3], 2);  // SUB
+        ram_write_or->connect_input(&cu_decoder[7], 3);  // MOVOUT
         ram_write_or->evaluate();
     }
 }
@@ -254,28 +265,31 @@ void Computer_3bit_v1::_phase_ram_write_enable()
 
 void Computer_3bit_v1::_multiplex_RAM_data_inputs()
 {
-    /* Select between ALU result and PM literal for RAM write data */
-    
-    // Create multiplexer (source 0 for ALU, source 1 for literal)
-    int num_sources = 2;
+    /* Select between ALU result, PM literal (MOVL), or RAM port-A output (MOVOUT) for write data */
+
+    // Source 0: ALU result  — when neither MOVL nor MOVOUT
+    // Source 1: PM literal  — when MOVL
+    // Source 2: RAM port-A  — when MOVOUT (value already on bus from read phase)
+    int num_sources = 3;
     ram_data_mux = new Multiplexer(NUM_BITS, num_sources, "ram_data_mux_in_computer_3bit_v1");
-    
-    // get data sources: ALU result from CPU and literal from PM
-    const bool* alu_result = cpu->get_result_outputs();
-    const bool* pm_literal = &program_memory->get_outputs()[static_cast<uint16_t>(NUM_BITS)];
-    
-    // create sources array
-    const bool* sources[] = { alu_result, pm_literal };
-    
-    // invert MOVL decoder output to indicate to use CPU result when not MOVL
+
+    const bool* alu_result  = cpu->get_result_outputs();
+    const bool* pm_literal  = &program_memory->get_outputs()[static_cast<uint16_t>(NUM_BITS)];
+    const bool* ram_port_a  = ram->get_outputs();  // port-A output (bits 0..NUM_BITS-1)
+
+    const bool* sources[] = { alu_result, pm_literal, ram_port_a };
+
+    // movl_not reused as NOT(MOVL|MOVOUT): gates ALU source off whenever a page-write is active
     movl_not = new Inverter(1, "movl_not_for_mux");
-    movl_not->connect_input(&cu_decoder[1], 0);
+    movl_not->connect_input(&movl_or_movout->get_outputs()[0], 0);
     movl_not->evaluate();
 
-    // control signals: !MOVL (source 0) and MOVL (source 1) (use literal when MOVL, use ALU result otherwise)
-    const bool* controls[] = { &movl_not->get_outputs()[0], &cu_decoder[1] };
-    
-    // Connect sources and controls to the multiplexer
+    const bool* controls[] = {
+        &movl_not->get_outputs()[0],  // NOT(MOVL|MOVOUT) -> ALU result
+        &cu_decoder[1],               // MOVL             -> PM literal
+        &cu_decoder[7]                // MOVOUT           -> RAM port-A
+    };
+
     ram_data_mux->connect_sources_from_values(sources, controls);
     
     // Connect multiplexed output to RAM input
@@ -310,6 +324,15 @@ void Computer_3bit_v1::_connect_ram_outputs()
     // === Connect all data sources to CPU ===
     // The CPU uses data_c for MOVL literal, data_a and data_b for ALU operations
     cpu->connect_data_inputs(data_a_ptrs, data_b_ptrs, data_c_ptrs);
+}
+
+void Computer_3bit_v1::evaluate_isa_write_gates()
+{
+    // Evaluate the OR gate that combines MOVL|MOVOUT for page-addressed writes
+    if (movl_or_movout)
+    {
+        movl_or_movout->evaluate();
+    }
 }
 
 void Computer_3bit_v1::_connect_jump_logic()
@@ -358,7 +381,7 @@ std::string Computer_3bit_v1::get_opcode_name(uint16_t opcode) const
         case 0b100: return "CMP";
         case 0b101: return "JEQ";
         case 0b110: return "JGT";
-        case 0b111: return "NOP";
+        case 0b111: return "MOVOUT";
         default:    return "UNKNOWN";
     }
 }

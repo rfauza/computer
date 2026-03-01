@@ -400,6 +400,9 @@ void Computer::evaluate()
         ram_data_mux->evaluate();
     }
 
+    // Allow subclass to evaluate ISA-specific gates before write-address gates use them
+    evaluate_isa_write_gates();
+
     // Evaluate any per-bit write-address high-bit gates if allocated by subclass
     if (ram_write_addr_high_mux)
     {
@@ -439,6 +442,11 @@ uint16_t Computer::from_binary(const std::string& binary) const
         return value;
     }
     return static_cast<uint16_t>(std::stoi(binary));
+}
+
+void Computer::evaluate_isa_write_gates()
+{
+    // Default no-op: subclasses may override to evaluate ISA-specific gates
 }
 
 void Computer::_create_namestring(const std::string& name)

@@ -14,7 +14,7 @@
  *   100 CMP   - Compare Out: set flags from [A] vs [B:C]  (B = page, C = addr)
  *   101 JEQ   - Jump if EQ:  goto [A:B:C]
  *   110 JGT   - Jump if GT:  goto [A:B:C]
- *   111 NOP   - No operation (options: CMP-in, MOVA-out, MOVA-in, rampage)
+ *   111 MOVOUT - Move out: [rampage:A] -> [B:C] (copy across RAM pages)
  *
  * Architecture: 3-bit data, 6-bit RAM addressing ([page:addr]),
  * 9-bit PC (512 PM addresses).
@@ -43,6 +43,7 @@ protected:
      * (e.g. 0b010 -> "ADD"). Used by diagnostics and printing helpers.
      */
     std::string get_opcode_name(uint16_t opcode) const override;
+    void evaluate_isa_write_gates() override;
 
 private:
     static constexpr uint16_t NUM_BITS = 3;
@@ -52,7 +53,8 @@ private:
     static const std::string ISA_V1_OPCODES;
     
     bool* cu_decoder;  ///< Pointer to CPU decoder outputs for opcode-based control signals
-    Inverter* movl_not; ///< Inverter for MOVL control used by RAM data mux
+    Inverter* movl_not;        ///< NOT(MOVL|MOVOUT): selects ALU result for write data
+    OR_Gate* movl_or_movout;   ///< MOVL|MOVOUT: gates write-address page bits and mux control
 
     // constructor helper functions
     /**
