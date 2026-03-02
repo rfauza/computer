@@ -31,6 +31,8 @@
 #include "testing/main_memory_tester.hpp"
 #include <filesystem>
 #include "computers/Computer_3bit_v1.hpp"
+#include "utilities/assembler.hpp"
+#include "utilities/evaluator.hpp"
 
 // Forward declaration of testMainMemory
 void testMainMemory();
@@ -40,29 +42,25 @@ extern int run_3bit_test(int argc, char* argv[]);
 
 int main()
 {
-    // Legacy test calls (kept commented for reference)
-    // Test Arithmetic Unit (4-bit)
-    // test_arithmetic_unit_truth_table();
-    
-    // Test ALU (4-bit, print all tests for now)
-    // test_alu_truth_table(4, true);
-    
-    // Test Control Unit (4-bit, print all tests)
-    // test_control_unit(4, true);
-    
-    // Test CPU (4-bit, print all tests)
-    // test_cpu(4, true);
-    
-    // Uncomment to test ALU with all tests printed:
-    // test_alu_truth_table(4, true);
+    // Assemble the provided .ass file and then run the Evaluator on the
+    // generated machine-code file. This allows automated verification.
+    // Paths are relative to the build directory when the executable runs there.
+    const std::string asm_path = "../programs/3bit_v1/add_sub.ass";
+    const std::string out_mc   = "../programs/3bit_v1/add_sub.mc";
 
-    // Unconditionally run the 3-bit interactive test (no argv required)
-    // return run_3bit_test(0, nullptr);
-    Computer_3bit_v1* computer = new Computer_3bit_v1("test_computer");
-    std::string program_file = "programs/3bit_v1/add_sub_test.txt";
-    computer->load_program(program_file);
-    computer->run(true);
-    delete computer;
+    Assembler assembler;
+    bool ok = assembler.assemble(asm_path, out_mc);
+    if (!ok)
+    {
+        std::cerr << "Assembly failed; aborting evaluation.\n";
+        return 1;
+    }
+
+    Evaluator eval;
+    bool pass = eval.evaluate(out_mc, true);
+    std::cout << "Evaluator result: " << (pass ? "PASS" : "FAIL") << "\n";
+
+    return pass ? 0 : 2;
 }
 
 bool loadPM()

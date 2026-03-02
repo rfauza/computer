@@ -54,8 +54,6 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- make assembler
-- make disassembler (which allows us to check the behavior of the program programatically)
 - retest all programs
 - tag main -
 
@@ -88,6 +86,7 @@ V2
 Mar 1 2026 : 
 1h break up control unit initializer
 1h added MovOut instruction for 3-bit v1
+1h made assembler and evaluator
 
 Feb 28 2026 : 2h total 79h
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs

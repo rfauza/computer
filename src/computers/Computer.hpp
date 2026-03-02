@@ -79,6 +79,42 @@ public:
 
     void evaluate() override;
 
+    // ── State query helpers (used by Evaluator) ───────────────────────────────
+
+    /** @brief Return the current program counter value. */
+    uint16_t get_pc() const;
+
+    /**
+     * @brief Re-evaluate the Program Memory decoder so get_pc() reflects
+     *        the CPU's current PC register outputs.
+     *
+     * Call this after clock_tick() when you need an up-to-date PC value.
+     * (The PM decoder is normally updated only at the start of each
+     * clock_tick(); calling sync_pc() between ticks keeps it in sync.)
+     */
+    void sync_pc();
+
+    /**
+     * @brief Read a RAM register value by its full address.
+     * @param address Full RAM address (0 to num_ram_addresses-1).
+     * @return The stored value at that address.
+     */
+    uint16_t read_ram(uint16_t address) const;
+
+    /** @brief Return data-path width in bits. */
+    uint16_t get_num_bits() const { return num_bits; }
+
+    /** @brief Return total number of RAM addresses. */
+    uint16_t get_num_ram_addresses() const { return num_ram_addresses; }
+
+    /** @brief Return the ISA version string set by the subclass. */
+    const std::string& get_isa_version() const { return ISA_version; }
+
+    /** @brief Return whether the computer is still running (not halted). */
+    bool get_is_running() const { return is_running; }
+    
+    // ───End:  State query helpers (used by Evaluator) ───────────────────────────────────
+
 protected:
     // ── Runtime dimensions (set once by the constructor) ──────────────────────
     uint16_t num_bits;

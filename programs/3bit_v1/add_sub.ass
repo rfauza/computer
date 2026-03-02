@@ -1,0 +1,47 @@
+# Add/Sub 3-bit v1 test program
+# filename: add_sub.ass
+# isa: 3bit_v1
+# tests all integer adds and subs using loops
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: sets flags based on [A] vs [B]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+
+# init
+movl 0 0 0    # move literal 0 into RAM addr 0 (A)
+movl 1 0 1    # move literal 1 into RAM addr 1 (B)
+movl 1 0 2    # move literal 1 into RAM addr 2 (1 for incrementing)
+movl 0 0 3    # move literal 0 into RAM addr 3 (0 for jumping when B overflows)
+
+# add loop
+def add_loop    # create reference to top of add loop
+add 0 1 4       # ADD #0 + #1 -> #4
+movout 4 1 4    # MOVOUT: copy result at #4 (page0) -> same addr on page1
+sub 0 1 5       # SUB #0 - #1 -> #5
+movout 5 1 5    # MOVOUT: copy result at #5 (page0) -> same addr on page1
+add 1 2 1       # ADD #1 + #2 -> #1 (increment B)
+cmp 1 0 3       # CMP #1 to #3 (zero)
+jgt add_loop    # JMP to #4 if B>0 (inner loop)
+ADD 0 2 0       # ADD #0 + #2 -> #0 (increment A)
+CMP 0 0 3       # CMP #0 to #3 (zero)
+JGT add_loop    # JMP to #4 if A>0 (outer loop)
+halt            # Halt execution
+
+
+
+
+
+
+
+
+
+
+
+
+

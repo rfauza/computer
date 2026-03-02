@@ -449,6 +449,21 @@ void Computer::evaluate_isa_write_gates()
     // Default no-op: subclasses may override to evaluate ISA-specific gates
 }
 
+uint16_t Computer::get_pc() const
+{
+    return program_memory->get_selected_address();
+}
+
+void Computer::sync_pc()
+{
+    program_memory->evaluate();
+}
+
+uint16_t Computer::read_ram(uint16_t address) const
+{
+    return ram->get_register_value(address);
+}
+
 void Computer::_create_namestring(const std::string& name)
 {
     // Create a unique component name string with memory address and optional name
