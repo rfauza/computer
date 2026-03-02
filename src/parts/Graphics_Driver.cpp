@@ -13,7 +13,7 @@ Graphics_Driver::Graphics_Driver(uint16_t num_bits, const std::string& name) : P
 }
 Graphics_Driver::~Graphics_Driver() = default;
 
-void Graphics_Driver::update()
+void Graphics_Driver::evaluate()
 {
+    // No combinational logic for graphics driver in this build; default no-op
 }
-

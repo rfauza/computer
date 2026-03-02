@@ -1,163 +1,137 @@
 #pragma once
-#include "../parts/Part.hpp"
-#include "../parts/CPU.hpp"
-#include "../parts/Program_Memory.hpp"
-#include "../parts/Main_Memory.hpp"
-#include "../components/Signal_Generator.hpp"
-#include "../components/OR_Gate.hpp"
-#include "../components/AND_Gate.hpp"
-#include "../components/Inverter.hpp"
+#include "Computer.hpp"
 #include <string>
-#include <vector>
 #include <cstdint>
 
 /**
- * @brief 3-bit v1 Computer with CPU, Program Memory, and RAM
- * 
- * Implements the 3-bit ISA v1:
- *   000 HALT   - Stop execution
- *   001 MOVL   - Move literal: litA -> [BC]
- *   010 ADD    - Add: [A] + [B] -> [C]
- *   011 SUB    - Subtract: [A] - [B] -> [C]
- *   100 CMP    - Compare: sets flags based on [A] vs [B]
- *   101 JEQ    - Jump if equal: if flag then goto ABC
- *   110 JGT    - Jump if greater: if flag then goto ABC
- *   111 NOP    - No operation
- * 
- * Architecture:
- *   - 3-bit data (values 0-7)
- *   - 8 RAM addresses (3-bit addressing)
- *   - 512 Program Memory addresses (9-bit PC)
- *   - Program format per line: "opcode A B C" (binary or decimal)
+ * @brief 3-bit Computer implementing ISA v1.
+ *
+ * ISA v1 opcodes:
+ *   000 HALT  - Stop execution
+ *   001 MOVL  - Move literal: A -> [B:C]
+ *   010 ADD   - Add:      [A] + [B] -> [C]
+ *   011 SUB   - Subtract: [A] - [B] -> [C]
+ *   100 CMP   - Compare Out: set flags from [A] vs [B:C]  (B = page, C = addr)
+ *   101 JEQ   - Jump if EQ:  goto [A:B:C]
+ *   110 JGT   - Jump if GT:  goto [A:B:C]
+ *   111 MOVOUT - Move out: [rampage:A] -> [B:C] (copy across RAM pages)
+ *
+ * Architecture: 3-bit data, 6-bit RAM addressing ([page:addr]),
+ * 9-bit PC (512 PM addresses).
  */
-class Computer_3bit_v1 : public Part
+class Computer_3bit_v1 : public Computer
 {
 public:
     /**
-     * @brief Constructs a 3-bit v1 computer
-     * 
-     * @param name Optional component name
+     * @brief Construct a Computer_3bit_v1 instance.
+     *
+     * Initializes the 3-bit ISA v1 computer and allocates core components.
+     * The constructor delegates ISA-specific wiring to private helpers that
+     * set up program memory <-> CPU connections, RAM addressing and
+     * multiplexing, data paths and jump logic.
+     *
+     * @param name Optional name suffix used to create per-component names.
      */
     Computer_3bit_v1(const std::string& name = "");
-    
     ~Computer_3bit_v1() override;
-    
+
+protected:
     /**
-     * @brief Load a program from file into Program Memory
-     * 
-     * File format (one instruction per line):
-     *   opcode A B C
-     * 
-     * Example:
-     *   001 011 000 101  # MOVL 3 -> [5] (A=data, B=page, C=addr)
-     *   010 101 110 111  # ADD [5] + [6] -> [7]
-     *   000 000 000 000  # HALT
-     * 
-     * @param filename Path to program file
-     * @return true if loaded successfully
+     * @brief Return human-readable mnemonic for an opcode.
+     *
+     * Maps numeric opcode values for ISA v1 to short mnemonic strings
+     * (e.g. 0b010 -> "ADD"). Used by diagnostics and printing helpers.
      */
-    bool load_program(const std::string& filename);
-    
-    /**
-     * @brief Execute the loaded program interactively
-     * 
-     * Prints PC, current instruction, and all RAM contents.
-     * Waits for user input (Enter) before each clock tick.
-     * Stops when HALT instruction is executed.
-     */
-    void run_interactive();
-    
-    /**
-     * @brief Execute one clock cycle
-     * 
-     * @return true if should continue (not halted), false if halted
-     */
-    bool clock_tick();
-    
-    /**
-     * @brief Print current state (PC, instruction, RAM)
-     */
-    void print_state() const;
-    
-    /**
-     * @brief Reset the computer to initial state
-     */
-    void reset();
-    
-    void evaluate() override;
-    void update() override;
+    std::string get_opcode_name(uint16_t opcode) const override;
+    void evaluate_isa_write_gates() override;
 
 private:
     static constexpr uint16_t NUM_BITS = 3;
-    static constexpr uint16_t NUM_RAM_ADDRESS_BITS = 6;  // Instruction fields: C (bits 0-2), B (bits 3-5)
-    static constexpr uint16_t NUM_RAM_ADDRESSES = (1u << NUM_RAM_ADDRESS_BITS);  // 2^NUM_RAM_ADDRESS_BITS
-    static constexpr uint16_t PC_BITS = 9;               // Use 9-bit PC for 512 PM addresses
-    static constexpr uint16_t NUM_PM_ADDRESSES = 512;    // 2^9
-    
-    CPU* cpu;
-    Program_Memory* program_memory;
-    Main_Memory* ram;
-    
-    // Opcode mappings
+    static constexpr uint16_t NUM_RAM_ADDR_BITS = 6;
+    static constexpr uint16_t PC_BITS = 9;
+
     static const std::string ISA_V1_OPCODES;
     
-    // Control signals
-    Signal_Generator* pm_write_enable;
-    Signal_Generator* pm_read_enable;
-    Signal_Generator* ram_write_enable;
-    Signal_Generator* ram_read_enable;
-    Signal_Generator* read_addr_high_low;  // Constant low signal for read port high address bits
-    OR_Gate* ram_write_or;  // Combines MOVL and ADD opcodes for RAM write enable
-    
-    // RAM write gating: ram_read_flag controls whether writes are allowed
-    // ram_we_gated = NOT(ram_read_flag) AND ram_write_or
-    // During reads: ram_read_flag=1, so WE=0 (no writes)
-    // During write setup: ram_read_flag=0, so WE=ram_write_or (writes allowed)
-    Signal_Generator* ram_read_flag;      // High during read phase, low during write phase
-    Inverter* ram_read_flag_not;          // Invert the flag
-    AND_Gate* ram_we_gated;               // AND(NOT ram_read_flag, ram_write_or) → effective WE
-    
-    // Mux for RAM data input: selects PM A field (MOVL) or CPU result (ADD/SUB)
-    Inverter* ram_data_mux_not;
-    AND_Gate** ram_data_mux_and_literal;
-    AND_Gate** ram_data_mux_and_result;
-    OR_Gate** ram_data_mux_or;
-    
-    // AND gates for write address high bits (bits 3-5): gate B field with MOVL opcode
-    // For ADD/SUB, MOVL=0, so these gates output 0
-    // For MOVL, MOVL=1, so these gates pass B field bits
-    AND_Gate** ram_write_addr_high_mux;  // 3 AND gates (one per address bit 3-5)
-    
-    // Signal generators for program loading (kept alive to avoid use-after-free)
-    // Use pointers to vectors to avoid overflow (vectors are large)
-    std::vector<Signal_Generator>* pm_load_addr_sigs;   // 9-bit address for loading
-    std::vector<Signal_Generator>* pm_load_data_sigs;   // 12-bit data for loading (opcode, C, A, B)
-    
-    // Signal generators for RAM address selection during execution
-    // Extract A field (bits 6-8) from PM instruction and route to RAM address decoder
-    // Mutable: used for reading RAM values in const print_state()
-    mutable std::vector<Signal_Generator>* ram_addr_sigs;       // 3-bit RAM address driver
-    
-    // Pointer arrays for CPU data inputs (must persist, not deleted)
-    const bool** data_a_ptrs;  // Pointers to RAM port A outputs
-    const bool** data_b_ptrs;  // Pointers to RAM port B outputs
-    const bool** data_c_ptrs;  // Pointers to PM A field for MOVL literals
-    
-    bool is_running;
-    // Total number of instructions executed so far (clock ticks)
-    uint64_t execution_count;
+    bool* cu_decoder;  ///< Pointer to CPU decoder outputs for opcode-based control signals
+    Inverter* movl_not;        ///< NOT(MOVL|MOVOUT): selects ALU result for write data
+    OR_Gate* movl_or_movout;   ///< MOVL|MOVOUT: gates write-address page bits and mux control
+
+    // constructor helper functions
     /**
-     * @brief Toggle RAM read flag and evaluate gating logic
-     * @param flag_high If true, set flag HIGH (read phase); if false, set flag LOW (write phase)
+     * @brief Wire program memory outputs into the CPU decoder and PM control.
+     *
+     * Sets up opcode wiring from PM to CPU, links CPU-driven PM address
+     * inputs (program counter) and creates a small `Decoder` that produces
+     * one-hot opcode signals directly from PM outputs for low-latency
+     * observation by other components.
      */
-    void toggle_ram_read_flag(bool flag_high);
-    
-    /// @brief Helper to convert 3-bit value to binary string
-    std::string to_binary(uint16_t value, uint16_t bits) const;
-    
-    // Helper to convert binary string to int
-    uint16_t from_binary(const std::string& binary) const;
-    
-    // Helper to get opcode name
-    std::string get_opcode_name(uint16_t opcode) const;
+    void _connect_program_memory_to_CPU_decoder();
+
+    /**
+     * @brief Orchestrate RAM-related wiring.
+     *
+     * Calls the address wiring, write-phase gating and data-multiplexing
+     * helpers to fully prepare RAM inputs and control signals for this ISA.
+     */
+    void _connect_ram_inputs();
+
+    /**
+     * @brief Configure RAM address inputs and CMP-aware multiplexers.
+     *
+     * Wires read-port and write-port address inputs. Uses a PM-level
+     * decoder output to control multiplexers that select between the
+     * default [0:B] layout and the CMP-specific [B:C] layout for read
+     * port 2.
+     */
+    void _connect_ram_address_inputs();
+
+    /**
+     * @brief Create CMP-controlled multiplexers for read-port-2 addressing.
+     *
+     * Allocates two `Multiplexer` instances (low and high address bits) that
+     * select between [0:B] layout (ADD/SUB) and [B:C] layout (CMP) based on
+     * the CMP decoder output. Also inverts the CMP signal to control the mux.
+     */
+    void _setup_ram_read_muxes();
+
+    /**
+     * @brief Wire per-bit RAM addresses and write-port controls.
+     *
+     * Connects read port 1 and 2 address lines, write address bits (C field
+     * for low, gated B field for high via MOVL), and configures write-enable
+     * OR gate for MOVL, ADD, and SUB instructions.
+     */
+    void _wire_ram_address_and_write_controls();
+
+    /**
+     * @brief Set up two-phase RAM read/write gating signals.
+     *
+     * Prevents read/write contention by creating a read-phase signal and
+     * gating write enables so writes occur only during the write phase.
+     */
+    void _phase_ram_write_enable();
+
+    /**
+     * @brief Create and wire the RAM write-data multiplexer.
+     *
+     * Selects between ALU result and program-memory literal (MOVL) for
+     * RAM write-data inputs using a `Multiplexer` device.
+     */
+    void _multiplex_RAM_data_inputs();
+
+    /**
+     * @brief Wire RAM data outputs into CPU data inputs.
+     *
+     * Collects pointers to RAM read-port outputs and the PM literal field
+     * and passes them to the CPU as operand sources.
+     */
+    void _connect_ram_outputs();
+
+    /**
+     * @brief Assemble jump target address and configure conditional jumps.
+     *
+     * Concatenates A, B and C instruction fields into a PC-width jump
+     * address and registers conditional jump conditions with the CPU.
+     */
+    void _connect_jump_logic();
 };

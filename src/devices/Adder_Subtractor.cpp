@@ -205,17 +205,5 @@ void Adder_Subtractor::evaluate()
     }
 }
 
-void Adder_Subtractor::update()
-{
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+
 

@@ -240,14 +240,3 @@ void Multiplier::evaluate()
     
     delete[] intermediate;
 }
-
-void Multiplier::update()
-{
-    evaluate();
-    
-    for (auto& component : downstream_components)
-    {
-        component->update();
-    }
-}
-

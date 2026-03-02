@@ -46,11 +46,6 @@ public:
      */
     void evaluate() override;
     
-    /**
-     * @brief Updates CPU and propagates signals
-     */
-    void update() override;
-    
     // === External Connection Methods ===
     
     /**
@@ -67,15 +62,15 @@ public:
     /**
      * @brief Connect data inputs from Program Memory or RAM
      * 
-     * @param data_c_outputs Pointer to C register/immediate data
      * @param data_a_outputs Pointer to A register data
      * @param data_b_outputs Pointer to B register data
+     * @param data_c_outputs Pointer to C register/immediate data
      * @return true if successful
      */
     bool connect_data_inputs(
-        const bool* const* data_c_outputs,
         const bool* const* data_a_outputs,
-        const bool* const* data_b_outputs
+        const bool* const* data_b_outputs,
+        const bool* const* data_c_outputs
     );
     
     /**
@@ -118,6 +113,21 @@ public:
      * @return Pointer to decoder output array (2^opcode_bits)
      */
     bool* get_decoder_outputs() const;
+    
+    /**
+     * @brief Get pointer to stored comparator flags
+     * 
+     * @return Pointer to stored comparator flags array
+     */
+    bool* get_cmp_flags() const;
+
+    /**
+     * @brief Wire the flag write-enable to an external signal
+     *
+     * @param signal_ptr Pointer to signal (e.g., decoder output for CMP)
+     * @return true if successful
+     */
+    bool wire_flag_write_enable(const bool* signal_ptr);
     
     /**
      * @brief Get number of opcode bits

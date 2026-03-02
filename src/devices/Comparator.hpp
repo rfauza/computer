@@ -30,7 +30,6 @@ public:
     Comparator(uint16_t num_bits, const std::string& name = "");
     ~Comparator() override;
     void evaluate() override;
-    void update() override;
     
 private:
     Adder_Subtractor subtractor;  // Computes A-B for comparison

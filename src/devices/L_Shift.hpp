@@ -36,5 +36,5 @@ public:
     /**
      * @brief Performs the left shift operation and updates downstream components
      */
-    void update() override;
+    void evaluate() override;
 };

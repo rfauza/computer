@@ -1,0 +1,39 @@
+# Long Division test
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: sets flags based on [A] vs [B]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+#divide 7 by 2
+
+
+001 110 000 000 # 0 - write 6 into &0-0
+001 010 000 001 # 1 - write 2 into &0-1
+001 001 000 010 # 2 - write 1 into &0-2
+100 001 000 000 # 3 - compare &1 and &0 (initial check that dividend is larger than divisior)
+110 000 001 010 # 4 - jump to end (line 10) if &1 > &0
+011 000 001 000 # 5 - subtract &0 - &1 -> &0
+010 111 010 111 # 6 - increment &7 (add &2(1) to &7)
+100 000 000 001 # 7 - compare &0 and &1 
+110 000 000 101 # 8 - jump back to line 5 if &0 > &1
+101 000 000 101 # 9 - jump back to line 5 if &0 == &1
+000 000 000 000 # 10 - halt
+
+
+
+# previous version (less code but more instructions repeated in loop. execution count 24):
+# 001 111 000 000 # 0 - write 6 into &0-0
+# 001 010 000 001 # 1 - write 2 into &0-1
+# 001 001 000 010 # 2 - write 1 into &0-2
+# 100 001 000 000 # 3 - compare &1 and &0 
+# 110 000 001 001 # 4 - jump to end (line 9) if &1 > &0
+# 011 000 001 000 # 5 - subtract &0 - &1 -> &0
+# 010 111 010 111 # 6 - increment &7 (add &2(1) to &7)
+# 100 000 000 000 # 7 - compare &0 and &0  (set up unconditional jeq)
+# 101 000 000 011 # 8 - unconditional jump back to line 3
+# 000 000 000 000 # 9 - halt

@@ -13,7 +13,8 @@ Memory_Controller::Memory_Controller(uint16_t num_bits, const std::string& name)
 }
 Memory_Controller::~Memory_Controller() = default;
 
-void Memory_Controller::update()
+void Memory_Controller::evaluate()
 {
+    // Default no-op evaluate for Memory_Controller; specialized logic may be added later
 }
 

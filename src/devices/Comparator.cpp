@@ -111,19 +111,3 @@ void Comparator::evaluate()
     outputs[4] = n_xor_v->get_output(0);         // LT_S = N XOR V
     outputs[5] = gt_s_and->get_output(0);        // GT_S = !(N XOR V) && !Z
 }
-
-void Comparator::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

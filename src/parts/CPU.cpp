@@ -155,9 +155,9 @@ bool CPU::connect_program_memory(const bool* const* pm_opcode_outputs, bool** pm
 }
 
 bool CPU::connect_data_inputs(
-    const bool* const* data_c_outputs,
     const bool* const* data_a_outputs,
-    const bool* const* data_b_outputs)
+    const bool* const* data_b_outputs,
+    const bool* const* data_c_outputs)
 {
     if (!data_a_outputs || !data_b_outputs)
         return false;
@@ -256,6 +256,18 @@ bool* CPU::get_decoder_outputs() const
     return control_unit->get_decoder_outputs();
 }
 
+bool* CPU::get_cmp_flags() const
+{
+    return control_unit->get_cmp_flags();
+}
+
+bool CPU::wire_flag_write_enable(const bool* signal_ptr)
+{
+    if (!control_unit)
+        return false;
+    return control_unit->connect_flag_write_enable(signal_ptr);
+}
+
 void CPU::clock_tick()
 {
     control_unit->clock_tick();
@@ -264,22 +276,9 @@ void CPU::clock_tick()
 void CPU::evaluate()
 {
     // Evaluate in dependency order
-    control_unit->evaluate();
-    alu->evaluate();
-}
-
-void CPU::update()
-{
-    // Update internal storage elements
-    control_unit->update();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
+    control_unit->evaluate();  // decodes opcode, computes PC, sets write-enable for flags
+    alu->evaluate();            // runs comparator to produce fresh flag outputs
+    // Evaluate flag register AFTER ALU so it reads fresh comparator outputs
+    control_unit->evaluate_flag_register();
 }
 

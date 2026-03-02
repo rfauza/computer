@@ -294,13 +294,3 @@ void Divider_Sequential::evaluate()
         }
     }
 }
-
-void Divider_Sequential::update()
-{
-    evaluate();
-    
-    for (auto& component : downstream_components)
-    {
-        component->update();
-    }
-}

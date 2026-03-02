@@ -3,6 +3,7 @@
 #include "../devices/Register.hpp"
 #include "../devices/Adder.hpp"
 #include "../devices/Decoder.hpp"
+#include "../devices/Multiplexer.hpp"
 #include "../components/Signal_Generator.hpp"
 #include "../components/AND_Gate.hpp"
 #include "../components/OR_Gate.hpp"
@@ -57,16 +58,27 @@ public:
     virtual ~Control_Unit();
     
     /**
-     * @brief Updates the control unit and propagates to downstream
-     */
-    void update() override;
-    
-    /**
      * @brief Evaluates internal components
      */
     void evaluate() override;
     
+    /**
+     * @brief Intentionally overriding. Updates the control unit and propagates to downstream
+     */
+    void update() override;
+    
     // === Connection Methods for Different Subsystems ===
+    
+    void _create_program_counter();
+    void _setup_run_halt_logic();
+    void _setup_compare_flags();
+    void _setup_rampage();
+    void _setup_opcode_page();
+    
+    /**
+     * @brief sets up stack pointer and return address registers for function calling
+     */
+    void _setup_function_calling();
     
     /**
      * @brief Connect PC output to Program Memory address input
@@ -107,10 +119,10 @@ public:
      * @brief Connect comparator flags from ALU
      * 
      * @param flag_outputs Pointer array to flag outputs (EQ, NEQ, LT_U, GT_U, LT_S, GT_S)
-     * @param num_flags Number of flag signals (typically 6)
+     * @param num_cmp_flags Number of flag signals (typically 6)
      * @return true if successful
      */
-    bool connect_comparator_flags(const bool* const* flag_outputs, uint16_t num_flags);
+    bool connect_comparator_flags(const bool* const* flag_outputs, uint16_t num_cmp_flags);
     
     /**
      * @brief Connect RAM page register data input
@@ -128,6 +140,19 @@ public:
      * @return true if successful
      */
     bool connect_ram_page_write_enable(const bool* page_write_enable);
+
+    /**
+     * @brief Evaluate the flag register (called by CPU after ALU runs)
+     */
+    void evaluate_flag_register();
+
+    /**
+     * @brief Connect flag write-enable to an external signal (e.g., CMP decoder output)
+     *
+     * @param signal_ptr Pointer to signal that controls when flags are written
+     * @return true if successful
+     */
+    bool connect_flag_write_enable(const bool* signal_ptr);
     
     /**
      * @brief Get pointer to PC outputs
@@ -148,7 +173,7 @@ public:
      * 
      * @return Pointer to flag register outputs
      */
-    bool* get_stored_flags() const;
+    bool* get_cmp_flags() const;
     
     /**
      * @brief Get pointer to RAM page register outputs
@@ -227,9 +252,8 @@ protected:
     
     // PC Write Control
     Inverter* jump_enable_inverter;   /**< Inverts jump enable */
-    AND_Gate** pc_increment_and_gates;    /**< Gates increment value with !jump_enable */
-    AND_Gate** pc_jump_and_gates;         /**< Gates jump address with jump_enable */
-    OR_Gate** pc_write_mux;           /**< Muxes increment vs jump for PC write */
+    AND_Gate** pc_halt_and_gates;         /**< Gates increment value with halt_inverter (per bit) */
+    Multiplexer* pc_write_mux;        /**< Muxes halt-gated increment vs jump address for PC write */
     Signal_Generator* pc_write_enable; /**< Always high - PC always writes */
     Signal_Generator* pc_read_enable;  /**< Always high - PC always reads */
     
@@ -244,8 +268,7 @@ protected:
     Flip_Flop* flag_clear_counter;    /**< Flip-flop for 1-cycle delay */
     Signal_Generator* clear_set;      /**< Used to set the clear counter */
     Signal_Generator* clear_reset;    /**< Used to reset the clear counter */
-    Inverter* clear_inverter;         /**< Inverts clear signal to clear flags */
-    uint16_t num_flags;               /**< Number of comparator flags */
+    uint16_t num_cmp_flags;               /**< Number of comparator flags */
     
     // RAM Page Register
     Register* ram_page_register;      /**< RAM paging register (2*num_bits) */

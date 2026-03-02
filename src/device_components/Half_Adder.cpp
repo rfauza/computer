@@ -65,18 +65,3 @@ void Half_Adder::evaluate()
     outputs[1] = inverter1.get_output(0);
 }
 
-void Half_Adder::update()
-{
-    // Evaluate internal components
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-

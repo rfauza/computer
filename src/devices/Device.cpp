@@ -8,7 +8,3 @@ Device::~Device()
 {
 }
 
-void Device::update()
-{
-}
-

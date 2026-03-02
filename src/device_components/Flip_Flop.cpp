@@ -74,21 +74,3 @@ void Flip_Flop::evaluate()
     // Output is Q from nand_gate_1
     outputs[0] = nand_gate_1.get_output(0);
 }
-
-void Flip_Flop::update()
-{
-    // Phase 2: update internal components so feedback/latches settle
-    inverter_set.update();
-    inverter_reset.update();
-    nand_gate_1.update();
-    nand_gate_2.update();
-    // extra passes to let feedback settle
-    nand_gate_1.update();
-    nand_gate_2.update();
-
-    // Refresh output from internal gate
-    outputs[0] = nand_gate_1.get_output(0);
-
-    // Do not automatically propagate updates from leaf device internals;
-    // higher-level parts/controllers orchestrate update propagation to avoid recursion.
-}

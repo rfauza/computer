@@ -131,7 +131,7 @@ void test_cpu(uint16_t num_bits, bool print_all)
             data_a_ptrs[i] = &data_a_sigs[i].get_outputs()[0];
             data_b_ptrs[i] = &data_b_sigs[i].get_outputs()[0];
         }
-        cpu->connect_data_inputs(nullptr, data_a_ptrs, data_b_ptrs);
+        cpu->connect_data_inputs(data_a_ptrs, data_b_ptrs, nullptr);
         
         // Test cases: {opcode_name, A, B, expected_result}
         std::vector<std::tuple<std::string, int, int, int>> test_cases = {

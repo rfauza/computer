@@ -25,10 +25,7 @@ ToDo:
         display numerical value for each ram addr
         rampage switches (and readout)
 
-- break utilities out of computer class
-- make automated testing for all parts and components
-help me make an automated testing suite that will test all my classes. use the standard industry format inside the testing folder (retain the files currently in that folder)
-- create stack pointer, function call and return ability
+
 
 - generate base minecraft 4-bit pc (with multiplier, read-only divider subroutine)
 - make faceplate addon to see all 16 RAM addr contents (can page?)
@@ -37,8 +34,7 @@ help me make an automated testing suite that will test all my classes. use the s
 - keyboard inputs (writes direclty to a register, only one is stored at a time, ignores other inputs until processed)
 - make 3-bit pong and snake
 
-rampage write enable should be opcode
-cmp flags always read/writable
+
 return addr and stack pointer. sp should point in ram to ra, so can have call from call
 clock tick is logic. needs to be gates
 
@@ -51,29 +47,75 @@ clock tick is logic. needs to be gates
     - 128x128 BW screen: 4 op codes [mode, RS0, CS0, data] [RS1-2, CS1-2] [RS3-6] [CS3-6] = 18x25 chars
     - 256x256 
 - make function call and return and pointers (store addr in ram registers and dereference)
-- make 8-bit version with Operating System and graphcis
-- figure negatives and floats
-- make 16-bit version with OS and graphcis
+- make 8-bit version with Operating System and graphics (terminal, text editor, assembler)
+- figure out negatives and floats
+- make 16-bit version with OS and graphics
 - try architecture with all in RAM (and storage) and no program memory
 
 
 Todo next:
-- change opcodes to be ABC instead of CAB?
-- make cmp A be able to read from other pages, since C is unused (CA cmp B). 
-- NOOP can be changed to RAMpage so we can work with other pages. addr 111 can be transfer buffer
-- copilot broke it, fixed it by adding siggens to computer. investigate
-- write programs for mult and long division
+- make gui faceplate/RAM (LED version)
+- 8-seg display addons
+- 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
+- write program to light one LED at a time, going down the rows and cols
+- watch-only pong?
+- keyboard inputs and MS paint? 
+- tag main -
+
+
+V2
+- generalize 3bit_v1, all computers will use all same logic and wiring for instructions (maybe make a class for each instruction?)
 - write program to add long ints
-- break computer into parent class
-- put each computer in a folder with its programs
-- make gui
+- make MovIn
+- connect opcodepage
+- connect rampage
+- make call/ret (create stack pointer, function call and return ability (pointers))
+    (stack of registers (or page in ram) that store pm when func call, counter to know which to pop)
+- address pointers (where to store func results)
+    (or better: save arguments to new rampage, page, then call func. page back on ret, retrieve result from that page)
+- write programs for shift mult, shift div
+- graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
+- make paint (user input arrows to move and space to toggle LED)
+- make pong
 
-Feb 21 2026
-1p
+Mar 1 2026 : 
+1h break up control unit initializer
+1h added MovOut instruction for 3-bit v1
+1h made assembler and evaluator
+.5h visually inspected evaluator results and add/sub and long_mult programs.
+ == TAGGED MAIN: "3bit_v1 complete - no GUI" ==
 
-Feb 20 2026 
+Feb 28 2026 : 2h total 79h
+1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
+1h replace mux in CU init
+
+Feb 26 2026 : 4h total 77h
+0.5h removed all redundant update() functions in entire project, inheriting component::update()
+1h created multiplexer class and replaced loose components in Computer for multiplexing RAM inputs (movL/ALU output)
+1.5h broke up Computer_3bit_v1 connect_ram function and fixed it to use the multiplexer
+1h created rampage and opcodepage registers. copilot makes a mess when trying to connect these
+
+Feb 24 2026 : 2h total 73h
+2h multiplication code and testing (can't do shift with v1 ISA)
+
+Feb 23 2026 : 1.5h total 71h
+1.5h only cmp writes to cmp flags now (all ops were feeding the ALU and writing to cmp flags)
+.5h Multiplication test draft
+
+Feb 22 2026 : 4h total 69h
+1h broke up Computer_3bit_v1 constructor into functions
+1.5h make cmp A be able to read from other pages, since C is unused (CA cmp B)
+.5h division program
+1h threw away copilot trying to not clear cmp flag
+
+
+Feb 21 2026 : 5h total 65h
+1h changing machine code order from OP CAB to OP ABC
+3h threw away copilot trying to create rampage
+1h created Computer class
+
+Feb 20 2026 : 1.5h total 60h
 1.5h fixed sub, improved prints
-3.50p 
 
 Feb 19 2026 : 1.5h total 58.5h
 1h test program tests all 3bit v1 functionality
@@ -147,20 +189,3 @@ Jan 28 2026 : 7h - total: 7h
 5h Logic Gates and Components Class
 1h Half and Full Adder
 1h Flip Flop and Memory Bit
-
-
-
-
-
-
-
-
-DONE:
-- Control Unit (unique for each pc architecture)
-    decoder receives opcode from PM and sends it to ALU/registers
-    add PC and incrementer (needs an adder)
-    PC has to be a register, that connects to PM select (2*numbits), and can be written to from PM or RAM PC register addr
-    also has RAMPage select register (2-bytes: store AB->rampage)
-    comparator flags and PC register 
-- make CPU (ALU+CU)
-- make 3-bit computer (print to terminal)

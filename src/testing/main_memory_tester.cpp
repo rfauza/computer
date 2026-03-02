@@ -70,9 +70,8 @@ void main_memory_tester(Main_Memory& mm, const std::string& input_str)
         sg.update();
     }
     
-    // Evaluate and update MM
+    // Evaluate MM
     mm.evaluate();
-    mm.update();
     
     std::cout << "Input:  addr=" << addr << " data=" << data 
               << " WE=" << we << " RE=" << re << "\n";

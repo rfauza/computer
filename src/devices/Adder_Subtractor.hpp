@@ -10,7 +10,6 @@ public:
     ~Adder_Subtractor() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;
-    void update() override;
     const bool* get_internal_output() const { return internal_output; }
     
 private:

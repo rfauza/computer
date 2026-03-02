@@ -48,7 +48,7 @@ static void print_cu_state(Control_Unit* cu, uint16_t pc_bits, const std::string
     std::cout << "  Flags [EQ,NEQ,LT_U,GT_U,LT_S,GT_S] = [";
     for (int i = 0; i < 6; ++i)
     {
-        std::cout << cu->get_stored_flags()[i];
+        std::cout << cu->get_cmp_flags()[i];
         if (i < 5) std::cout << ",";
     }
     std::cout << "]\n";
@@ -244,7 +244,7 @@ void test_control_unit(uint16_t num_bits, bool print_all)
         for (auto& sig : flag_sigs) sig.evaluate();
         cu->evaluate();
         
-        bool* stored_flags = cu->get_stored_flags();
+        bool* stored_flags = cu->get_cmp_flags();
         bool pass = (stored_flags[0] == true && stored_flags[1] == false &&
                      stored_flags[2] == true && stored_flags[3] == false &&
                      stored_flags[4] == false && stored_flags[5] == true);

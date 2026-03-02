@@ -13,7 +13,7 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, const 
 
 Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16_t pc_bits_param, const std::string& name) : Part(num_bits, name)
 {
-    // create component name string
+    // === Create component name string ===
     std::ostringstream oss;
     oss << "Control_Unit 0x" << std::hex << reinterpret_cast<uintptr_t>(this);
     if (!name.empty()) {
@@ -21,11 +21,29 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     }
     component_name = oss.str();
     
+    // === Jump Instruction Conditions === (initialized in connect_jump_instructions)
+    jump_instruction_and_gates = nullptr;
+    jump_instructions_or_gate = nullptr;
+    num_jump_conditions = 0;
+    
+    // Expect pc_bits_param = 3 * numbits. set to numbits otherwise
     // Allow override of PC bit width. If pc_bits_param > 0, use that, otherwise default to num_bits
     pc_bits = (pc_bits_param > 0) ? pc_bits_param : static_cast<uint16_t>(num_bits);
+    num_cmp_flags = 6;  // Standard comparator flags: EQ, NEQ, LT_U, GT_U, LT_S, GT_S
+    // === Opcode Decoder ===
     opcode_bits = (opcode_bits_param == 0) ? num_bits : opcode_bits_param;  // Use param or default to num_bits
-    num_flags = 6;  // Standard comparator flags: EQ, NEQ, LT_U, GT_U, LT_S, GT_S
+    opcode_decoder = new Decoder(opcode_bits, "opcode_decoder_in_control_unit");
     
+    _create_program_counter();
+    _setup_run_halt_logic();
+    _setup_compare_flags();
+    _setup_rampage(); // TODO
+    _setup_opcode_page(); // TODO
+    _setup_function_calling(); // TODO
+}
+
+void Control_Unit::_create_program_counter()
+{
     // === Program Counter and Incrementer ===
     pc = new Register(pc_bits, "pc_in_control_unit");
     // Zero-initialize PC outputs to 0
@@ -52,18 +70,20 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
         pc_incrementer->connect_input(&increment_signals[i]->get_outputs()[0], pc_bits + i);  // B inputs = 0001
     }
     
-    // === PC Write Control (Mux between increment and jump) ===
+    // === PC Write Control (Mux between halt-gated increment and jump address) ===
     jump_enable_inverter = new Inverter(1, "jump_enable_inverter_in_control_unit");
-    pc_increment_and_gates = new AND_Gate*[pc_bits];
-    pc_jump_and_gates = new AND_Gate*[pc_bits];
-    pc_write_mux = new OR_Gate*[pc_bits];
+    pc_halt_and_gates = new AND_Gate*[pc_bits];
+    pc_write_mux = new Multiplexer(pc_bits, 2, "pc_write_mux_in_control_unit");
     
     // Create default low signal for optional/unconnected inputs
     default_low_signal = new Signal_Generator("default_low_in_control_unit");
     default_low_signal->go_low();  // Sets output to false directly, no need to evaluate
     // Default: no jump enabled, no jump address
     jump_enable_inverter->connect_input(&default_low_signal->get_outputs()[0], 0);
-    
+}
+
+void Control_Unit::_setup_run_halt_logic()
+{
     // === Run/Halt Flag Control ===
     // Halt flip-flop: controls whether PC increments
     // Q=1 means running, Q=0 means halted
@@ -107,33 +127,24 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        std::ostringstream and_inc_name, and_jmp_name, or_name;
-        and_inc_name << "pc_increment_and_gate_" << i << "_in_control_unit";
-        and_jmp_name << "pc_jump_and_gate_" << i << "_in_control_unit";
-        or_name << "pc_write_mux_" << i << "_in_control_unit";
+        std::ostringstream and_halt_name;
+        and_halt_name << "pc_halt_and_gate_" << i << "_in_control_unit";
         
-        // 3-input AND gate: incrementer & !jump_enable & run_flag
-        pc_increment_and_gates[i] = new AND_Gate(3, and_inc_name.str());
-        pc_jump_and_gates[i] = new AND_Gate(2, and_jmp_name.str());
-        pc_write_mux[i] = new OR_Gate(2, or_name.str());
+        // 2-input AND gate: incrementer[i] & !halt
+        pc_halt_and_gates[i] = new AND_Gate(2, and_halt_name.str());
+        pc_halt_and_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
+        pc_halt_and_gates[i]->connect_input(&halt_inverter->get_outputs()[0], 1);
         
-        // Wire: incrementer_output & !jump_enable & !halt -> AND gate
-        pc_increment_and_gates[i]->connect_input(&pc_incrementer->get_outputs()[i], 0);
-        pc_increment_and_gates[i]->connect_input(&jump_enable_inverter->get_outputs()[0], 1);
-        pc_increment_and_gates[i]->connect_input(&halt_inverter->get_outputs()[0], 2);  // Immediate !halt signal (no latency)
+        // Source[0]: halt-gated increment; source[1]: jump address (default low)
+        pc_write_mux->connect_source_data_bit(0, i, &pc_halt_and_gates[i]->get_outputs()[0]);
+        pc_write_mux->connect_source_data_bit(1, i, &default_low_signal->get_outputs()[0]);
         
-        // Wire: jump_address & jump_enable -> OR gate
-        // (jump address will be connected externally via connect_jump_address_to_pc)
-        // Default: connect jump address to low (no jump)
-        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 0);
-        // Default: connect jump enable to low (no jump)
-        pc_jump_and_gates[i]->connect_input(&default_low_signal->get_outputs()[0], 1);
-        
-        // Wire OR outputs to PC data inputs
-        pc_write_mux[i]->connect_input(&pc_increment_and_gates[i]->get_outputs()[0], 0);
-        pc_write_mux[i]->connect_input(&pc_jump_and_gates[i]->get_outputs()[0], 1);
-        pc->connect_input(&pc_write_mux[i]->get_outputs()[0], i);
+        // Wire mux output to PC data input
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
     }
+    // Source controls: [0]=!jump_enable, [1]=low by default (updated by connect_jump_enable)
+    pc_write_mux->connect_source_control(0, &jump_enable_inverter->get_outputs()[0]);
+    pc_write_mux->connect_source_control(1, &default_low_signal->get_outputs()[0]);
     
     // PC always writes and reads
     pc_write_enable = new Signal_Generator("pc_write_enable_in_control_unit");
@@ -143,19 +154,19 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     pc_read_enable = new Signal_Generator("pc_read_enable_in_control_unit");
     pc_read_enable->go_high();
     pc->connect_input(&pc_read_enable->get_outputs()[0], pc_bits + 1);  // read enable
-    
-    // === Opcode Decoder ===
-    opcode_decoder = new Decoder(opcode_bits, "opcode_decoder_in_control_unit");
-    
+}
+
+void Control_Unit::_setup_compare_flags()
+{
     // === Comparator Flags Storage ===
-    flag_register = new Register(num_flags, "flag_register_in_control_unit");
+    flag_register = new Register(num_cmp_flags, "flag_register_in_control_unit");
     flag_write_enable = new Signal_Generator("flag_write_enable_in_control_unit");
-    flag_write_enable->go_high();  // Flags always write when provided
-    flag_register->connect_input(&flag_write_enable->get_outputs()[0], num_flags);
+    flag_write_enable->go_low();  // Flags write enabled by cmp decoder output, so default to low
+    flag_register->connect_input(&flag_write_enable->get_outputs()[0], num_cmp_flags);
     
     flag_read_enable = new Signal_Generator("flag_read_enable_in_control_unit");
     flag_read_enable->go_high();  // Flags always readable
-    flag_register->connect_input(&flag_read_enable->get_outputs()[0], num_flags + 1);
+    flag_register->connect_input(&flag_read_enable->get_outputs()[0], num_cmp_flags + 1);
     
     // Flag auto-clear mechanism: flip-flop tracks when to clear
     flag_clear_counter = new Flip_Flop("flag_clear_counter_in_control_unit");
@@ -170,8 +181,10 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
     flag_clear_counter->connect_input(&clear_set->get_outputs()[0], 0);  // Set input
     flag_clear_counter->connect_input(&clear_reset->get_outputs()[0], 1);  // Reset input
     
-    clear_inverter = new Inverter(1, "clear_inverter_in_control_unit");
-    
+}
+
+void Control_Unit::_setup_rampage()
+{
     // === RAM Page Register ===
     ram_page_register = new Register(pc_bits, "ram_page_register_in_control_unit");
     // Zero-initialize RAM page outputs to 0
@@ -190,11 +203,15 @@ Control_Unit::Control_Unit(uint16_t num_bits, uint16_t opcode_bits_param, uint16
         ram_page_register->connect_input(&default_low_signal->get_outputs()[0], i);
     }
     
-    // === Jump Instruction Conditions === (initialized in connect_jump_instructions)
-    jump_instruction_and_gates = nullptr;
-    jump_instructions_or_gate = nullptr;
-    num_jump_conditions = 0;
+}
+
+void Control_Unit::_setup_opcode_page()
+{
     
+}
+
+void Control_Unit::_setup_function_calling()
+{
     // === Stack Pointer and Return Address === DISABLED: inputs not connected
     //stack_pointer = new Register(pc_bits, "stack_pointer_in_control_unit");
     //// Zero-initialize stack pointer outputs to 0
@@ -220,15 +237,11 @@ Control_Unit::~Control_Unit()
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
         delete increment_signals[i];
-        delete pc_increment_and_gates[i];
-        delete pc_jump_and_gates[i];
-        delete pc_write_mux[i];
+        delete pc_halt_and_gates[i];
     }
     delete[] increment_signals;
-    delete[] pc_increment_and_gates;
-    delete[] pc_jump_and_gates;
-    delete[] pc_write_mux;
-    
+    delete[] pc_halt_and_gates;
+    delete pc_write_mux;
     delete jump_enable_inverter;
     delete default_low_signal;
     delete pc_write_enable;
@@ -240,7 +253,6 @@ Control_Unit::~Control_Unit()
     delete flag_clear_counter;
     delete clear_set;
     delete clear_reset;
-    delete clear_inverter;
     delete ram_page_register;
     delete ram_page_read_enable;
     delete run_halt_flag;
@@ -272,13 +284,11 @@ void Control_Unit::evaluate()
 {
     // Evaluate in dependency order
     
-    // 0. Decode opcode early so HALT detection uses current instruction
+    // 0. Decode opcode early so decoder outputs are current for ALL downstream logic
     opcode_decoder->evaluate();
 
-    // 0.5. Evaluate flags EARLY so jump instruction conditions can use them
-    flag_write_enable->evaluate();
-    flag_read_enable->evaluate();
-    flag_register->evaluate();
+    // 0.5. Flag register is evaluated by CPU::evaluate() AFTER alu->evaluate(),
+    //      so comparator outputs are fresh. See CPU::evaluate_flag_register().
 
     // 1. Evaluate run/halt flag and halt detection (used in PC increment gating)
     halt_or_gate->evaluate();
@@ -309,16 +319,15 @@ void Control_Unit::evaluate()
     jump_enable_inverter->evaluate();
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_increment_and_gates[i]->evaluate();
-        pc_jump_and_gates[i]->evaluate();
-        pc_write_mux[i]->evaluate();
+        pc_halt_and_gates[i]->evaluate();
     }
+    pc_write_mux->evaluate();
     
     // 3. Update PC
     pc->evaluate();
     
-    // 4. Decode opcode
-    opcode_decoder->evaluate();
+    // 4. (Already done at top) Decode opcode
+    // opcode_decoder->evaluate();
     
     // 6. Evaluate other registers
     ram_page_read_enable->evaluate();
@@ -331,9 +340,10 @@ void Control_Unit::evaluate()
 
 void Control_Unit::update()
 {
-    // DO NOT CALL EVALUATE HERE!
-    // update() should only latch storage elements, not re-compute combinational logic
+    /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
+    (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
     
+    // update() should only latch storage elements, not re-compute combinational logic
     // Update internal storage elements (flip-flops and registers)
     run_halt_flag->update();
     flag_register->update();
@@ -370,7 +380,7 @@ bool Control_Unit::connect_jump_address_to_pc(const bool* const* jump_address_ou
     
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
-        pc_jump_and_gates[i]->connect_input(jump_address_output[i], 0);
+        pc_write_mux->connect_source_data_bit(1, i, jump_address_output[i]);
     }
     return true;
 }
@@ -383,11 +393,8 @@ bool Control_Unit::connect_jump_enable(const bool* jump_enable_signal)
     // Connect to inverter
     jump_enable_inverter->connect_input(jump_enable_signal, 0);
     
-    // Connect to all jump gates
-    for (uint16_t i = 0; i < pc_bits; ++i)
-    {
-        pc_jump_and_gates[i]->connect_input(jump_enable_signal, 1);
-    }
+    // Update jump source control in the mux
+    pc_write_mux->connect_source_control(1, jump_enable_signal);
     
     return true;
 }
@@ -406,10 +413,10 @@ bool Control_Unit::connect_opcode_input(const bool* const* opcode_output, uint16
 
 bool Control_Unit::connect_comparator_flags(const bool* const* flag_outputs, uint16_t num_flag_signals)
 {
-    if (!flag_outputs || num_flag_signals != num_flags)
+    if (!flag_outputs || num_flag_signals != num_cmp_flags)
         return false;
     
-    for (uint16_t i = 0; i < num_flags; ++i)
+    for (uint16_t i = 0; i < num_cmp_flags; ++i)
     {
         flag_register->connect_input(flag_outputs[i], i);
     }
@@ -437,6 +444,25 @@ bool Control_Unit::connect_ram_page_write_enable(const bool* page_write_enable)
     return true;
 }
 
+void Control_Unit::evaluate_flag_register()
+{
+    // Called by CPU::evaluate() after ALU runs so comparator outputs are fresh
+    flag_write_enable->evaluate();
+    flag_read_enable->evaluate();
+    flag_register->evaluate();
+}
+
+bool Control_Unit::connect_flag_write_enable(const bool* signal_ptr)
+{
+    if (!signal_ptr)
+        return false;
+    
+    // Directly reconnect the flag register's write input to the decoder output signal
+    // This bypasses the flag_write_enable Signal_Generator and wires the signal directly
+    flag_register->connect_input(signal_ptr, num_cmp_flags);
+    return true;
+}
+
 bool Control_Unit::connect_pc_carry(const bool* carry_signal)
 {
     if (!carry_signal)
@@ -457,7 +483,7 @@ bool* Control_Unit::get_decoder_outputs() const
     return opcode_decoder->get_outputs();
 }
 
-bool* Control_Unit::get_stored_flags() const
+bool* Control_Unit::get_cmp_flags() const
 {
     return flag_register->get_outputs();
 }
@@ -527,7 +553,7 @@ bool Control_Unit::connect_jump_instructions(const std::vector<std::pair<uint16_
         uint16_t flag_index = jump_conditions[i].second;
         
         // Validate flag index
-        if (flag_index >= num_flags)
+        if (flag_index >= num_cmp_flags)
             return false;
         
         // Connect decoder output (jump instruction signal) to AND gate input 0

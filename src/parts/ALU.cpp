@@ -198,21 +198,6 @@ void ALU::evaluate()
     }
 }
 
-void ALU::update()
-{
-    // Evaluate this component
-    evaluate();
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
-
 void ALU::print_comparator_io() const
 {
     if (comparator)

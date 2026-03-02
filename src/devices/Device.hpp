@@ -19,7 +19,6 @@ class Device : public Component
 public:
     Device(uint16_t num_bits, const std::string& name = "");
     virtual ~Device();
-    void update() override;
     
 protected:
     uint16_t num_bits;
