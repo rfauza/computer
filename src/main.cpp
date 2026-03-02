@@ -45,18 +45,13 @@ int main()
     // Assemble the provided .ass file and then run the Evaluator on the
     // generated machine-code file. This allows automated verification.
     // Paths are relative to the build directory when the executable runs there.
-    const std::string asm_path = "../programs/3bit_v1/add_sub.ass";
-    const std::string out_mc   = "../programs/3bit_v1/add_sub.mc";
-
+    const std::string asm_path = "../programs/3bit_v1/long_mult.ass";
+    const std::string out_mc   = "../programs/3bit_v1/long_mult.mc";
+    
     Assembler assembler;
-    bool ok = assembler.assemble(asm_path, out_mc);
-    if (!ok)
-    {
-        std::cerr << "Assembly failed; aborting evaluation.\n";
-        return 1;
-    }
-
     Evaluator eval;
+    
+    assembler.assemble(asm_path, out_mc);
     bool pass = eval.evaluate(out_mc, true);
     std::cout << "Evaluator result: " << (pass ? "PASS" : "FAIL") << "\n";
 

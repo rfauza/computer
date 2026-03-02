@@ -4,17 +4,6 @@
 # Add/Sub 3-bit v1 test program
 # tests all integer adds and subs using loops
 # 3-bit v1 ISA:
-# 000 HALT   - Stop execution
-# 001 MOVL   - Move literal: litA -> [BC]
-# 010 ADD    - Add: [A] + [B] -> [C]
-# 011 SUB    - Subtract: [A] - [B] -> [C]
-# 100 CMP    - Compare: sets flags based on [A] vs [B]
-# 101 JEQ    - Jump if equal: if flag then goto ABC
-# 110 JGT    - Jump if greater: if flag then goto ABC
-# 111 NOP    - No operation
-# init
-# add loop
-# 3-bit v1 ISA:
 #   000  HALT     - Stop execution
 #   001  MOVL     - Move literal: A -> [B:C]
 #   010  ADD      - Add:      [A] + [B] -> [C]   (page 0 addresses)

@@ -1,5 +1,5 @@
 # Multiply by repeated addition
-# filename: mult_loop_test
+# filename: long_mult.ass
 # isa: 3bit_v1
 # description: Computes RAM[0] * RAM[1] by adding RAM[0] to accumulator RAM[2]
 #   RAM[1] times. Verifies loop labels, ADD, SUB, CMP, and JGT.

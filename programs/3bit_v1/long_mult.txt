@@ -1,3 +1,4 @@
+# isa: 3bit_v1
 # Long Multiplication test
 # decrements smaller of the multiplicands to zero while adding the other to answer
 # iterates through all numbers until A and B both overflow

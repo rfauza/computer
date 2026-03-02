@@ -54,9 +54,6 @@ clock tick is logic. needs to be gates
 
 
 Todo next:
-- retest all programs
-- tag main -
-
 - make gui faceplate/RAM (LED version)
 - 8-seg display addons
 - 8x8 LED display added to faceplate (in v1 wire to RAM registers. in v2 make graphics processor)
@@ -65,12 +62,10 @@ Todo next:
 - keyboard inputs and MS paint? 
 - tag main -
 
-- write program to add long ints
-- v1.1 NOOP becomes movOUT - copy data from one address to another (to transfer across pages)
-- v1.1 jeq becomes movIN
-- v1.2 NOOP becomes RAMpage so we can work with other pages. addr 111 can be transfer buffer
 
 V2
+- generalize 3bit_v1, all computers will use all same logic and wiring for instructions (maybe make a class for each instruction?)
+- write program to add long ints
 - make MovIn
 - connect opcodepage
 - connect rampage
@@ -87,6 +82,8 @@ Mar 1 2026 :
 1h break up control unit initializer
 1h added MovOut instruction for 3-bit v1
 1h made assembler and evaluator
+.5h visually inspected evaluator results and add/sub and long_mult programs.
+ == TAGGED MAIN: "3bit_v1 complete - no GUI" ==
 
 Feb 28 2026 : 2h total 79h
 1h replace mux in connect ram inputs, broke up Computer_3bit_v1::_connect_ram_address_inputs
