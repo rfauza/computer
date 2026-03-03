@@ -211,3 +211,26 @@ uint16_t Program_Memory::get_selected_address() const
     }
     return 0;
 }
+
+void Program_Memory::get_instruction(uint16_t address, uint16_t& opcode,
+                                     uint16_t& a, uint16_t& b, uint16_t& c) const
+{
+    if (address >= num_addresses)
+    {
+        opcode = a = b = c = 0;
+        return;
+    }
+    
+    // reg_index 0 = opcode, 1 = A, 2 = B, 3 = C
+    opcode = 0;
+    a = 0;
+    b = 0;
+    c = 0;
+    for (uint16_t bit = 0; bit < data_bits; ++bit)
+    {
+        opcode |= (registers[0][address]->get_output(bit) ? 1 : 0) << bit;
+        a      |= (registers[1][address]->get_output(bit) ? 1 : 0) << bit;
+        b      |= (registers[2][address]->get_output(bit) ? 1 : 0) << bit;
+        c      |= (registers[3][address]->get_output(bit) ? 1 : 0) << bit;
+    }
+}

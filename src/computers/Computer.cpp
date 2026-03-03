@@ -464,6 +464,104 @@ uint16_t Computer::read_ram(uint16_t address) const
     return ram->get_register_value(address);
 }
 
+void Computer::read_pm_instruction(uint16_t address, uint16_t& opcode,
+                                   uint16_t& a, uint16_t& b, uint16_t& c) const
+{
+    program_memory->get_instruction(address, opcode, a, b, c);
+}
+
+void Computer::write_pm_instruction(uint16_t address, uint16_t opcode,
+                                    uint16_t a_val, uint16_t b_val, uint16_t c_val)
+{
+    uint16_t decoder_bits_     = program_memory->get_decoder_bits();
+    uint16_t data_bits_        = program_memory->get_data_bits();
+    uint16_t data_inputs_start = decoder_bits_;
+    
+    // Set address via signal generators
+    for (uint16_t i = 0; i < decoder_bits_; ++i)
+    {
+        bool bit = ((address >> i) & 1) != 0;
+        if (bit) (*pm_load_addr_sigs)[i].go_high();
+        else     (*pm_load_addr_sigs)[i].go_low();
+        (*pm_load_addr_sigs)[i].evaluate();
+        program_memory->connect_input(&(*pm_load_addr_sigs)[i].get_outputs()[0], i);
+    }
+    
+    // Set data (opcode, A, B, C) via signal generators
+    uint16_t values[4] = { opcode, a_val, b_val, c_val };
+    for (uint16_t reg = 0; reg < 4; ++reg)
+    {
+        for (uint16_t b = 0; b < data_bits_; ++b)
+        {
+            uint16_t idx = reg * data_bits_ + b;
+            bool bit = ((values[reg] >> b) & 1) != 0;
+            if (bit) (*pm_load_data_sigs)[idx].go_high();
+            else     (*pm_load_data_sigs)[idx].go_low();
+            (*pm_load_data_sigs)[idx].evaluate();
+            program_memory->connect_input(
+                &(*pm_load_data_sigs)[idx].get_outputs()[0],
+                static_cast<uint16_t>(data_inputs_start + idx));
+        }
+    }
+    
+    // Pulse write enable
+    pm_write_enable->go_high();
+    pm_write_enable->evaluate();
+    program_memory->evaluate();
+    pm_write_enable->go_low();
+    pm_write_enable->evaluate();
+    
+    // Restore PC outputs as PM address inputs
+    bool* pc_outputs = cpu->get_pc_outputs();
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        program_memory->connect_input(&pc_outputs[i], i);
+    }
+    
+    // Clear data signal generators
+    for (auto& sig : *pm_load_data_sigs)
+    {
+        sig.go_low();
+        sig.evaluate();
+    }
+}
+
+void Computer::get_current_instruction(uint16_t& opcode, uint16_t& a,
+                                       uint16_t& b, uint16_t& c) const
+{
+    bool* pm_out = program_memory->get_outputs();
+    opcode = a = b = c = 0;
+    for (uint16_t i = 0; i < num_bits; ++i)
+    {
+        opcode |= (pm_out[i]               ? 1 : 0) << i;
+        a      |= (pm_out[num_bits + i]     ? 1 : 0) << i;
+        b      |= (pm_out[2 * num_bits + i] ? 1 : 0) << i;
+        c      |= (pm_out[3 * num_bits + i] ? 1 : 0) << i;
+    }
+}
+
+bool* Computer::get_cmp_flags() const
+{
+    if (cpu)
+    {
+        return cpu->get_cmp_flags();
+    }
+    return nullptr;
+}
+
+void Computer::prepare_run()
+{
+    // Reconnect PC to PM address inputs
+    bool* pc_outputs = cpu->get_pc_outputs();
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        program_memory->connect_input(&pc_outputs[i], i);
+    }
+    program_memory->evaluate();
+    is_running = true;
+    execution_count = 0;
+}
+
 void Computer::_create_namestring(const std::string& name)
 {
     // Create a unique component name string with memory address and optional name

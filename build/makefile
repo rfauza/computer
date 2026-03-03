@@ -11,8 +11,8 @@ TOP := ../src
 # Output: executable in project root
 BINDIR := ..
 
-# Find all .cpp files in TOP excluding any path that contains /test/
-SRCS := $(shell find $(TOP) -type f -name '*.cpp' -not -path '*/test/*' 2>/dev/null || true)
+# Find all .cpp files in TOP excluding any path that contains /test/ or /gui/
+SRCS := $(shell find $(TOP) -type f -name '*.cpp' -not -path '*/test/*' -not -path '*/gui/*' 2>/dev/null || true)
 
 # Map source files to object files placed under build/ preserving subdirs
 # (produce paths like components/AND_Gate.o so pattern rules match)

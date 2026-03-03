@@ -65,6 +65,8 @@ Todo next:
 
 V2
 - generalize 3bit_v1, all computers will use all same logic and wiring for instructions (maybe make a class for each instruction?)
+    maybe change Computer to Computer_utils, and generalized computer to ISA_wiring (with one function per op) (or Computer)
+    and the different computer versions inherit both (or computer_version[v] inherits Computer/ISA which inherits Utils)
 - write program to add long ints
 - make MovIn
 - connect opcodepage
@@ -78,7 +80,20 @@ V2
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
 
-Mar 1 2026 : 
+-gui:
+    write to one addr erases the others.
+    need my same color, and addons to be separated
+    knob is discrete, needs to be continuous
+    layout and color should be the same as my drawing
+    needs reset button
+    8x8 is wired wrong (0x0 should be top left)
+    needs rampage leds and 8-seg
+    slave/indep vertical
+
+Mar 2 2026
+1h Claude Opus made the GUI and it works.
+
+Mar 1 2026 : 3.5h total 82.5h
 1h break up control unit initializer
 1h added MovOut instruction for 3-bit v1
 1h made assembler and evaluator

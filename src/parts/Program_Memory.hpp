@@ -35,9 +35,24 @@ public:
     
     uint16_t get_decoder_bits() const { return decoder_bits; }
     uint16_t get_data_bits() const { return data_bits; }
-
+    
     // Returns the currently-selected address (the decoder output that is high)
     uint16_t get_selected_address() const;
+    
+    /**
+     * @brief Read the stored instruction at a given address.
+     *
+     * Directly reads register contents without changing the decoder or
+     * needing read-enable.  This is used by the GUI to inspect PM.
+     *
+     * @param address  PM address (0 to num_addresses-1).
+     * @param opcode   Receives the opcode field.
+     * @param a        Receives the A field.
+     * @param b        Receives the B field.
+     * @param c        Receives the C field.
+     */
+    void get_instruction(uint16_t address, uint16_t& opcode,
+                         uint16_t& a, uint16_t& b, uint16_t& c) const;
 
 private:
     static constexpr uint16_t registers_per_address = 4;
