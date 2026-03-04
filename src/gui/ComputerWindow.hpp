@@ -122,9 +122,9 @@ private:
     // ── Widgets: seven-segment displays ────────────────────────────────
     std::vector<SevenSegDisplay*> pm_addr_segs_;
     SevenSegDisplay* opcode_seg_ = nullptr;
-    SevenSegDisplay* a_seg_      = nullptr;
-    SevenSegDisplay* b_seg_      = nullptr;
-    SevenSegDisplay* c_seg_      = nullptr;
+    SevenSegDisplay* a_seg_         = nullptr;
+    SevenSegDisplay* b_seg_         = nullptr;
+    SevenSegDisplay* c_seg_         = nullptr;
     
     // ── Widgets: RAM LED panel ─────────────────────────────────────────
     std::vector<ToggleSwitch*>         ram_page_switches_;

@@ -81,19 +81,19 @@ V2
 - make pong
 
 -gui:
-    write to one addr erases the others.
+    file menu to load program
     need my same color, and addons to be separated
     knob is discrete, needs to be continuous
     layout and color should be the same as my drawing
     needs reset button
-    8x8 is wired wrong (0x0 should be top left)
     needs rampage leds and 8-seg
     slave/indep vertical
     
-Mar 3 2026 : 
+Mar 3 2026 : 5.5h total 89h
 1h fix vscode include errors and git running vscode on wsl ubuntu
 1h corrected 8x8 LED layout
-7.20p 
+.5h fixed writing to one pm clears others
+3h tweaking GUI
 
 Mar 2 2026 : 1h total 83.5h
 1h Claude Opus made the GUI and it works.
