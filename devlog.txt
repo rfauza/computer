@@ -89,8 +89,13 @@ V2
     8x8 is wired wrong (0x0 should be top left)
     needs rampage leds and 8-seg
     slave/indep vertical
+    
+Mar 3 2026 : 
+1h fix vscode include errors and git running vscode on wsl ubuntu
+1h corrected 8x8 LED layout
+7.20p 
 
-Mar 2 2026
+Mar 2 2026 : 1h total 83.5h
 1h Claude Opus made the GUI and it works.
 
 Mar 1 2026 : 3.5h total 82.5h

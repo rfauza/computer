@@ -3,6 +3,16 @@ SHELL := /bin/sh
 # C++ compiler and flags
 CXX := g++
 CXXFLAGS := -O2 -Wall -g -fsanitize=address -fno-omit-frame-pointer
+
+# Detect gtkmm (optional). Try gtkmm-3.0 then gtkmm-4.0. If pkg-config isn't
+# available or neither package is installed, these will be empty and build
+# will proceed without GUI flags.
+PKG_CONFIG ?= pkg-config
+GTK_CFLAGS := $(shell $(PKG_CONFIG) --cflags gtkmm-3.0 2>/dev/null || $(PKG_CONFIG) --cflags gtkmm-4.0 2>/dev/null || echo)
+GTK_LIBS   := $(shell $(PKG_CONFIG) --libs gtkmm-3.0 2>/dev/null || $(PKG_CONFIG) --libs gtkmm-4.0 2>/dev/null || echo)
+
+# Append GTK CFLAGS so headers like <gtkmm.h> are found when present
+CXXFLAGS += $(GTK_CFLAGS)
 DEPFLAGS := -MMD -MP -MF $(dir $@)$(basename $(notdir $<)).d
 
 # Source directory (project `src` folder)
@@ -11,8 +21,9 @@ TOP := ../src
 # Output: executable in project root
 BINDIR := ..
 
-# Find all .cpp files in TOP excluding any path that contains /test/ or /gui/
-SRCS := $(shell find $(TOP) -type f -name '*.cpp' -not -path '*/test/*' -not -path '*/gui/*' 2>/dev/null || true)
+# Find all .cpp files in TOP excluding any path that contains /test/
+# (include GUI sources so ComputerWindow and other GUI files are built)
+SRCS := $(shell find $(TOP) -type f -name '*.cpp' -not -path '*/test/*' 2>/dev/null || true)
 
 # Map source files to object files placed under build/ preserving subdirs
 # (produce paths like components/AND_Gate.o so pattern rules match)
@@ -34,7 +45,7 @@ dirs:
 # Link all object files into a single executable in project root
 $(BINDIR)/main: $(OBJS)
 	@echo Linking $@
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJS) $(GTK_LIBS) -o $@
 
 # Compile rule: search for .cpp via VPATH, generate dependency files
 %.o: %.cpp

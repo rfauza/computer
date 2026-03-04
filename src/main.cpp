@@ -5,10 +5,38 @@
 #include <gtkmm.h>
 #include <iostream>
 #include <memory>
+#include <filesystem>
 #include "gui/ComputerWindow.hpp"
 #include "computers/Computer_3bit_v1.hpp"
 
-int main(int argc, char* argv[])
+// Utilities used by non-GUI runners/tests
+#include "utilities/assembler.hpp"
+#include "utilities/evaluator.hpp"
+#include "utilities/program_memory_loader.hpp"
+#include "utilities/main_memory_loader.hpp"
+#include "testing/program_memory_tester.hpp"
+#include "testing/main_memory_tester.hpp"
+
+
+int run_with_no_gui()
+{
+    // Assemble the provided .ass file and then run the Evaluator on the
+    // generated machine-code file. This allows automated verification.
+    // Paths are relative to the build directory when the executable runs there.
+    const std::string asm_path = "../programs/3bit_v1/long_mult.ass";
+    const std::string out_mc   = "../programs/3bit_v1/long_mult.mc";
+    
+    Assembler assembler;
+    Evaluator eval;
+
+    assembler.assemble(asm_path, out_mc);
+    bool pass = eval.evaluate(out_mc, true);
+    std::cout << "Evaluator result: " << (pass ? "PASS" : "FAIL") << "\n";
+
+    return pass ? 0 : 2;
+}
+
+int run_gui(int argc, char* argv[])
 {
     auto app = Gtk::Application::create("org.comp3bit.gui");
 
@@ -36,6 +64,15 @@ int main(int argc, char* argv[])
     });
 
     return app->run(argc, argv);
+}
+
+int main(int argc, char* argv[])
+{
+    // If run with --no-gui, run the headless tester; otherwise start GUI.
+    if (argc > 1 && std::string(argv[1]) == "--no-gui") {
+        return run_with_no_gui();
+    }
+    return run_gui(argc, argv);
 }
 
 bool loadPM()

@@ -61,42 +61,45 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->rectangle(1, 1, width - 2, height - 2);
     cr->stroke();
     
-    // Title
+    double left_margin = 20.0;
+    double top_margin = 25.0;
+    double side_margin = 10.0;
+    double avail_w = width - left_margin - side_margin;
+    double avail_h = height - top_margin - side_margin;
+    double cell = std::min(avail_w / COLS, avail_h / ROWS);
+    double grid_w = cell * COLS;
+    double grid_h = cell * ROWS;
+    double ox = left_margin + (avail_w - grid_w) / 2.0;
+    double oy = top_margin + (avail_h - grid_h) / 2.0;
+    double led_r = cell * 0.32;
+    
+    // Title (in upper left)
     cr->set_source_rgb(0.7, 0.7, 0.7);
     cr->select_font_face("monospace", Cairo::ToyFontFace::Slant::NORMAL,
                           Cairo::ToyFontFace::Weight::BOLD);
     cr->set_font_size(9.0);
     Cairo::TextExtents ext;
     cr->get_text_extents("8x8 LED Matrix Display", ext);
-    cr->move_to((width - ext.width) / 2.0, 12);
+    cr->move_to(left_margin, 12);
     cr->show_text("8x8 LED Matrix Display");
-    
-    double top_margin = 18.0;
-    double side_margin = 10.0;
-    double avail_w = width - 2 * side_margin;
-    double avail_h = height - top_margin - side_margin;
-    double cell = std::min(avail_w / COLS, avail_h / ROWS);
-    double grid_w = cell * COLS;
-    double grid_h = cell * ROWS;
-    double ox = side_margin + (avail_w - grid_w) / 2.0;
-    double oy = top_margin + (avail_h - grid_h) / 2.0;
-    double led_r = cell * 0.32;
     
     // Row/column labels
     cr->set_source_rgb(0.55, 0.55, 0.55);
     cr->set_font_size(7.0);
+    // Column labels on top
     for (int c = 0; c < COLS; ++c)
     {
-        std::string lbl = std::to_string(COLS - 1 - c);
+        std::string lbl = std::to_string(c);
         cr->get_text_extents(lbl, ext);
         cr->move_to(ox + c * cell + (cell - ext.width) / 2.0, oy - 3);
         cr->show_text(lbl);
     }
+    // Row labels on left
     for (int r = 0; r < ROWS; ++r)
     {
         std::string lbl = std::to_string(r);
         cr->get_text_extents(lbl, ext);
-        cr->move_to(ox + grid_w + 3, oy + r * cell + (cell + ext.height) / 2.0);
+        cr->move_to(ox - left_margin + 3, oy + r * cell + (cell + ext.height) / 2.0);
         cr->show_text(lbl);
     }
     
@@ -107,7 +110,7 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
         {
             double cx = ox + c * cell + cell / 2.0;
             double cy = oy + r * cell + cell / 2.0;
-            bool on = grid_[r][COLS - 1 - c]; // MSB on the left
+            bool on = grid_[r][c]; // Direct mapping, 0,0 at top-left
             
             if (on)
             {

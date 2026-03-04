@@ -987,38 +987,37 @@ void ComputerWindow::update_led_matrix_display()
 {
     if (!led_matrix_) return;
     
-    // The 8×8 LED matrix is connected to the last 3 pages of RAM.
-    // For a system with pages_per_ram_ pages (e.g. 8 for 3-bit):
-    //   display_pages = last 3 pages
-    //   Each page provides num_bits_ columns
-    //   row = address within page (0..addrs_per_page_-1)
-    
-    int num_display_pages = std::min(3, static_cast<int>(pages_per_ram_));
-    int start_page = pages_per_ram_ - num_display_pages;
+    // The 8×8 LED matrix is wired to the last 3 pages of RAM (pages 5, 6, 7).
+    // Mapping (0,0 is top-left):
+    //   Columns 0-2:  page 5, bits 1,2,3
+    //   Columns 3-5:  page 6, bits 1,2,7
+    //   Columns 6-7:  page 7, bits 1,2
+    // Each row maps to an address within each page.
     
     led_matrix_->clear();
     
-    for (int pg = 0; pg < num_display_pages; ++pg)
+    // Define the bit mapping for each visual column
+    const int col_page[8]  = {5, 5, 5, 6, 6, 6, 7, 7};
+    // Use zero-based bit indices within the RAM data width (0..NUM_BITS-1).
+    // Previous values included out-of-range indices (3 and 7) which always read as 0.
+    const int col_bit[8]   = {0, 1, 2, 0, 1, 2, 0, 1};
+    
+    for (int row = 0; row < 8 && row < static_cast<int>(addrs_per_page_); ++row)
     {
-        int page_num = start_page + pg;
-        for (int addr = 0; addr < std::min(8, static_cast<int>(addrs_per_page_)); ++addr)
+        for (int col = 0; col < 8; ++col)
         {
-            uint16_t full_addr = static_cast<uint16_t>((page_num << num_bits_) | addr);
+            int page = col_page[col];
+            int bit = col_bit[col];
+            
+            uint16_t full_addr = static_cast<uint16_t>((page << num_bits_) | row);
             uint16_t val = 0;
             if (full_addr < computer_->get_num_ram_addresses())
             {
                 val = computer_->read_ram(full_addr);
             }
             
-            // Map bits to LED columns
-            for (int bit = 0; bit < num_bits_ && bit < 8; ++bit)
-            {
-                int col = pg * num_bits_ + bit;
-                if (col < LEDMatrix::COLS)
-                {
-                    led_matrix_->set_led(addr, col, ((val >> bit) & 1) != 0);
-                }
-            }
+            bool led_on = ((val >> bit) & 1) != 0;
+            led_matrix_->set_led(row, col, led_on);
         }
     }
     
