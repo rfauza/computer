@@ -28,9 +28,14 @@ ComputerWindow::ComputerWindow(Computer* computer, uint16_t num_bits)
         sigc::mem_fun(*this, &ComputerWindow::on_key_pressed), false);
     add_controller(key_ctrl);
     
-    // Start in program / write mode; update displays
+    // Start in program / write mode; set switches and update displays
     mode_ = Mode::PROGRAM;
     prog_sub_ = ProgSub::WRITE;
+    // Ensure the UI switches reflect these defaults:
+    // mode_switch_: up(off)=Program -> set_off(false)
+    // sub_switch_: down(on)=Write   -> set_on(true)
+    if (mode_switch_) mode_switch_->set_on(false);
+    if (sub_switch_)  sub_switch_->set_on(true);
     update_all_displays();
 }
 

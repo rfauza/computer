@@ -222,6 +222,7 @@ protected:
     // ── PM loading signal generators (kept alive to avoid use-after-free) ─────
     std::vector<Signal_Generator>*          pm_load_addr_sigs;
     std::vector<Signal_Generator>*          pm_load_data_sigs;
+    std::vector<Signal_Generator>*          pm_zero_sigs;   ///< Permanent zeros to restore PM data inputs after writes
     mutable std::vector<Signal_Generator>*  ram_addr_sigs;
 
     // ── CPU data-input pointer arrays (lifetime matches the Computer) ─────────

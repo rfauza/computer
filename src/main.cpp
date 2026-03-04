@@ -18,6 +18,18 @@
 #include "testing/main_memory_tester.hpp"
 
 
+int run_with_no_gui();
+int run_gui(int argc, char* argv[]);
+
+int main(int argc, char* argv[])
+{
+    // If run with --no-gui, run the headless tester; otherwise start GUI.
+    if (argc > 1 && std::string(argv[1]) == "--no-gui") {
+        return run_with_no_gui();
+    }
+    return run_gui(argc, argv);
+}
+
 int run_with_no_gui()
 {
     // Assemble the provided .ass file and then run the Evaluator on the
@@ -64,15 +76,6 @@ int run_gui(int argc, char* argv[])
     });
 
     return app->run(argc, argv);
-}
-
-int main(int argc, char* argv[])
-{
-    // If run with --no-gui, run the headless tester; otherwise start GUI.
-    if (argc > 1 && std::string(argv[1]) == "--no-gui") {
-        return run_with_no_gui();
-    }
-    return run_gui(argc, argv);
 }
 
 bool loadPM()

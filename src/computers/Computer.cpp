@@ -31,6 +31,7 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
       ram_write_addr_high_mux(nullptr),
       pm_load_addr_sigs(nullptr),
       pm_load_data_sigs(nullptr),
+      pm_zero_sigs(nullptr),
       ram_addr_sigs(nullptr),
       data_a_ptrs(nullptr),
       data_b_ptrs(nullptr),
@@ -51,6 +52,14 @@ Computer::Computer(uint16_t num_bits_, uint16_t num_ram_addr_bits_,
     
     pm_load_data_sigs = new std::vector<Signal_Generator>();
     pm_load_data_sigs->resize(4 * num_bits);
+    
+    pm_zero_sigs = new std::vector<Signal_Generator>();
+    pm_zero_sigs->resize(4 * num_bits);
+    for (auto& sig : *pm_zero_sigs)
+    {
+        sig.go_low();
+        sig.evaluate();
+    }
     
     ram_addr_sigs = new std::vector<Signal_Generator>();
     ram_addr_sigs->resize(num_bits);
@@ -117,6 +126,7 @@ Computer::~Computer()
     
     delete pm_load_addr_sigs;
     delete pm_load_data_sigs;
+    delete pm_zero_sigs;
     delete ram_addr_sigs;
 
     // Delete PM opcode decoder and read-port-2 address muxes (null-safe)
@@ -247,10 +257,12 @@ bool Computer::load_program(const std::string& filename)
     }
     program_memory->evaluate();
 
-    for (auto& sig : *pm_load_data_sigs)
+    // Reconnect PM data inputs to permanent zeros to prevent stale write data
+    // from corrupting subsequent memory operations
+    for (uint16_t b = 0; b < 4 * data_bits; ++b)
     {
-        sig.go_low();
-        sig.evaluate();
+        program_memory->connect_input(&(*pm_zero_sigs)[b].get_outputs()[0],
+                                      static_cast<uint16_t>(data_inputs_start + b));
     }
     
     std::cout << "Loaded " << address << " instructions" << std::endl;
@@ -518,11 +530,12 @@ void Computer::write_pm_instruction(uint16_t address, uint16_t opcode,
         program_memory->connect_input(&pc_outputs[i], i);
     }
     
-    // Clear data signal generators
-    for (auto& sig : *pm_load_data_sigs)
+    // Reconnect PM data inputs to permanent zeros to prevent stale write data
+    // from corrupting subsequent writes
+    for (uint16_t b = 0; b < 4 * data_bits_; ++b)
     {
-        sig.go_low();
-        sig.evaluate();
+        program_memory->connect_input(&(*pm_zero_sigs)[b].get_outputs()[0],
+                                      static_cast<uint16_t>(data_inputs_start + b));
     }
 }
 
