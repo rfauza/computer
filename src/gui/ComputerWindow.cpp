@@ -460,25 +460,14 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
     panel->append(*addr_lbl);
 
     // RAM LED grid: addrs_per_page_ rows × num_bits_ columns
-    // Create an outer filler that expands and centers the LED block
     ram_leds_.resize(addrs_per_page_);
-
-    auto* leds_outer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    leds_outer->set_vexpand(true);
-    leds_outer->set_valign(Gtk::Align::CENTER);
-    leds_outer->set_halign(Gtk::Align::CENTER);
-
-    auto* leds_block = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
-    leds_block->set_halign(Gtk::Align::CENTER);
-
     for (int addr = 0; addr < addrs_per_page_; ++addr)
     {
-        auto* row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 6));
+        auto* row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 1));
 
-        // Address label (moves with the LED block)
+        // Address label
         auto* a_lbl = Gtk::manage(new Gtk::Label(std::to_string(addr)));
-        a_lbl->set_size_request(24, -1);
-        a_lbl->set_halign(Gtk::Align::END);
+        a_lbl->set_size_request(16, -1);
         row->append(*a_lbl);
 
         for (int bit = num_bits_ - 1; bit >= 0; --bit)
@@ -488,13 +477,11 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
             ram_leds_[addr].push_back(led);
             row->append(*led);
         }
-
+        // Reverse so index 0 = bit 0
         std::reverse(ram_leds_[addr].begin(), ram_leds_[addr].end());
-        leds_block->append(*row);
-    }
 
-    leds_outer->append(*leds_block);
-    panel->append(*leds_outer);
+        panel->append(*row);
+    }
     
     return panel;
 }
