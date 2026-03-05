@@ -71,12 +71,12 @@ void program_memory_tester(Program_Memory& pm, const std::string& input_str)
     // Update all signal generators
     for (auto& sg : sig_gens)
     {
-        sg.update();
+        sg.evaluate();
     }
     
     // Evaluate and update PM
     pm.evaluate();
-    pm.update();
+    pm.evaluate();
     
     std::cout << "Input:  addr=" << addr << " opcode=" << opcode << " C=" << c 
               << " A=" << a << " B=" << b << " WE=" << we << " RE=" << re << "\n";

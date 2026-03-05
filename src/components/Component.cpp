@@ -23,16 +23,16 @@ void Component::evaluate()
     // Leaf components override this for their logic
 }
 
-void Component::update()
-{
-    // Default update: evaluate this component and propagate to downstream components.
-    // Most components follow the pattern: compute outputs then notify dependents.
-    evaluate();
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream) downstream->update();
-    }
-}
+// void Component::update()
+// {
+//     // Default update: evaluate this component and propagate to downstream components.
+//     // Most components follow the pattern: compute outputs then notify dependents.
+//     evaluate();
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream) downstream->update();
+//     }
+// }
 
 void Component::print_outputs() const
 {

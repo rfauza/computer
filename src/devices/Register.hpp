@@ -47,7 +47,7 @@ public:
     /**
      * @brief Performs update cycle: evaluates all memory bits and signals downstream
      */
-    void update() override;
+    // void update() override;
 
 private:
     std::vector<Memory_Bit*> memory_bits;  /**< Array of Memory_Bit cells */

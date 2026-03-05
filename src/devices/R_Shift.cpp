@@ -19,7 +19,7 @@ R_Shift::R_Shift(uint16_t num_bits, const std::string& name) : Device(num_bits, 
 
 R_Shift::~R_Shift() = default;
 
-void R_Shift::update()
+void R_Shift::evaluate()
 {
     // Right shift: output[i] = input[i-1], output[0] = 0
     // Since LSB is at index 0, this shifts right (towards higher indices)
@@ -31,13 +31,17 @@ void R_Shift::update()
             outputs[i] = *inputs[i - 1];
         }
     }
-    
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
 }
+
+// void R_Shift::update()
+// {
+//     evaluate();
+//     // Signal all downstream components to update
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }

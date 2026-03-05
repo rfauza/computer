@@ -215,24 +215,24 @@ void Main_Memory::evaluate()
     }
 }
 
-void Main_Memory::update()
-{
-    // Phase 2 of clock cycle: Only latch storage elements (registers)
-    // Do NOT call evaluate() here - that already happened in Phase 1
+// void Main_Memory::update()
+// {
+//     // Phase 2 of clock cycle: Only latch storage elements (registers)
+//     // Do NOT call evaluate() here - that already happened in Phase 1
     
-    for (uint16_t addr = 0; addr < num_addresses; ++addr)
-    {
-        registers[addr]->update();
-    }
+//     for (uint16_t addr = 0; addr < num_addresses; ++addr)
+//     {
+//         registers[addr]->update();
+//     }
     
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }
 
 uint16_t Main_Memory::get_register_value(uint16_t address) const
 {

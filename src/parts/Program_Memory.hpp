@@ -31,7 +31,7 @@ public:
     ~Program_Memory() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;
-    void update() override;
+    // void update() override;
     
     uint16_t get_decoder_bits() const { return decoder_bits; }
     uint16_t get_data_bits() const { return data_bits; }

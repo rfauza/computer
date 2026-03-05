@@ -198,12 +198,12 @@ static void set_mm_inputs(
     // Update all signal generators
     for (auto& sg : sig_gens)
     {
-        sg.update();
+        sg.evaluate();
     }
     
     // Evaluate and update MM
     mm.evaluate();
-    mm.update();
+    mm.evaluate();
 }
 
 

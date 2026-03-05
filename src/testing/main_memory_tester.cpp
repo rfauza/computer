@@ -67,7 +67,7 @@ void main_memory_tester(Main_Memory& mm, const std::string& input_str)
     // Update all signal generators
     for (auto& sg : sig_gens)
     {
-        sg.update();
+        sg.evaluate();
     }
     
     // Evaluate MM

@@ -33,8 +33,9 @@ public:
      */
     ~R_Shift() override;
     
+    void evaluate() override;
     /**
      * @brief Performs the right shift operation and updates downstream components
      */
-    void update() override;
+    // void update() override;
 };

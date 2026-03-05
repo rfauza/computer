@@ -338,28 +338,28 @@ void Control_Unit::evaluate()
     //return_address->evaluate();  // DISABLED: inputs not connected
 }
 
-void Control_Unit::update()
-{
-    /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
-    (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
+// void Control_Unit::update()
+// {
+//     /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
+//     (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
     
-    // update() should only latch storage elements, not re-compute combinational logic
-    // Update internal storage elements (flip-flops and registers)
-    run_halt_flag->update();
-    flag_register->update();
-    flag_clear_counter->update();
-    pc->update();
-    ram_page_register->update();
+//     // update() should only latch storage elements, not re-compute combinational logic
+//     // Update internal storage elements (flip-flops and registers)
+//     run_halt_flag->update();
+//     flag_register->update();
+//     flag_clear_counter->update();
+//     pc->update();
+//     ram_page_register->update();
     
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+//     // Signal all downstream components to update
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }
 
 bool Control_Unit::connect_pc_to_pm_address(bool** pm_address_input, uint16_t start_index)
 {

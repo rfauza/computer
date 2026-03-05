@@ -829,7 +829,7 @@ void ComputerWindow::on_pulse_pressed()
             uint16_t b_val  = read_switch_value(b_switches_);
             uint16_t c_val  = read_switch_value(c_switches_);
             
-            computer_->write_pm_innstruction(addr, opcode, a_val, b_val, c_val);
+            computer_->write_pm_instruction(addr, opcode, a_val, b_val, c_val);
         }
         // In read mode, button does nothing
     }
