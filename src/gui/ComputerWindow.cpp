@@ -43,7 +43,7 @@ ComputerWindow::~ComputerWindow()
 
 void ComputerWindow::build_ui()
 {
-    set_default_size(1340, 680);
+    set_default_size(1340, 550);
 
     // ── Global CSS ─────────────────────────────────────────────────────
     auto css = Gtk::CssProvider::create();
@@ -429,6 +429,31 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
     title->set_markup("<span size='small' weight='bold'>RAM Page Select</span>");
     panel->append(*title);
 
+    // Bit-weight labels above LEDs (like main section)
+    auto* weight_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    for (int i = num_bits_ - 1; i >= 0; --i)
+    {
+        auto* lbl = Gtk::manage(new Gtk::Label());
+        std::string txt = std::to_string(1 << i);
+        lbl->set_markup("<span size='x-small'>" + txt + "</span>");
+        lbl->set_size_request(32, -1);
+        lbl->set_halign(Gtk::Align::CENTER);
+        weight_row->append(*lbl);
+    }
+    panel->append(*weight_row);
+
+    // LEDs above switches
+    auto* led_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    for (int i = num_bits_ - 1; i >= 0; --i)
+    {
+        auto* led = Gtk::manage(new LED(1.0, 0.0, 0.0));
+        ram_page_leds_.push_back(led);
+        led->set_size_request(32, 20);
+        led_row->append(*led);
+    }
+    std::reverse(ram_page_leds_.begin(), ram_page_leds_.end());
+    panel->append(*led_row);
+
     // Page select switches
     auto* page_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
     for (int i = num_bits_ - 1; i >= 0; --i)
@@ -441,17 +466,6 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
     }
     std::reverse(ram_page_switches_.begin(), ram_page_switches_.end());
     panel->append(*page_row);
-
-    // Bit-weight labels for page switches
-    auto* pw_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
-    for (int i = num_bits_ - 1; i >= 0; --i)
-    {
-        auto* lbl = Gtk::manage(new Gtk::Label(std::to_string(1 << i)));
-        lbl->set_size_request(24, -1);
-        lbl->set_halign(Gtk::Align::CENTER);
-        pw_row->append(*lbl);
-    }
-    panel->append(*pw_row);
 
     // "Addr" label
     auto* addr_lbl = Gtk::manage(new Gtk::Label());
@@ -498,19 +512,8 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     title->set_markup("<span size='small' weight='bold'>RAM Page Select</span>");
     panel->append(*title);
     
-    // Slave/Independent switch
-    auto* slave_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 4));
-    auto* slave_lbl = Gtk::manage(new Gtk::Label());
-    slave_lbl->set_markup("<span size='x-small'>Slave</span>");
-    slave_row->append(*slave_lbl);
-    slave_switch_ = Gtk::manage(new ToggleSwitch());
-    slave_switch_->set_size_request(32, 48);
-    slave_switch_->set_toggle_callback([this](bool) { on_slave_toggled(); });
-    slave_row->append(*slave_switch_);
-    auto* indep_lbl = Gtk::manage(new Gtk::Label());
-    indep_lbl->set_markup("<span size='x-small'>Indep</span>");
-    slave_row->append(*indep_lbl);
-    panel->append(*slave_row);
+    // Top row: page selector switches (left) and slave/indep switch (right)
+    auto* top_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 12));
     
     // Page select switches (for independent mode)
     auto* page2_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
@@ -523,7 +526,35 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
         page2_row->append(*sw);
     }
     std::reverse(ram_page2_switches_.begin(), ram_page2_switches_.end());
-    panel->append(*page2_row);
+    top_row->append(*page2_row);
+    
+    // Slave/Independent switch (vertical layout with labels above/below)
+    auto* slave_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    auto* slave_lbl = Gtk::manage(new Gtk::Label());
+    slave_lbl->set_markup("<span size='x-small'>Slave</span>");
+    slave_lbl->set_halign(Gtk::Align::CENTER);
+    slave_col->append(*slave_lbl);
+    slave_switch_ = Gtk::manage(new ToggleSwitch());
+    slave_switch_->set_size_request(32, 48);
+    slave_switch_->set_toggle_callback([this](bool) { on_slave_toggled(); });
+    slave_col->append(*slave_switch_);
+    auto* indep_lbl = Gtk::manage(new Gtk::Label());
+    indep_lbl->set_markup("<span size='x-small'>Indep</span>");
+    indep_lbl->set_halign(Gtk::Align::CENTER);
+    slave_col->append(*indep_lbl);
+    top_row->append(*slave_col);
+    
+    // Page display (seven-segment showing selected page number)
+    auto* page_seg_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    ram_page_seg_ = Gtk::manage(new SevenSegDisplay());
+    page_seg_col->append(*ram_page_seg_);
+    auto* page_seg_lbl = Gtk::manage(new Gtk::Label());
+    page_seg_lbl->set_markup("<span size='x-small'>Page</span>");
+    page_seg_lbl->set_halign(Gtk::Align::CENTER);
+    page_seg_col->append(*page_seg_lbl);
+    top_row->append(*page_seg_col);
+    
+    panel->append(*top_row);
     
     // "Data" label
     auto* data_lbl = Gtk::manage(new Gtk::Label("Data"));
@@ -798,7 +829,7 @@ void ComputerWindow::on_pulse_pressed()
             uint16_t b_val  = read_switch_value(b_switches_);
             uint16_t c_val  = read_switch_value(c_switches_);
             
-            computer_->write_pm_instruction(addr, opcode, a_val, b_val, c_val);
+            computer_->write_pm_innstruction(addr, opcode, a_val, b_val, c_val);
         }
         // In read mode, button does nothing
     }
@@ -1048,6 +1079,9 @@ void ComputerWindow::update_ram_led_display()
 {
     uint16_t page = read_switch_value(ram_page_switches_);
     
+    // Update the page selector LEDs to reflect switch positions
+    set_leds_from_value(ram_page_leds_, page);
+    
     for (int addr = 0; addr < addrs_per_page_; ++addr)
     {
         uint16_t full_addr = static_cast<uint16_t>((page << num_bits_) | addr);
@@ -1077,6 +1111,12 @@ void ComputerWindow::update_ram_seg_display()
     else
     {
         page = read_switch_value(ram_page2_switches_);
+    }
+    
+    // Update the page display seven-segment
+    if (ram_page_seg_)
+    {
+        ram_page_seg_->set_value(static_cast<uint8_t>(page & 0x0F));
     }
     
     for (int addr = 0; addr < addrs_per_page_ && addr < static_cast<int>(ram_segs_.size()); ++addr)

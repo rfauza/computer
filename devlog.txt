@@ -81,6 +81,9 @@ V2
 - make pong
 
 -gui:
+    writing to one addr erases all the oters again...
+    vscode on wsl does not show linking info with ctrl 
+    start gui with write to prevent unconnected error
     file menu to load program
     need my same color, and addons to be separated
     knob is discrete, needs to be continuous
@@ -88,6 +91,10 @@ V2
     needs reset button
     needs rampage leds and 8-seg
     slave/indep vertical
+
+
+Mar 4 2026 : 
+GUI tweaks
     
 Mar 3 2026 : 5.5h total 89h
 1h fix vscode include errors and git running vscode on wsl ubuntu

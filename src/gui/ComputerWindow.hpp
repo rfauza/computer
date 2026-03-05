@@ -128,11 +128,13 @@ private:
     
     // ── Widgets: RAM LED panel ─────────────────────────────────────────
     std::vector<ToggleSwitch*>         ram_page_switches_;
+    std::vector<LED*>                  ram_page_leds_;      // LEDs above page switches
     std::vector<std::vector<LED*>>     ram_leds_;   // [addr][bit]
     
     // ── Widgets: RAM seven-seg panel ───────────────────────────────────
     std::vector<ToggleSwitch*>         ram_page2_switches_;
     ToggleSwitch*                      slave_switch_ = nullptr;
+    SevenSegDisplay*                   ram_page_seg_ = nullptr; // Shows selected page
     std::vector<SevenSegDisplay*>      ram_segs_;    // 8 displays
     
     // ── Widgets: LED matrix ────────────────────────────────────────────
