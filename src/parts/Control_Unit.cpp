@@ -507,17 +507,38 @@ void Control_Unit::set_run_halt_flag(bool state)
 {
     if (state)
     {
-        // Set to running: Q = 1 (reset flip-flop, since reset is active low)
+        // Pulse Set HIGH to force Q=1 (running), then bring it back LOW so that
+        // a future HALT instruction can pull Q=0 without the forbidden S=1,R=1 state.
         halt_set_signal->go_high();
+        halt_set_signal->evaluate();
+        run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
+        run_halt_flag->evaluate();
+        halt_set_signal->go_low();
+        halt_set_signal->evaluate();
     }
     else
     {
-        // Set to halted: Q = 0 (set flip-flop)
+        // Set to halted: Q = 0
         halt_set_signal->go_low();
+        halt_set_signal->evaluate();
+        run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
+        run_halt_flag->evaluate();
     }
-    halt_set_signal->evaluate();
-    run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
-    run_halt_flag->evaluate();
+}
+
+void Control_Unit::reset_pc()
+{
+    // Temporarily connect all PC data inputs to the always-low signal,
+    // evaluate to latch zeros, then restore the mux outputs.
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&default_low_signal->get_outputs()[0], i);
+    }
+    pc->evaluate();
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
+    }
 }
 
 bool Control_Unit::connect_halt_signal(const bool* halt_signal)

@@ -70,6 +70,13 @@ bool Memory_Bit::get_stored_bit() const
     return flip_flop.get_output(0);
 }
 
+void Memory_Bit::force_reset()
+{
+    flip_flop.force_reset();
+    output_and.get_outputs()[0] = false;
+    outputs[0] = false;
+}
+
 void Memory_Bit::evaluate()
 {
     // Evaluate in order: data_inverter → AND gates → flip_flop → output_and

@@ -93,6 +93,17 @@ public:
      * @return true if CPU is running, false if halted
      */
     bool get_run_halt_flag() const;
+
+    /**
+     * @brief Set the run/halt flag in the control unit.
+     * @param state true = running, false = halted
+     */
+    void set_run_halt_flag(bool state);
+
+    /**
+     * @brief Reset the program counter to address 0.
+     */
+    void reset_pc();
     
     /**
      * @brief Get opcode value for a given operation name

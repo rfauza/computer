@@ -247,6 +247,14 @@ uint16_t Main_Memory::get_register_value(uint16_t address) const
     return value;
 }
 
+void Main_Memory::zero_all()
+{
+    for (uint16_t addr = 0; addr < num_addresses; ++addr)
+    {
+        registers[addr]->zero();
+    }
+}
+
 void Main_Memory::print_pages(uint16_t num_pages) const
 {
     // Clamp num_pages to actual available pages

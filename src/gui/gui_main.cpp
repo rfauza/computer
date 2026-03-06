@@ -1,6 +1,7 @@
 #include <gtkmm.h>
 #include <iostream>
 #include <memory>
+#include <cstdlib>
 #include "ComputerWindow.hpp"
 #include "../computers/Computer_3bit_v1.hpp"
 
@@ -19,6 +20,11 @@
 // lives in `src/main.cpp` which will call `gui_main` when appropriate.
 int gui_main(int argc, char* argv[])
 {
+    // Force X11 backend to avoid "Compositor doesn't support moving popups" GDK
+    // warning under WSL / Wayland compositors that don't support popup relocation.
+    // Only sets if not already overridden by the environment.
+    setenv("GDK_BACKEND", "x11", 0);
+
     auto app = Gtk::Application::create("org.comp3bit.gui");
 
     // Parse optional program-file argument (first positional arg)

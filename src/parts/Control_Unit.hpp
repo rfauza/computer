@@ -242,6 +242,14 @@ public:
      * @brief Trigger a clock cycle (for flag clearing and other sequential logic)
      */
     void clock_tick();
+
+    /**
+     * @brief Reset the program counter to address 0.
+     *
+     * Directly zeros the PC register by temporarily connecting zero signals to
+     * its data inputs and evaluating once, then restores the mux connections.
+     */
+    void reset_pc();
     
 protected:
     // === Core Components ===

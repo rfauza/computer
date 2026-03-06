@@ -74,6 +74,15 @@ bool Register::get_stored_bit(uint16_t bit) const
     return memory_bits[bit]->get_stored_bit();
 }
 
+void Register::zero()
+{
+    for (size_t i = 0; i < memory_bits.size(); ++i)
+    {
+        memory_bits[i]->force_reset();
+        outputs[i] = false;
+    }
+}
+
 void Register::evaluate()
 {
     // Evaluate all memory bits and gather outputs

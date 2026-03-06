@@ -77,6 +77,21 @@ public:
      */
     void reset();
 
+    /** @brief Reset the program counter to address 0 and clear halt state. */
+    void reset_pc();
+
+    /** @brief Erase all RAM (write zeros to every address). */
+    void reset_ram();
+
+    /**
+     * @brief Full reset: zero all RAM, zero all PM, set PC to 0, clear halt.
+     * Leaves the machine ready to program from scratch.
+     */
+    void reset_all();
+
+    /** @brief Clear the halt state so execution can resume from the current PC. */
+    void clear_halt();
+
     void evaluate() override;
 
     // ── State query helpers (used by Evaluator) ───────────────────────────────

@@ -371,6 +371,43 @@ void Computer::reset()
     std::cout << "Computer reset to initial state" << std::endl;
 }
 
+void Computer::reset_pc()
+{
+    cpu->set_run_halt_flag(true);
+    cpu->reset_pc();
+    is_running = true;
+    sync_pc();
+}
+
+void Computer::reset_ram()
+{
+    ram->zero_all();
+}
+
+void Computer::reset_all()
+{
+    // Zero all RAM
+    ram->zero_all();
+
+    // Zero all PM instructions
+    for (uint16_t addr = 0; addr < num_pm_addresses; ++addr)
+    {
+        write_pm_instruction(addr, 0, 0, 0, 0);
+    }
+
+    // Reset PC to 0 and clear halt
+    cpu->set_run_halt_flag(true);
+    cpu->reset_pc();
+    is_running = true;
+    sync_pc();
+}
+
+void Computer::clear_halt()
+{
+    cpu->set_run_halt_flag(true);
+    is_running = true;
+}
+
 void Computer::toggle_ram_read_flag(bool flag_high)
 {
     if (flag_high) ram_read_flag->go_high();

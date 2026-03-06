@@ -64,6 +64,9 @@ private:
     void on_ram_page_changed();
     void on_ram_page2_changed();
     void on_slave_toggled();
+    void on_reset_pc();
+    void on_reset_ram();
+    void on_reset_all();
     
     // ── Periodic auto-run timer ────────────────────────────────────────
     bool on_auto_tick();
@@ -109,6 +112,9 @@ private:
     ToggleSwitch* mode_switch_  = nullptr;   // up=Program, down=Run
     ToggleSwitch* sub_switch_   = nullptr;   // Program: up=Write, down=Read
                                               // Run:     up=Auto,  down=Pulse
+    Gtk::Button* reset_pc_btn_  = nullptr;
+    Gtk::Button* reset_ram_btn_ = nullptr;
+    Gtk::Button* reset_all_btn_ = nullptr;
     
     // ── Widgets: main switch/LED columns ───────────────────────────────
     std::vector<ToggleSwitch*> pm_addr_switches_;

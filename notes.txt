@@ -293,3 +293,27 @@ old:
 101 jeq ABC
 110 jgt ABC
 111 NoOp
+
+
+- make GUI for front plate with lights and switches
+    program mode/run mode switch
+    pulse/auto-run switch
+    addr select
+    OP code
+    C, A, B
+    write button
+    pulse button
+    GUI
+    main area:
+        run/program
+        auto/pulse switch
+        pulse/write button
+        pm addr switches and LEDs
+        PM contents LEDs and write switches: OP C A B
+    RAM addon:
+        numaddr rows of numbits LEDs showing the contents of each ram addr (page switches if pageable)
+    8-seg main addon:
+        8-segment displays showing opcode name, A/B/C numerical
+    8-seg RAM addon:
+        display numerical value for each ram addr
+        rampage switches (and readout)

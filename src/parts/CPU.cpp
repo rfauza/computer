@@ -192,6 +192,16 @@ bool CPU::get_run_halt_flag() const
     return control_unit->get_run_halt_flag();
 }
 
+void CPU::set_run_halt_flag(bool state)
+{
+    control_unit->set_run_halt_flag(state);
+}
+
+void CPU::reset_pc()
+{
+    control_unit->reset_pc();
+}
+
 int CPU::get_opcode_for_operation(const std::string& operation_name) const
 {
     auto it = operation_to_opcode.find(operation_name);

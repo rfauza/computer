@@ -35,6 +35,9 @@ public:
     uint16_t get_address_bits() const { return address_bits; }
     uint16_t get_data_bits() const { return data_bits; }
     uint16_t get_num_addresses() const { return num_addresses; }
+
+    /** Directly zeroes every stored register without touching external connections. */
+    void zero_all();
     
     /**
      * @brief Get the value stored in a register at the given address

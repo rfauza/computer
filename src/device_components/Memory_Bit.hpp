@@ -25,6 +25,9 @@ public:
     /** Returns the raw stored Q value, bypassing the read-enable gate. */
     bool get_stored_bit() const;
 
+    /** Directly forces this memory cell to store 0. */
+    void force_reset();
+
 private:
     Inverter data_inverter;     // Inverts data for reset path
     AND_Gate set_and;           // Data AND Write Enable → Set

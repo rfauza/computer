@@ -97,9 +97,11 @@ void ComputerWindow::build_ui()
     file_menu->append("Load Program...", "app.load");
     menu_model->append_submenu("File", file_menu);
 
-    // Edit submenu (placeholder)
+    // Edit submenu
     auto edit_menu = Gio::Menu::create();
-    edit_menu->append("(no actions)", "");
+    edit_menu->append("Reset PC",  "app.reset_pc");
+    edit_menu->append("Reset RAM", "app.reset_ram");
+    edit_menu->append("Reset All", "app.reset_all");
     menu_model->append_submenu("Edit", edit_menu);
 
     // Help submenu
@@ -118,7 +120,34 @@ void ComputerWindow::build_ui()
 
     auto* seg_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     seg_unit->add_css_class("panel-unit");
-    seg_unit->append(*build_seven_seg_bar());
+    // Spacer pushes the content to the bottom of the panel
+    auto* seg_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    seg_spacer->set_vexpand(true);
+    seg_unit->append(*seg_spacer);
+    // Bottom row: reset buttons on the left, 7-seg bar on the right
+    auto* seg_bottom = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 8));
+    seg_bottom->set_margin_start(4);
+    seg_bottom->set_margin_bottom(4);
+    // Reset buttons column
+    auto* rst_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
+    rst_col->set_valign(Gtk::Align::END);
+    rst_col->set_margin_end(4);
+    reset_pc_btn_  = Gtk::manage(new Gtk::Button("Reset PC"));
+    reset_ram_btn_ = Gtk::manage(new Gtk::Button("Reset RAM"));
+    reset_all_btn_ = Gtk::manage(new Gtk::Button("Reset All"));
+    for (auto* b : {reset_pc_btn_, reset_ram_btn_, reset_all_btn_})
+    {
+        b->set_size_request(80, 28);
+    }
+    reset_pc_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_pc));
+    reset_ram_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_ram));
+    reset_all_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_all));
+    rst_col->append(*reset_pc_btn_);
+    rst_col->append(*reset_ram_btn_);
+    rst_col->append(*reset_all_btn_);
+    seg_bottom->append(*rst_col);
+    seg_bottom->append(*build_seven_seg_bar());
+    seg_unit->append(*seg_bottom);
     top_row->append(*seg_unit);
 
     auto* mat_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
@@ -153,8 +182,11 @@ void ComputerWindow::build_ui()
     // Register application actions (make the GUI self-sufficient).
     auto register_actions = [this]() {
         if (auto app = get_application()) {
-            app->add_action("load", [this]() { open_load_dialog(); });
-            app->add_action("about", [this]() { open_about_dialog(); });
+            app->add_action("load",      [this]() { open_load_dialog(); });
+            app->add_action("about",     [this]() { open_about_dialog(); });
+            app->add_action("reset_pc",  [this]() { on_reset_pc(); });
+            app->add_action("reset_ram", [this]() { on_reset_ram(); });
+            app->add_action("reset_all", [this]() { on_reset_all(); });
         }
     };
     if (get_application())
@@ -164,8 +196,11 @@ void ComputerWindow::build_ui()
         sigc::connection conn;
         conn = signal_map().connect([this, &conn]() mutable {
             if (auto app = get_application()) {
-                app->add_action("load", [this]() { open_load_dialog(); });
-                app->add_action("about", [this]() { open_about_dialog(); });
+                app->add_action("load",      [this]() { open_load_dialog(); });
+                app->add_action("about",     [this]() { open_about_dialog(); });
+                app->add_action("reset_pc",  [this]() { on_reset_pc(); });
+                app->add_action("reset_ram", [this]() { on_reset_ram(); });
+                app->add_action("reset_all", [this]() { on_reset_all(); });
                 if (conn.connected()) conn.disconnect();
             }
         });
@@ -946,6 +981,11 @@ void ComputerWindow::on_pulse_pressed()
     {
         if (run_sub_ == RunSub::PULSE)
         {
+            // If halted, un-halt so the next clock tick can proceed
+            if (!computer_->get_is_running())
+            {
+                computer_->clear_halt();
+            }
             // Single clock tick
             computer_->clock_tick();
             computer_->sync_pc();
@@ -1267,4 +1307,39 @@ void ComputerWindow::update_led_matrix_display()
     }
     
     led_matrix_->refresh();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Reset handlers
+// ═══════════════════════════════════════════════════════════════════════
+
+void ComputerWindow::on_reset_pc()
+{
+    Glib::signal_idle().connect_once([this]() {
+        stop_auto_timer();
+        computer_->reset_pc();
+        update_all_displays();
+        // If in auto-run mode, restart the timer
+        if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
+        {
+            start_auto_timer();
+        }
+    });
+}
+
+void ComputerWindow::on_reset_ram()
+{
+    Glib::signal_idle().connect_once([this]() {
+        computer_->reset_ram();
+        update_all_displays();
+    });
+}
+
+void ComputerWindow::on_reset_all()
+{
+    Glib::signal_idle().connect_once([this]() {
+        stop_auto_timer();
+        computer_->reset_all();
+        update_all_displays();
+    });
 }

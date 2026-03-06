@@ -47,6 +47,12 @@ public:
     /** Returns the raw stored Q value for the given bit, bypassing the read-enable gate. */
     bool get_stored_bit(uint16_t bit) const;
 
+    /** Directly zeroes all stored bits without touching external connections. */
+    void zero();
+
+    /** Returns the number of data bits stored in this register. */
+    uint16_t get_num_bits() const { return static_cast<uint16_t>(memory_bits.size()); }
+
     /**
      * @brief Performs update cycle: evaluates all memory bits and signals downstream
      */

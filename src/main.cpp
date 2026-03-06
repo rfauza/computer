@@ -23,7 +23,8 @@ int run_gui(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
-    // If run with --no-gui, run the headless tester; otherwise start GUI.
+    
+    
     if (argc > 1 && std::string(argv[1]) == "--no-gui") {
         return run_with_no_gui();
     }

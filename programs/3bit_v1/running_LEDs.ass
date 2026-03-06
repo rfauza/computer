@@ -1,0 +1,56 @@
+# running_LEDs 3-bit v1
+# filename: running_LEDs.ass
+# isa: 3bit_v1
+# light up one LED of the 8x8 display at a time, going down the line
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: sets flags based on [A] vs [B]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+
+# row 0
+movout 4 5 0 # move 100 into page 5 addr 0 (light row 0 col 0)
+movout 2 5 0
+movout 1 5 0
+movout 0 5 0
+movout 4 6 0
+movout 2 6 0
+movout 1 6 0
+movout 0 6 0
+movout 4 7 0
+movout 2 7 0
+movout 1 7 0
+movout 0 7 0
+
+# row 1
+movout 4 5 1
+movout 2 5 1
+movout 1 5 1
+movout 0 5 1
+movout 4 6 1
+movout 2 6 1
+movout 1 6 1
+movout 0 6 1
+movout 4 7 1
+movout 2 7 1
+movout 1 7 1
+movout 0 7 1
+
+# row 2
+movout 4 5 2
+movout 2 5 2
+movout 1 5 2
+movout 0 5 2
+movout 4 6 2
+movout 2 6 2
+movout 1 6 2
+movout 0 6 2
+movout 4 7 2
+movout 2 7 2
+movout 1 7 2
+movout 0 7 2
