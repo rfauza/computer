@@ -570,6 +570,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     int half = total_segs / 2;
     
     auto* row1 = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    row1->set_halign(Gtk::Align::CENTER);
     for (int i = 0; i < half; ++i)
     {
         auto* seg = Gtk::manage(new SevenSegDisplay());
@@ -580,6 +581,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     
     // Address labels for first row
     auto* lbl_row1 = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    lbl_row1->set_halign(Gtk::Align::CENTER);
     for (int i = 0; i < half; ++i)
     {
         auto* lbl = Gtk::manage(new Gtk::Label(std::to_string(i)));
@@ -590,6 +592,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     panel->append(*lbl_row1);
     
     auto* row2 = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    row2->set_halign(Gtk::Align::CENTER);
     for (int i = half; i < total_segs; ++i)
     {
         auto* seg = Gtk::manage(new SevenSegDisplay());
@@ -600,6 +603,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     
     // Address labels for second row
     auto* lbl_row2 = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    lbl_row2->set_halign(Gtk::Align::CENTER);
     for (int i = half; i < total_segs; ++i)
     {
         auto* lbl = Gtk::manage(new Gtk::Label(std::to_string(i)));

@@ -94,8 +94,8 @@ Mar 5 2026 :
 1h fixing vscode not linking gtkmm again... and installed gitlens to show git blame again
 1h fixed writing to one addr erases all the others... again...
 .5h turns out closing program gives memory errors are "false positives" per google AI. gpt creating suppress file them did nothing
-fixed start gui with write gives unconnected errors
-fixed 8-seg ram slave mode not moving sitches
+    fixed start gui with write gives unconnected errors
+.5h fixed 8-seg ram slave mode not moving sitches, moved rampage 8-seg to left of switches, centered RAM 8-segs
 
 Mar 4 2026 : 1h
 1h GUI tweaks
