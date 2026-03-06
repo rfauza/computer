@@ -564,6 +564,16 @@ bool* Computer::get_cmp_flags() const
 
 void Computer::prepare_run()
 {
+    // Ensure PM data inputs are connected (in case no write has happened yet)
+    uint16_t decoder_bits_ = program_memory->get_decoder_bits();
+    uint16_t data_bits_    = program_memory->get_data_bits();
+    uint16_t data_start    = decoder_bits_;
+    for (uint16_t b = 0; b < 4 * data_bits_; ++b)
+    {
+        program_memory->connect_input(&(*pm_zero_sigs)[b].get_outputs()[0],
+                                      static_cast<uint16_t>(data_start + b));
+    }
+    
     // Reconnect PC to PM address inputs
     bool* pc_outputs = cpu->get_pc_outputs();
     for (uint16_t i = 0; i < pc_bits; ++i)
