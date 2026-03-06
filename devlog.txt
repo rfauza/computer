@@ -85,9 +85,8 @@ V2
     need my same color, and addons to be separated
     knob is discrete, needs to be continuous, start at 0.5Hz
     layout and color should be the same as my drawing
-    needs reset button
+    needs reset button and menu option (reset computer, and reset clock)
     needs rampage leds and 8-seg
-    slave/indep vertical
 
 
 Mar 5 2026 : 

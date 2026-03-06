@@ -153,14 +153,23 @@ void ComputerWindow::build_ui()
     // Register application actions (make the GUI self-sufficient).
     auto register_actions = [this]() {
         if (auto app = get_application()) {
-            app->add_action("load", [this](const Glib::VariantBase&) { open_load_dialog(); });
-            app->add_action("about", [this](const Glib::VariantBase&) { open_about_dialog(); });
+            app->add_action("load", [this]() { open_load_dialog(); });
+            app->add_action("about", [this]() { open_about_dialog(); });
         }
     };
     if (get_application())
         register_actions();
     else
-        signal_map().connect_once(register_actions);
+    {
+        sigc::connection conn;
+        conn = signal_map().connect([this, &conn]() mutable {
+            if (auto app = get_application()) {
+                app->add_action("load", [this]() { open_load_dialog(); });
+                app->add_action("about", [this]() { open_about_dialog(); });
+                if (conn.connected()) conn.disconnect();
+            }
+        });
+    }
 
     // Keyboard controller on the window
     auto key_ctrl = Gtk::EventControllerKey::create();
