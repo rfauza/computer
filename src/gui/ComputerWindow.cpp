@@ -526,8 +526,20 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
         page2_row->append(*sw);
     }
     std::reverse(ram_page2_switches_.begin(), ram_page2_switches_.end());
-    top_row->append(*page2_row);
     
+    // Page display (seven-segment showing selected page number)
+    auto* page_seg_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    ram_page_seg_ = Gtk::manage(new SevenSegDisplay());
+    page_seg_col->append(*ram_page_seg_);
+    auto* page_seg_lbl = Gtk::manage(new Gtk::Label());
+    page_seg_lbl->set_markup("<span size='x-small'>Page</span>");
+    page_seg_lbl->set_halign(Gtk::Align::CENTER);
+    page_seg_col->append(*page_seg_lbl);
+
+    top_row->append(*page_seg_col);
+
+    top_row->append(*page2_row);
+
     // Slave/Independent switch (vertical layout with labels above/below)
     auto* slave_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     auto* indep_lbl = Gtk::manage(new Gtk::Label());
@@ -544,15 +556,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     slave_col->append(*slave_lbl);
     top_row->append(*slave_col);
     
-    // Page display (seven-segment showing selected page number)
-    auto* page_seg_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
-    ram_page_seg_ = Gtk::manage(new SevenSegDisplay());
-    page_seg_col->append(*ram_page_seg_);
-    auto* page_seg_lbl = Gtk::manage(new Gtk::Label());
-    page_seg_lbl->set_markup("<span size='x-small'>Page</span>");
-    page_seg_lbl->set_halign(Gtk::Align::CENTER);
-    page_seg_col->append(*page_seg_lbl);
-    top_row->append(*page_seg_col);
+    
     
     panel->append(*top_row);
     
