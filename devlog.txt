@@ -83,7 +83,7 @@ V2
 -gui:
     file menu to load program
     need my same color, and addons to be separated
-    knob is discrete, needs to be continuous
+    knob is discrete, needs to be continuous, start at 0.5Hz
     layout and color should be the same as my drawing
     needs reset button
     needs rampage leds and 8-seg
@@ -95,7 +95,8 @@ Mar 5 2026 :
 1h fixed writing to one addr erases all the others... again...
 .5h turns out closing program gives memory errors are "false positives" per google AI. gpt creating suppress file them did nothing
     fixed start gui with write gives unconnected errors
-.5h fixed 8-seg ram slave mode not moving sitches, moved rampage 8-seg to left of switches, centered RAM 8-segs
+.5h fixed 8-seg ram slave mode not moving sitches, moved rampage 8-seg to left of switches, centered RAM 8-segs and led block
+1h added file menu bar and load program
 
 Mar 4 2026 : 1h
 1h GUI tweaks

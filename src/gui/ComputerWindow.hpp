@@ -31,6 +31,9 @@ public:
      */
     ComputerWindow(Computer* computer, uint16_t num_bits);
     ~ComputerWindow() override;
+    // Menu actions callable from application menu
+    void open_load_dialog();
+    void open_about_dialog();
     
 private:
     // ── Mode enumerations ──────────────────────────────────────────────

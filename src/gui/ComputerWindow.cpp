@@ -4,6 +4,8 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <giomm.h>
+// Avoid pulling in unavailable specific headers; use umbrella <gtkmm.h>
 
 // ═══════════════════════════════════════════════════════════════════════
 // Construction / destruction
@@ -84,6 +86,33 @@ void ComputerWindow::build_ui()
     root->set_margin_top(6);
     root->set_margin_bottom(6);
 
+    // Top menu bar: File / Edit / Help using Gtk::MenuBar
+    // nothing here; dialogs moved to public methods open_load_dialog/open_about_dialog
+
+    // Top menu using PopoverMenuBar (Gio::Menu model)
+    auto menu_model = Gio::Menu::create();
+
+    // File submenu
+    auto file_menu = Gio::Menu::create();
+    file_menu->append("Load Program...", "app.load");
+    menu_model->append_submenu("File", file_menu);
+
+    // Edit submenu (placeholder)
+    auto edit_menu = Gio::Menu::create();
+    edit_menu->append("(no actions)", "");
+    menu_model->append_submenu("Edit", edit_menu);
+
+    // Help submenu
+    auto help_menu = Gio::Menu::create();
+    help_menu->append("About", "app.about");
+    menu_model->append_submenu("Help", help_menu);
+
+    auto* popbar = Gtk::manage(new Gtk::PopoverMenuBar(menu_model));
+
+    // Application-level actions handled in main.cpp (app.add_action)
+
+    root->append(*popbar);
+
     // ── Top row: seven-seg unit + LED-matrix unit ──────────────────────
     auto* top_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 6));
 
@@ -121,11 +150,74 @@ void ComputerWindow::build_ui()
 
     set_child(*root);
 
+    // Register application actions (make the GUI self-sufficient).
+    auto register_actions = [this]() {
+        if (auto app = get_application()) {
+            app->add_action("load", [this](const Glib::VariantBase&) { open_load_dialog(); });
+            app->add_action("about", [this](const Glib::VariantBase&) { open_about_dialog(); });
+        }
+    };
+    if (get_application())
+        register_actions();
+    else
+        signal_map().connect_once(register_actions);
+
     // Keyboard controller on the window
     auto key_ctrl = Gtk::EventControllerKey::create();
     key_ctrl->signal_key_pressed().connect(
         sigc::mem_fun(*this, &ComputerWindow::on_key_pressed), false);
     add_controller(key_ctrl);
+}
+
+void ComputerWindow::open_load_dialog()
+{
+    auto* dialog = new Gtk::FileChooserDialog(*this, "Load Program", Gtk::FileChooser::Action::OPEN);
+    dialog->add_button("_Open", Gtk::ResponseType::ACCEPT);
+    dialog->add_button("_Cancel", Gtk::ResponseType::CANCEL);
+    auto filter = Gtk::FileFilter::create();
+    filter->set_name("Machine code files");
+    filter->add_pattern("*.mc");
+    filter->add_pattern("*.ass");
+    dialog->add_filter(filter);
+    dialog->set_transient_for(*this);
+
+    dialog->signal_response().connect([this, dialog](int response_id) {
+        if (response_id == static_cast<int>(Gtk::ResponseType::ACCEPT))
+        {
+            auto file = dialog->get_file();
+            if (file)
+            {
+                std::string path = file->get_path();
+                bool ok = computer_->load_program(path);
+                if (!ok)
+                {
+                    auto* err = new Gtk::MessageDialog(*this, "Failed to load program file",
+                                                       false, Gtk::MessageType::ERROR);
+                    err->set_secondary_text(path);
+                    err->set_transient_for(*this);
+                    err->signal_response().connect([err](int) { err->hide(); delete err; });
+                    err->show();
+                }
+                else
+                {
+                    computer_->prepare_run();
+                    update_all_displays();
+                }
+            }
+        }
+        dialog->hide();
+        delete dialog;
+    });
+
+    dialog->show();
+}
+
+void ComputerWindow::open_about_dialog()
+{
+    auto* dlg = new Gtk::MessageDialog(*this, "16Bit Computer", false, Gtk::MessageType::INFO);
+    dlg->set_secondary_text("16BitComp GUI");
+    dlg->signal_response().connect([dlg](int){ dlg->hide(); delete dlg; });
+    dlg->show();
 }
 
 // ── Seven-Segment Display Bar ─────────────────────────────────────────
