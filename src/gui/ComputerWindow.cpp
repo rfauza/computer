@@ -530,18 +530,18 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
     
     // Slave/Independent switch (vertical layout with labels above/below)
     auto* slave_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    auto* slave_lbl = Gtk::manage(new Gtk::Label());
-    slave_lbl->set_markup("<span size='x-small'>Slave</span>");
-    slave_lbl->set_halign(Gtk::Align::CENTER);
-    slave_col->append(*slave_lbl);
-    slave_switch_ = Gtk::manage(new ToggleSwitch());
-    slave_switch_->set_size_request(32, 48);
-    slave_switch_->set_toggle_callback([this](bool) { on_slave_toggled(); });
-    slave_col->append(*slave_switch_);
     auto* indep_lbl = Gtk::manage(new Gtk::Label());
     indep_lbl->set_markup("<span size='x-small'>Indep</span>");
     indep_lbl->set_halign(Gtk::Align::CENTER);
     slave_col->append(*indep_lbl);
+    slave_switch_ = Gtk::manage(new ToggleSwitch());
+    slave_switch_->set_size_request(32, 48);
+    slave_switch_->set_toggle_callback([this](bool) { on_slave_toggled(); });
+    slave_col->append(*slave_switch_);
+    auto* slave_lbl = Gtk::manage(new Gtk::Label());
+    slave_lbl->set_markup("<span size='x-small'>Slave</span>");
+    slave_lbl->set_halign(Gtk::Align::CENTER);
+    slave_col->append(*slave_lbl);
     top_row->append(*slave_col);
     
     // Page display (seven-segment showing selected page number)
@@ -860,14 +860,9 @@ void ComputerWindow::on_ram_page_changed()
 {
     update_ram_led_display();
     
-    // If slave mode, also update the RAM seg panel
+    // If slave mode, update the RAM seg display (without moving the switches)
     if (slave_switch_ && slave_switch_->is_on())
     {
-        // Copy page switches to page2 switches
-        for (size_t i = 0; i < ram_page_switches_.size() && i < ram_page2_switches_.size(); ++i)
-        {
-            ram_page2_switches_[i]->set_on(ram_page_switches_[i]->is_on());
-        }
         update_ram_seg_display();
     }
 }
@@ -882,15 +877,8 @@ void ComputerWindow::on_ram_page2_changed()
 
 void ComputerWindow::on_slave_toggled()
 {
-    if (slave_switch_->is_on())
-    {
-        // Slave mode: sync page2 from page1
-        for (size_t i = 0; i < ram_page_switches_.size() && i < ram_page2_switches_.size(); ++i)
-        {
-            ram_page2_switches_[i]->set_on(ram_page_switches_[i]->is_on());
-        }
-        update_ram_seg_display();
-    }
+    // Just update the display; switches remain independent
+    update_ram_seg_display();
 }
 
 // ═══════════════════════════════════════════════════════════════════════

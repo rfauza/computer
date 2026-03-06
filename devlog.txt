@@ -81,9 +81,6 @@ V2
 - make pong
 
 -gui:
-    
-    
-    start gui with write to prevent unconnected error
     file menu to load program
     need my same color, and addons to be separated
     knob is discrete, needs to be continuous
@@ -98,6 +95,7 @@ Mar 5 2026 :
 1h fixed writing to one addr erases all the others... again...
 .5h turns out closing program gives memory errors are "false positives" per google AI. gpt creating suppress file them did nothing
 fixed start gui with write gives unconnected errors
+fixed 8-seg ram slave mode not moving sitches
 
 Mar 4 2026 : 1h
 1h GUI tweaks
