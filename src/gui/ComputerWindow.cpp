@@ -223,7 +223,6 @@ void ComputerWindow::open_load_dialog()
     auto filter = Gtk::FileFilter::create();
     filter->set_name("Machine code files");
     filter->add_pattern("*.mc");
-    filter->add_pattern("*.ass");
     dialog->add_filter(filter);
     dialog->set_transient_for(*this);
 
