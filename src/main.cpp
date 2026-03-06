@@ -19,16 +19,13 @@
 
 
 int run_with_no_gui();
-int run_gui(int argc, char* argv[]);
+int run_gui();
 
-int main(int argc, char* argv[])
+int main()
 {
-    
-    
-    if (argc > 1 && std::string(argv[1]) == "--no-gui") {
-        return run_with_no_gui();
-    }
-    return run_gui(argc, argv);
+    Assembler ass;
+    ass.assemble("../programs/3bit_v1/running_LEDs.ass", "../programs/3bit_v1/running_LEDs.mc");
+    return run_gui();
 }
 
 int run_with_no_gui()
@@ -49,22 +46,11 @@ int run_with_no_gui()
     return pass ? 0 : 2;
 }
 
-int run_gui(int argc, char* argv[])
+int run_gui()
 {
     auto app = Gtk::Application::create("org.comp3bit.gui");
 
-    // Optional program file path
-    std::string program_file;
-    if (argc > 1)
-        program_file = argv[1];
-
     auto computer = std::make_unique<Computer_3bit_v1>("gui_main");
-    if (!program_file.empty())
-    {
-        std::cout << "Loading program: " << program_file << std::endl;
-        if (!computer->load_program(program_file))
-            std::cerr << "Warning: failed to load program: " << program_file << std::endl;
-    }
 
     Computer_3bit_v1* comp_ptr = computer.get();
 
@@ -76,7 +62,7 @@ int run_gui(int argc, char* argv[])
         window->set_visible(true);
     });
 
-    return app->run(argc, argv);
+    return app->run();
 }
 
 bool loadPM()

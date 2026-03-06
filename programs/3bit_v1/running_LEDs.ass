@@ -12,6 +12,11 @@
 # 110 JGT    - Jump if greater: if flag then goto ABC
 # 111 NOP    - No operation
 
+# setup
+movl 1 0 1
+movl 2 0 2
+movl 4 0 4
+
 
 # row 0
 movout 4 5 0 # move 100 into page 5 addr 0 (light row 0 col 0)

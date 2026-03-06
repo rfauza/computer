@@ -5,6 +5,8 @@
 #include <cmath>
 #include <algorithm>
 #include <giomm.h>
+#include <filesystem>
+
 // Avoid pulling in unavailable specific headers; use umbrella <gtkmm.h>
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -225,6 +227,18 @@ void ComputerWindow::open_load_dialog()
     dialog->add_filter(filter);
     dialog->set_transient_for(*this);
 
+    // Default the dialog to the project `programs/` folder (relative to build dir).
+    try {
+        namespace fs = std::filesystem;
+        fs::path prog_dir = fs::absolute(fs::path("../programs"));
+        if (fs::exists(prog_dir)) {
+            dialog->set_current_folder(Gio::File::create_for_path(prog_dir.string()));
+        }
+    } catch (...) {
+        // If filesystem isn't available or any error occurs, fall back to default.
+    }
+
+    // Assemble .ass files automatically and safely load .mc files.
     dialog->signal_response().connect([this, dialog](int response_id) {
         if (response_id == static_cast<int>(Gtk::ResponseType::ACCEPT))
         {
@@ -1316,6 +1330,11 @@ void ComputerWindow::update_led_matrix_display()
 void ComputerWindow::on_reset_pc()
 {
     Glib::signal_idle().connect_once([this]() {
+        // Ensure PM and other optional inputs are connected to safe defaults
+        // to avoid "unconnected" evaluation errors when manipulating
+        // components that may evaluate immediately.
+        computer_->prepare_run();
+
         stop_auto_timer();
         computer_->reset_pc();
         update_all_displays();
@@ -1330,6 +1349,8 @@ void ComputerWindow::on_reset_pc()
 void ComputerWindow::on_reset_ram()
 {
     Glib::signal_idle().connect_once([this]() {
+        // Ensure PM default inputs are connected before any evaluations
+        computer_->prepare_run();
         computer_->reset_ram();
         update_all_displays();
     });
@@ -1338,6 +1359,8 @@ void ComputerWindow::on_reset_ram()
 void ComputerWindow::on_reset_all()
 {
     Glib::signal_idle().connect_once([this]() {
+        // Prepare PM to avoid unconnected-input errors during bulk PM writes
+        computer_->prepare_run();
         stop_auto_timer();
         computer_->reset_all();
         update_all_displays();

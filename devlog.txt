@@ -49,7 +49,6 @@ V2
 - make pong
 
 Todo next:
-- gui needs reset computer and reset clock, reset ram buttons and menu options
 - gui knob is discrete, needs to be continuous, start at 0.5Hz
 - gui layout and color should be the same as my drawing
 - write program to light one LED at a time, going down the rows and cols
@@ -59,7 +58,8 @@ Todo next:
 - tag main -
 
 Mar 6 2026 : 
-.5h added clear buttons to gui
+.5h added pc/ram/rall clear buttons and menu items to gui
+5.50p
 
 Mar 5 2026 : 4h total 94h
 1h fixing vscode not linking gtkmm again... and installed gitlens to show git blame again
