@@ -23,8 +23,9 @@ int run_gui();
 
 int main()
 {
-    Assembler ass;
-    ass.assemble("../programs/3bit_v1/running_LEDs.ass", "../programs/3bit_v1/running_LEDs.mc");
+    // Assembler ass;
+    // ass.assemble("../programs/3bit_v1/running_LEDs.ass", "../programs/3bit_v1/running_LEDs.mc");
+    
     return run_gui();
 }
 
