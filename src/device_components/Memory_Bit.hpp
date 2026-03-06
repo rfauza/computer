@@ -22,6 +22,9 @@ public:
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;
 
+    /** Returns the raw stored Q value, bypassing the read-enable gate. */
+    bool get_stored_bit() const;
+
 private:
     Inverter data_inverter;     // Inverts data for reset path
     AND_Gate set_and;           // Data AND Write Enable → Set

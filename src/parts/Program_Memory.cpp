@@ -228,9 +228,9 @@ void Program_Memory::get_instruction(uint16_t address, uint16_t& opcode,
     c = 0;
     for (uint16_t bit = 0; bit < data_bits; ++bit)
     {
-        opcode |= (registers[0][address]->get_output(bit) ? 1 : 0) << bit;
-        a      |= (registers[1][address]->get_output(bit) ? 1 : 0) << bit;
-        b      |= (registers[2][address]->get_output(bit) ? 1 : 0) << bit;
-        c      |= (registers[3][address]->get_output(bit) ? 1 : 0) << bit;
+        opcode |= (registers[0][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        a      |= (registers[1][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        b      |= (registers[2][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        c      |= (registers[3][address]->get_stored_bit(bit) ? 1 : 0) << bit;
     }
 }

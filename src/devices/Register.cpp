@@ -69,6 +69,11 @@ bool Register::connect_input(const bool* const upstream_output_p, uint16_t input
     return false;
 }
 
+bool Register::get_stored_bit(uint16_t bit) const
+{
+    return memory_bits[bit]->get_stored_bit();
+}
+
 void Register::evaluate()
 {
     // Evaluate all memory bits and gather outputs

@@ -43,7 +43,10 @@ public:
      * @brief Evaluates all memory bits and updates outputs
      */
     void evaluate() override;
-    
+
+    /** Returns the raw stored Q value for the given bit, bypassing the read-enable gate. */
+    bool get_stored_bit(uint16_t bit) const;
+
     /**
      * @brief Performs update cycle: evaluates all memory bits and signals downstream
      */

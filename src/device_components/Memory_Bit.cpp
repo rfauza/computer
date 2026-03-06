@@ -65,6 +65,11 @@ bool Memory_Bit::connect_input(const bool* const upstream_output_p, uint16_t inp
     return true;
 }
 
+bool Memory_Bit::get_stored_bit() const
+{
+    return flip_flop.get_output(0);
+}
+
 void Memory_Bit::evaluate()
 {
     // Evaluate in order: data_inverter → AND gates → flip_flop → output_and
