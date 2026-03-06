@@ -469,7 +469,7 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
 
     // "Addr" label
     auto* addr_lbl = Gtk::manage(new Gtk::Label());
-    addr_lbl->set_markup("<span size='small'>Addr</span>");
+    addr_lbl->set_markup("<span size='small'> Addr</span>");
     addr_lbl->set_halign(Gtk::Align::START);
     panel->append(*addr_lbl);
 
@@ -480,7 +480,7 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
         auto* row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 1));
 
         // Address label
-        auto* a_lbl = Gtk::manage(new Gtk::Label(std::to_string(addr)));
+        auto* a_lbl = Gtk::manage(new Gtk::Label("   "+std::to_string(addr)+"  "));
         a_lbl->set_size_request(16, -1);
         row->append(*a_lbl);
 
