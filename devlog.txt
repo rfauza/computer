@@ -83,7 +83,7 @@ V2
 -gui:
     writing to one addr erases all the oters again...
     closing program gives memory errors
-    vscode on wsl does not show linking info with ctrl 
+    vscdoe not showing git blame and times
     start gui with write to prevent unconnected error
     file menu to load program
     need my same color, and addons to be separated
@@ -94,8 +94,11 @@ V2
     slave/indep vertical
 
 
-Mar 4 2026 : 
-GUI tweaks
+Mar 5 2026 : 
+1h fixing vscode not linking gtkmm again...
+
+Mar 4 2026 : 1h
+1h GUI tweaks
     
 Mar 3 2026 : 5.5h total 89h
 1h fix vscode include errors and git running vscode on wsl ubuntu
