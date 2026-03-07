@@ -521,6 +521,11 @@ uint16_t Computer::read_ram(uint16_t address) const
     return ram->get_register_value(address);
 }
 
+void Computer::write_ram(uint16_t address, uint16_t value)
+{
+    ram->set_register_value(address, value);
+}
+
 void Computer::read_pm_instruction(uint16_t address, uint16_t& opcode,
                                    uint16_t& a, uint16_t& b, uint16_t& c) const
 {

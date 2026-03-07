@@ -57,6 +57,7 @@ Todo next:
 Mar 6 2026 : 
 .5h added pc/ram/rall clear buttons and menu items to gui
 .5h made knob continuous, program to light one LED at a time in 8x8 matrix
+.5h keyboard inputs space and wasd mapped to ram page 4 addr 0-4 respectively
 
 Mar 5 2026 : 4h total 94h
 1h fixing vscode not linking gtkmm again... and installed gitlens to show git blame again

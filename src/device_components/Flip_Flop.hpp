@@ -25,6 +25,9 @@ public:
      */
     void force_reset();
 
+    /** Directly forces the latch into the stable Q=1 state. */
+    void force_set();
+
 private:
     Inverter inverter_set;      // Inverts Set input for NAND latch
     Inverter inverter_reset;    // Inverts Reset input for NAND latch

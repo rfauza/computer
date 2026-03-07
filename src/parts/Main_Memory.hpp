@@ -45,6 +45,13 @@ public:
      * @return The value stored in that register as a uint16_t
      */
     uint16_t get_register_value(uint16_t address) const;
+
+    /**
+     * @brief Directly write a value into a register at the given address
+     * @param address The address of the register (0 to num_addresses-1)
+     * @param value   The value to store
+     */
+    void set_register_value(uint16_t address, uint16_t value);
     
     /**
      * @brief Print RAM contents organized by pages in a grid format

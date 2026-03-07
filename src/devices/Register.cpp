@@ -83,6 +83,22 @@ void Register::zero()
     }
 }
 
+void Register::set_bit(uint16_t bit, bool value)
+{
+    if (bit >= memory_bits.size())
+        return;
+    if (value)
+    {
+        memory_bits[bit]->force_set();
+        outputs[bit] = true;
+    }
+    else
+    {
+        memory_bits[bit]->force_reset();
+        outputs[bit] = false;
+    }
+}
+
 void Register::evaluate()
 {
     // Evaluate all memory bits and gather outputs

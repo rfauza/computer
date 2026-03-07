@@ -28,6 +28,9 @@ public:
     /** Directly forces this memory cell to store 0. */
     void force_reset();
 
+    /** Directly forces this memory cell to store 1. */
+    void force_set();
+
 private:
     Inverter data_inverter;     // Inverts data for reset path
     AND_Gate set_and;           // Data AND Write Enable → Set

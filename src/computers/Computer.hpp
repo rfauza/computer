@@ -119,6 +119,13 @@ public:
      */
     uint16_t read_ram(uint16_t address) const;
 
+    /**
+     * @brief Directly write a value into RAM at the given full address.
+     * @param address Full RAM address (0 to num_ram_addresses-1).
+     * @param value   Value to store.
+     */
+    void write_ram(uint16_t address, uint16_t value);
+
     /** @brief Return data-path width in bits. */
     uint16_t get_num_bits() const { return num_bits; }
 

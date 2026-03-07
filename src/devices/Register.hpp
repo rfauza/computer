@@ -50,6 +50,9 @@ public:
     /** Directly zeroes all stored bits without touching external connections. */
     void zero();
 
+    /** Directly forces a single bit to the given value without touching external connections. */
+    void set_bit(uint16_t bit, bool value);
+
     /** Returns the number of data bits stored in this register. */
     uint16_t get_num_bits() const { return static_cast<uint16_t>(memory_bits.size()); }
 

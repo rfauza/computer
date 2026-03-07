@@ -77,6 +77,13 @@ void Memory_Bit::force_reset()
     outputs[0] = false;
 }
 
+void Memory_Bit::force_set()
+{
+    flip_flop.force_set();
+    output_and.get_outputs()[0] = true;
+    outputs[0] = true;
+}
+
 void Memory_Bit::evaluate()
 {
     // Evaluate in order: data_inverter → AND gates → flip_flop → output_and

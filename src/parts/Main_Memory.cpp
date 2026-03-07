@@ -247,6 +247,17 @@ uint16_t Main_Memory::get_register_value(uint16_t address) const
     return value;
 }
 
+void Main_Memory::set_register_value(uint16_t address, uint16_t value)
+{
+    if (address >= num_addresses)
+        return;
+    
+    for (uint16_t bit = 0; bit < data_bits; ++bit)
+    {
+        registers[address]->set_bit(bit, (value >> bit) & 1);
+    }
+}
+
 void Main_Memory::zero_all()
 {
     for (uint16_t addr = 0; addr < num_addresses; ++addr)

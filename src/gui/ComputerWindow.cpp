@@ -213,6 +213,8 @@ void ComputerWindow::build_ui()
 
     // Keyboard controller on the window
     auto key_ctrl = Gtk::EventControllerKey::create();
+    // Capture phase ensures this controller sees keys before widget defaults
+    key_ctrl->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
     key_ctrl->signal_key_pressed().connect(
         sigc::mem_fun(*this, &ComputerWindow::on_key_pressed), false);
     add_controller(key_ctrl);
@@ -898,10 +900,34 @@ bool ComputerWindow::on_key_pressed(guint keyval, guint /*keycode*/,
         }
         
         case GDK_KEY_space:
+            computer_->write_ram((4 << num_bits_) | 0, 1);
+            update_all_displays();
+            return true;
+            
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
             on_pulse_pressed();
             pulse_button_->flash();
+            return true;
+            
+        case GDK_KEY_w:
+            computer_->write_ram((4 << num_bits_) | 1, 1);
+            update_all_displays();
+            return true;
+            
+        case GDK_KEY_a:
+            computer_->write_ram((4 << num_bits_) | 2, 1);
+            update_all_displays();
+            return true;
+            
+        case GDK_KEY_s:
+            computer_->write_ram((4 << num_bits_) | 3, 1);
+            update_all_displays();
+            return true;
+            
+        case GDK_KEY_d:
+            computer_->write_ram((4 << num_bits_) | 4, 1);
+            update_all_displays();
             return true;
             
         case GDK_KEY_Escape:

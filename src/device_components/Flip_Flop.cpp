@@ -85,3 +85,13 @@ void Flip_Flop::force_reset()
     nand_gate_2.get_outputs()[0] = true;
     outputs[0] = false;
 }
+
+void Flip_Flop::force_set()
+{
+    // Drive the NAND latch directly into a stable Q=1 state:
+    //   nand_gate_1 output (Q)   = 1
+    //   nand_gate_2 output (!Q)  = 0
+    nand_gate_1.get_outputs()[0] = true;
+    nand_gate_2.get_outputs()[0] = false;
+    outputs[0] = true;
+}
