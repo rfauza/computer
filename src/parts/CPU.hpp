@@ -104,6 +104,11 @@ public:
      * @brief Reset the program counter to address 0.
      */
     void reset_pc();
+
+    /**
+     * @brief Set the program counter to a specific address.
+     */
+    void set_pc(uint16_t address);
     
     /**
      * @brief Get opcode value for a given operation name

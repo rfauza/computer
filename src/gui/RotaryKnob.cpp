@@ -3,15 +3,18 @@
 
 RotaryKnob::RotaryKnob()
 {
-    set_content_width(72);
-    set_content_height(72);
+    set_content_width(140);
+    set_content_height(140);
     set_draw_func(sigc::mem_fun(*this, &RotaryKnob::on_draw));
-    
-    click_ = Gtk::GestureClick::create();
-    click_->signal_pressed().connect(
-        sigc::mem_fun(*this, &RotaryKnob::on_click_pressed));
-    add_controller(click_);
-    
+    set_cursor("ns-resize");
+
+    drag_ = Gtk::GestureDrag::create();
+    drag_->signal_drag_begin().connect(
+        sigc::mem_fun(*this, &RotaryKnob::on_drag_begin));
+    drag_->signal_drag_update().connect(
+        sigc::mem_fun(*this, &RotaryKnob::on_drag_update));
+    add_controller(drag_);
+
     scroll_ = Gtk::EventControllerScroll::create();
     scroll_->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
     scroll_->signal_scroll().connect(
@@ -21,65 +24,71 @@ RotaryKnob::RotaryKnob()
 
 double RotaryKnob::get_frequency_hz() const
 {
-    return frequencies_[step_];
+    const double log_min = std::log10(FREQ_MIN);
+    const double log_max = std::log10(FREQ_MAX);
+    return std::pow(10.0, log_min + value_ * (log_max - log_min));
 }
 
-void RotaryKnob::set_step(int step)
+void RotaryKnob::set_value(double value)
 {
-    step = std::max(0, std::min(step, NUM_STEPS - 1));
-    if (step_ != step)
+    value = std::max(0.0, std::min(1.0, value));
+    if (value_ != value)
     {
-        step_ = step;
+        value_ = value;
         queue_draw();
         if (cb_)
         {
-            cb_(step_, frequencies_[step_]);
+            cb_(get_frequency_hz());
         }
     }
 }
 
-void RotaryKnob::on_click_pressed(int /*n_press*/, double x, double /*y*/)
+void RotaryKnob::on_drag_begin(double /*x*/, double /*y*/)
 {
-    int w = get_width();
-    if (x < w / 2.0)
-    {
-        set_step(step_ - 1);
-    }
-    else
-    {
-        set_step(step_ + 1);
-    }
+    drag_start_value_ = value_;
+}
+
+void RotaryKnob::on_drag_update(double /*dx*/, double dy)
+{
+    set_value(drag_start_value_ - dy / DRAG_SENS);
 }
 
 bool RotaryKnob::on_scroll(double /*dx*/, double dy)
 {
-    if (dy < 0)
-    {
-        set_step(step_ + 1);
-    }
-    else if (dy > 0)
-    {
-        set_step(step_ - 1);
-    }
+    set_value(value_ - dy / 60.0);
     return true;
 }
 
 void RotaryKnob::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
                           int width, int height)
 {
-    double cx = width / 2.0;
-    double cy = height / 2.0;
-    double r = std::min(cx, cy) * 0.75;
-    
-    // Outer chrome ring
+    const double cx = width  / 2.0;
+    const double cy = height / 2.0;
+    const double base = std::min(cx, cy);
+    const double r       = base * 0.38;   // knob radius
+    const double r_track = r + 5.0;       // arc track radius
+    const double r_label = base * 0.76;   // label centre radius
+
+    // Angle conventions:
+    //   angle_min (value=0) -> 7 o'clock (lower-left)
+    //   angle_max (value=1) -> 5 o'clock (lower-right)
+    //   The -pi/2 shift rotates the zero ref from 3-o'clock to 12-o'clock.
+    constexpr double ANGLE_MIN   = -150.0 * M_PI / 180.0;
+    constexpr double ANGLE_RANGE =  300.0 * M_PI / 180.0;
+
+    auto val_to_angle = [&](double v) -> double {
+        return ANGLE_MIN + v * ANGLE_RANGE - M_PI / 2.0;
+    };
+
+    // ---- Outer chrome ring ----
     auto ring = Cairo::RadialGradient::create(cx, cy, r * 0.85, cx, cy, r + 2);
     ring->add_color_stop_rgb(0.0, 0.6, 0.6, 0.6);
     ring->add_color_stop_rgb(1.0, 0.3, 0.3, 0.3);
     cr->arc(cx, cy, r + 2, 0, 2 * M_PI);
     cr->set_source(ring);
     cr->fill();
-    
-    // Knob body (dark, ridged)
+
+    // ---- Knob body ----
     auto body = Cairo::RadialGradient::create(
         cx - r * 0.15, cy - r * 0.15, r * 0.05, cx, cy, r);
     body->add_color_stop_rgb(0.0, 0.22, 0.22, 0.22);
@@ -87,54 +96,77 @@ void RotaryKnob::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->arc(cx, cy, r, 0, 2 * M_PI);
     cr->set_source(body);
     cr->fill();
-    
-    // Ridges (circular lines)
+
+    // ---- Ridges ----
     cr->set_source_rgba(1, 1, 1, 0.07);
     for (int i = 0; i < 24; ++i)
     {
         double a = i * M_PI * 2.0 / 24.0;
-        cr->move_to(cx + r * 0.55 * cos(a), cy + r * 0.55 * sin(a));
-        cr->line_to(cx + r * 0.92 * cos(a), cy + r * 0.92 * sin(a));
+        cr->move_to(cx + r * 0.55 * std::cos(a), cy + r * 0.55 * std::sin(a));
+        cr->line_to(cx + r * 0.92 * std::cos(a), cy + r * 0.92 * std::sin(a));
     }
     cr->set_line_width(1.0);
     cr->stroke();
-    
-    // Position indicator line
-    // Map step (0..6) to angle: -150° to +150° (in radians)
-    double angle_min = -150.0 * M_PI / 180.0;
-    double angle_max =  150.0 * M_PI / 180.0;
-    double angle_range = angle_max - angle_min;
-    double frac = static_cast<double>(step_) / (NUM_STEPS - 1);
-    double angle = angle_min + frac * angle_range - M_PI / 2.0; // -90 to rotate CW from top
-    
-    cr->set_source_rgb(1.0, 1.0, 1.0);
-    cr->set_line_width(2.5);
-    cr->move_to(cx + r * 0.3 * cos(angle), cy + r * 0.3 * sin(angle));
-    cr->line_to(cx + r * 0.85 * cos(angle), cy + r * 0.85 * sin(angle));
+
+    // ---- Arc track (dim, full range) ----
+    const double arc_start = val_to_angle(0.0);
+    const double arc_end   = val_to_angle(1.0);
+    cr->set_source_rgba(0.45, 0.45, 0.45, 0.6);
+    cr->set_line_width(2.0);
+    cr->arc(cx, cy, r_track, arc_start, arc_end);
     cr->stroke();
-    
-    // Tick marks and labels around the knob
-    cr->set_source_rgb(0.85, 0.85, 0.85);
-    cr->select_font_face("monospace", Cairo::ToyFontFace::Slant::NORMAL,
-                          Cairo::ToyFontFace::Weight::NORMAL);
-    cr->set_font_size(7.0);
-    
-    for (int i = 0; i < NUM_STEPS; ++i)
+
+    // ---- Arc fill (amber, min to current) ----
+    const double current_angle = val_to_angle(value_);
+    if (value_ > 0.0)
     {
-        double f = static_cast<double>(i) / (NUM_STEPS - 1);
-        double a = angle_min + f * angle_range - M_PI / 2.0;
-        
-        // Tick mark
-        cr->set_line_width(1.2);
-        cr->move_to(cx + (r + 4) * cos(a), cy + (r + 4) * sin(a));
-        cr->line_to(cx + (r + 8) * cos(a), cy + (r + 8) * sin(a));
+        cr->set_source_rgba(0.9, 0.45, 0.1, 0.85);
+        cr->set_line_width(2.5);
+        cr->arc(cx, cy, r_track, arc_start, current_angle);
         cr->stroke();
     }
-    
-    // Current frequency label below knob
-    cr->set_font_size(9.0);
-    Cairo::TextExtents extents;
-    cr->get_text_extents(labels_[step_], extents);
-    cr->move_to(cx - extents.width / 2.0, height - 2);
-    cr->show_text(labels_[step_]);
+
+    // ---- Position indicator ----
+    cr->set_source_rgb(1.0, 1.0, 1.0);
+    cr->set_line_width(2.5);
+    cr->move_to(cx + r * 0.3  * std::cos(current_angle),
+                cy + r * 0.3  * std::sin(current_angle));
+    cr->line_to(cx + r * 0.85 * std::cos(current_angle),
+                cy + r * 0.85 * std::sin(current_angle));
+    cr->stroke();
+
+    // ---- Tick marks and labels around arc ----
+    cr->select_font_face("monospace", Cairo::ToyFontFace::Slant::NORMAL,
+                          Cairo::ToyFontFace::Weight::NORMAL);
+    cr->set_font_size(7.5);
+
+    const double log_min = std::log10(FREQ_MIN);
+    const double log_max = std::log10(FREQ_MAX);
+
+    for (int i = 0; i < NUM_LABELS; ++i)
+    {
+        const double frac = (std::log10(label_freqs_[i]) - log_min) / (log_max - log_min);
+        const double a    = val_to_angle(frac);
+        const double ca   = std::cos(a);
+        const double sa   = std::sin(a);
+
+        // Tick
+        const double tick_inner = r + 4.0;
+        const double tick_outer = r + 9.0;
+        cr->set_source_rgb(0.75, 0.75, 0.75);
+        cr->set_line_width(1.2);
+        cr->move_to(cx + tick_inner * ca, cy + tick_inner * sa);
+        cr->line_to(cx + tick_outer * ca, cy + tick_outer * sa);
+        cr->stroke();
+
+        // Label centred at r_label along the tick direction
+        Cairo::TextExtents te;
+        cr->get_text_extents(label_texts_[i], te);
+        const double tx = cx + r_label * ca;
+        const double ty = cy + r_label * sa;
+        cr->set_source_rgb(0.0, 0.0, 0.0);
+        cr->move_to(tx - te.x_bearing - te.width  / 2.0,
+                    ty - te.y_bearing - te.height / 2.0);
+        cr->show_text(label_texts_[i]);
+    }
 }

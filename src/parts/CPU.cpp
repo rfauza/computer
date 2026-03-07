@@ -202,6 +202,11 @@ void CPU::reset_pc()
     control_unit->reset_pc();
 }
 
+void CPU::set_pc(uint16_t address)
+{
+    control_unit->set_pc(address);
+}
+
 int CPU::get_opcode_for_operation(const std::string& operation_name) const
 {
     auto it = operation_to_opcode.find(operation_name);

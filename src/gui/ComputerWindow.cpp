@@ -134,16 +134,19 @@ void ComputerWindow::build_ui()
     auto* rst_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
     rst_col->set_valign(Gtk::Align::END);
     rst_col->set_margin_end(4);
+    goto_pc_button_ = Gtk::manage(new Gtk::Button("GoTo PC"));
     reset_pc_btn_  = Gtk::manage(new Gtk::Button("Reset PC"));
     reset_ram_btn_ = Gtk::manage(new Gtk::Button("Reset RAM"));
     reset_all_btn_ = Gtk::manage(new Gtk::Button("Reset All"));
-    for (auto* b : {reset_pc_btn_, reset_ram_btn_, reset_all_btn_})
+    for (auto* b : {goto_pc_button_, reset_pc_btn_, reset_ram_btn_, reset_all_btn_})
     {
         b->set_size_request(80, 28);
     }
+    goto_pc_button_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_goto_pc_pressed));
     reset_pc_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_pc));
     reset_ram_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_ram));
     reset_all_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_all));
+    rst_col->append(*goto_pc_button_);
     rst_col->append(*reset_pc_btn_);
     rst_col->append(*reset_ram_btn_);
     rst_col->append(*reset_all_btn_);
@@ -281,7 +284,7 @@ void ComputerWindow::open_about_dialog()
 
 Gtk::Box* ComputerWindow::build_seven_seg_bar()
 {
-    auto* bar = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 10));
+    auto* bar = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 20));
     bar->set_margin_start(6);
     bar->set_margin_end(6);
     bar->set_margin_top(4);
@@ -374,9 +377,9 @@ Gtk::Box* ComputerWindow::build_main_panel()
     title_label_->set_markup(
         "<span foreground='#000000' size='small'>Computer 3 Bit v1 ISA</span>");
     title_label_->set_halign(Gtk::Align::CENTER);
-    // Move title up 40px relative to the panel (panel margin_top is 54,
-    // so leave a 14px gap below the title: 54 - 40 = 14)
-    title_label_->set_margin_bottom(14);
+    title_label_->set_margin_start(50);
+    // Move title down 20px relative to panel (was 14, now -6)
+    title_label_->set_margin_bottom(-6);
     main_vbox->append(*title_label_);
 
     // Left column: controls
@@ -433,21 +436,23 @@ Gtk::Box* ComputerWindow::build_control_column()
     auto* row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 12));
     row->set_margin_start(4);
     row->set_margin_end(4);
+    row->set_margin_top(-10);
 
     // Left group: knob and pulse button stacked closely
-    auto* left_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 6));
+    auto* left_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     auto* freq_lbl = Gtk::manage(new Gtk::Label());
     freq_lbl->set_markup("<span size='small'>Clock Speed</span>");
     freq_lbl->set_halign(Gtk::Align::CENTER);
     left_grp->append(*freq_lbl);
 
     knob_ = Gtk::manage(new RotaryKnob());
-    knob_->set_size_request(60, 60);
+    knob_->set_size_request(140, 140);
     knob_->set_change_callback(sigc::mem_fun(*this, &ComputerWindow::on_knob_changed));
     left_grp->append(*knob_);
 
     pulse_button_ = Gtk::manage(new PushButton());
     pulse_button_->set_size_request(52, 52);
+    pulse_button_->set_margin_top(-4);
     pulse_button_->set_press_callback(sigc::mem_fun(*this, &ComputerWindow::on_pulse_pressed));
     left_grp->append(*pulse_button_);
 
@@ -572,6 +577,7 @@ Gtk::Box* ComputerWindow::build_ram_led_panel()
 {
     auto* panel = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     panel->set_margin_start(8);
+    panel->set_margin_top(10);
 
     // Title
     auto* title = Gtk::manage(new Gtk::Label());
@@ -655,6 +661,7 @@ Gtk::Box* ComputerWindow::build_ram_seg_panel()
 {
     auto* panel = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     panel->set_margin_start(8);
+    panel->set_margin_top(10);
     
     // Title
     auto* title = Gtk::manage(new Gtk::Label());
@@ -1008,7 +1015,25 @@ void ComputerWindow::on_pulse_pressed()
     }
 }
 
-void ComputerWindow::on_knob_changed(int /*step*/, double freq)
+void ComputerWindow::on_goto_pc_pressed()
+{
+    Glib::signal_idle().connect_once([this]() {
+        if (mode_ == Mode::RUN)
+        {
+            computer_->prepare_run();
+            uint16_t target_addr = read_switch_value(pm_addr_switches_);
+            computer_->set_pc(target_addr);
+            stop_auto_timer();
+            update_all_displays();
+            if (run_sub_ == RunSub::AUTO)
+            {
+                start_auto_timer();
+            }
+        }
+    });
+}
+
+void ComputerWindow::on_knob_changed(double freq)
 {
     if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
     {

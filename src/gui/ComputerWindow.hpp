@@ -60,7 +60,8 @@ private:
     void on_switch_toggled();
     void on_mode_switch_toggled();
     void on_pulse_pressed();
-    void on_knob_changed(int step, double freq);
+    void on_goto_pc_pressed();
+    void on_knob_changed(double freq);
     void on_ram_page_changed();
     void on_ram_page2_changed();
     void on_slave_toggled();
@@ -112,6 +113,7 @@ private:
     ToggleSwitch* mode_switch_  = nullptr;   // up=Program, down=Run
     ToggleSwitch* sub_switch_   = nullptr;   // Program: up=Write, down=Read
                                               // Run:     up=Auto,  down=Pulse
+    Gtk::Button* goto_pc_button_ = nullptr;
     Gtk::Button* reset_pc_btn_  = nullptr;
     Gtk::Button* reset_ram_btn_ = nullptr;
     Gtk::Button* reset_all_btn_ = nullptr;

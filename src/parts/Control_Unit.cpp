@@ -80,6 +80,16 @@ void Control_Unit::_create_program_counter()
     default_low_signal->go_low();  // Sets output to false directly, no need to evaluate
     // Default: no jump enabled, no jump address
     jump_enable_inverter->connect_input(&default_low_signal->get_outputs()[0], 0);
+    
+    // Create persistent signal generators for set_pc operations
+    pc_set_addr_sigs = new std::vector<Signal_Generator>();
+    pc_set_addr_sigs->reserve(pc_bits);
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        std::ostringstream name_str;
+        name_str << "pc_set_addr_signal_" << i << "_in_control_unit";
+        pc_set_addr_sigs->emplace_back(name_str.str());
+    }
 }
 
 void Control_Unit::_setup_run_halt_logic()
@@ -244,6 +254,7 @@ Control_Unit::~Control_Unit()
     delete pc_write_mux;
     delete jump_enable_inverter;
     delete default_low_signal;
+    delete pc_set_addr_sigs;
     delete pc_write_enable;
     delete pc_read_enable;
     delete opcode_decoder;
@@ -535,6 +546,35 @@ void Control_Unit::reset_pc()
         pc->connect_input(&default_low_signal->get_outputs()[0], i);
     }
     pc->evaluate();
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
+    }
+}
+
+void Control_Unit::set_pc(uint16_t address)
+{
+    // Set PC to the specified address using persistent signal generators.
+    // Set each signal to match the corresponding address bit
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        bool bit = ((address >> i) & 1) != 0;
+        if (bit)
+        {
+            (*pc_set_addr_sigs)[i].go_high();
+        }
+        else
+        {
+            (*pc_set_addr_sigs)[i].go_low();
+        }
+        (*pc_set_addr_sigs)[i].evaluate();
+        pc->connect_input(&(*pc_set_addr_sigs)[i].get_outputs()[0], i);
+    }
+
+    // Evaluate the PC register to latch the new address
+    pc->evaluate();
+
+    // Restore the mux outputs
     for (uint16_t i = 0; i < pc_bits; ++i)
     {
         pc->connect_input(&pc_write_mux->get_outputs()[i], i);

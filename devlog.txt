@@ -49,8 +49,6 @@ V2
 - make pong
 
 Todo next:
-- gui knob is discrete, needs to be continuous, start at 0.5Hz
-- gui layout and color should be the same as my drawing
 - watch-only pong?
 - keyboard inputs and MS paint? 
 - 1 player pong?
@@ -58,7 +56,7 @@ Todo next:
 
 Mar 6 2026 : 
 .5h added pc/ram/rall clear buttons and menu items to gui
-5.50p 
+.5h made knob continuous, program to light one LED at a time in 8x8 matrix
 
 Mar 5 2026 : 4h total 94h
 1h fixing vscode not linking gtkmm again... and installed gitlens to show git blame again

@@ -80,6 +80,9 @@ public:
     /** @brief Reset the program counter to address 0 and clear halt state. */
     void reset_pc();
 
+    /** @brief Set the program counter to a specific address. */
+    void set_pc(uint16_t address);
+
     /** @brief Erase all RAM (write zeros to every address). */
     void reset_ram();
 

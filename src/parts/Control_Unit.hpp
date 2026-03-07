@@ -250,6 +250,13 @@ public:
      * its data inputs and evaluating once, then restores the mux connections.
      */
     void reset_pc();
+
+    /**
+     * @brief Set the program counter to a specific address.
+     * Temporarily connects PC data inputs to match the address bits,
+     * evaluates once, then restores the mux connections.
+     */
+    void set_pc(uint16_t address);
     
 protected:
     // === Core Components ===
@@ -264,6 +271,9 @@ protected:
     Multiplexer* pc_write_mux;        /**< Muxes halt-gated increment vs jump address for PC write */
     Signal_Generator* pc_write_enable; /**< Always high - PC always writes */
     Signal_Generator* pc_read_enable;  /**< Always high - PC always reads */
+    
+    // PC Set signals (for set_pc method)
+    std::vector<Signal_Generator>* pc_set_addr_sigs; /**< Address bit signals for temporary PC set operations */
     
     // Opcode Decoder
     Decoder* opcode_decoder;          /**< Decodes opcode to control signals */

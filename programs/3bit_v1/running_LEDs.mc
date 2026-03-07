@@ -21,6 +21,7 @@
 # row 5
 # row 6
 # row 7
+# restart
 # 3-bit v1 ISA:
 #   000  HALT     - Stop execution
 #   001  MOVL     - Move literal: A -> [B:C]
@@ -123,3 +124,5 @@
 111 001 111 111 # 88 - movout 1 7 7
 111 010 111 111 # 89 - movout 2 7 7
 111 000 111 111 # 90 - movout 0 7 7
+100 000 000 000 # 91 - cmp 0 0 0
+101 000 000 011 # 92 - JEQ start (->3)

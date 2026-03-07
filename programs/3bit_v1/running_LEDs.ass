@@ -17,6 +17,7 @@ movl 1 0 1
 movl 2 0 2
 movl 4 0 4
 
+def start
 # row 0
 movout 1 5 0 # move 100 into page 5 addr 0 (light row 0 col 0)
 movout 2 5 0
@@ -120,3 +121,7 @@ movout 0 6 7
 movout 1 7 7
 movout 2 7 7
 movout 0 7 7
+
+# restart
+cmp 0 0 0
+jeq start

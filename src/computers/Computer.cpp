@@ -379,6 +379,14 @@ void Computer::reset_pc()
     sync_pc();
 }
 
+void Computer::set_pc(uint16_t address)
+{
+    cpu->set_run_halt_flag(true);
+    cpu->set_pc(address);
+    is_running = true;
+    sync_pc();
+}
+
 void Computer::reset_ram()
 {
     ram->zero_all();
