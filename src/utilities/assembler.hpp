@@ -23,7 +23,6 @@
  *   # <description>
  *   # filename: <name>
  *   # isa: <isa_key>
- *   # <extra header comment lines copied from .ass>
  *   # <ISA opcode table>
  *   # generated_from: <input_file>
  *   opc  A   B   C   # <line_num> - <assembly text>

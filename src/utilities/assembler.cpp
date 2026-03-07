@@ -68,7 +68,6 @@ bool Assembler::assemble(const std::string& input_file,
     std::string isa_key;
     std::string filename_meta;
     std::string description_meta;
-    std::vector<std::string> extra_header_comments; // #-prefixed lines from user
 
     std::map<std::string, int> label_map;            // label -> instruction index
     std::vector<ParsedInstruction> instructions;     // one per real instruction
@@ -133,8 +132,7 @@ bool Assembler::assemble(const std::string& input_file,
                 }
             }
 
-            // Generic header comment — include in output
-            extra_header_comments.push_back(line);
+            // Generic header comment — ignored; assembler will generate its own header
             continue;
         }
 
@@ -392,12 +390,9 @@ bool Assembler::assemble(const std::string& input_file,
         return false;
     }
 
-    // Header
-    out << "# " << description_meta << "\n";
+    // Header: generate our own comments (filename then ISA)
     out << "# filename: " << filename_meta << "\n";
     out << "# isa: " << isa->key << "\n";
-    for (const auto& hc : extra_header_comments)
-        out << hc << "\n";
     out << "# " << isa->display_name << " ISA:\n";
     for (const auto& op : isa->opcodes)
     {
