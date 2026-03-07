@@ -1,0 +1,44 @@
+# pong_bar 3-bit v1
+# filename: pong_bar.ass
+# isa: 3bit_v1
+# draw pong bar - needs 8 routines because we don't have pointers
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: flags <- [0:A] vs [B:C]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+# setup
+movl 0 0 0 # zero for clearing
+movl 1 0 1 # literal 1 for drawing bar
+movl 0 0 2 # bar position top
+
+def start
+
+def draw_bar_0
+movout 1 5 0
+movout 1 5 1
+movout 1 5 2
+
+def wait_input
+cmp 1 4 1 # compare 
+cmp 1 4 3 # compare 
+
+
+def clear
+movout 0 5 0
+movout 0 5 1
+movout 0 5 2
+movout 0 5 3
+movout 0 5 4
+movout 0 5 5
+movout 0 5 6
+movout 0 5 7
+
+# restart
+cmp 0 0 0
+jeq start

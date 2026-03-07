@@ -5,7 +5,7 @@
 # 001 MOVL   - Move literal: litA -> [BC]
 # 010 ADD    - Add: [A] + [B] -> [C]
 # 011 SUB    - Subtract: [A] - [B] -> [C]
-# 100 CMP    - Compare: sets flags based on [A] vs [B]
+# 100 CMP    - Compare: flags <- [0:A] vs [B:C]
 # 101 JEQ    - Jump if equal: if flag then goto ABC
 # 110 JGT    - Jump if greater: if flag then goto ABC
 # 111 NOP    - No operation

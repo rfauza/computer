@@ -49,8 +49,9 @@ V2
 - make pong
 
 Todo next:
+- pong bar with keyboard inputs
+- MS paint
 - watch-only pong?
-- keyboard inputs and MS paint? 
 - 1 player pong?
 - tag main -
 
