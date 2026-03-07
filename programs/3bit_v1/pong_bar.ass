@@ -14,31 +14,106 @@
 
 # setup
 movl 0 0 0 # zero for clearing
-movl 1 0 1 # literal 1 for drawing bar
+movl 1 0 1 # literal 1 for drawing bar and inc/decrementing
 movl 0 0 2 # bar position top
+movl 1 1 1 # use page 1 for comparing
+movl 2 1 2
+movl 3 1 3
+movl 4 1 4
+movl 5 1 5
+movl 6 1 6
+movl 7 1 7
 
-def start
-
-def draw_bar_0
-movout 1 5 0
+# draw initial bar
+movout 1 5 0 
 movout 1 5 1
 movout 1 5 2
+# fallthrough to wait_input
 
 def wait_input
-cmp 1 4 1 # compare 
-cmp 1 4 3 # compare 
+cmp 1 4 1 # compare 1 and 4.1: detect w input
+jeq move_up
+cmp 1 4 3 # compare 1 and 4.3: detect s input
+jeq move_down
+cmp 0 0 0 # if no inputs, repeat loop
+jeq wait_input # loop and wait for input
 
-
-def clear
-movout 0 5 0
-movout 0 5 1
-movout 0 5 2
-movout 0 5 3
-movout 0 5 4
-movout 0 5 5
-movout 0 5 6
-movout 0 5 7
-
-# restart
+# allowing wrapping TODO: don't wrap
+def move_up
+movout 0 4 1 # clear input
+cmp 2 1 0 # check if bar is at the top
+jeq wait_input # if it is, ignore
+sub 2 1 2 # decrement bar position
 cmp 0 0 0
-jeq start
+jeq draw_bar # clear screen and redraw
+
+def move_down
+movout 0 4 3 # clear input
+cmp 2 1 5 # check if bar is at the bottom
+jeq wait_input # if it is, ignore
+add 1 2 2 # increment bar position
+cmp 0 0 0
+jeq draw_bar # clear screen and redraw
+
+def draw_bar
+cmp 2 1 0
+jeq draw_bar_0
+cmp 2 1 1
+jeq draw_bar_1
+cmp 2 1 2
+jeq draw_bar_2
+cmp 2 1 3
+jeq draw_bar_3
+cmp 2 1 4
+jeq draw_bar_4
+cmp 2 1 5
+jeq draw_bar_5
+
+# clear adjacent LEDs and ommit center one (since it was tail of previous)
+def draw_bar_0
+movout 0 5 7 # clear adjacent LEDs
+movout 0 5 3 # clear adjacent LEDs
+movout 1 5 0
+movout 1 5 2
+cmp 0 0 0
+jeq wait_input
+
+def draw_bar_1
+movout 0 5 0
+movout 0 5 4
+movout 1 5 1
+movout 1 5 3
+cmp 0 0 0
+jeq wait_input
+
+def draw_bar_2
+movout 0 5 1
+movout 0 5 5
+movout 1 5 2
+movout 1 5 4
+cmp 0 0 0
+jeq wait_input
+
+def draw_bar_3
+movout 0 5 2
+movout 0 5 6
+movout 1 5 3
+movout 1 5 5
+cmp 0 0 0
+jeq wait_input
+
+def draw_bar_4
+movout 0 5 3
+movout 0 5 7
+movout 1 5 4
+movout 1 5 6
+cmp 0 0 0
+jeq wait_input
+
+def draw_bar_5
+movout 0 5 4
+movout 0 5 0
+movout 1 5 5
+movout 1 5 7
+cmp 0 0 0
+jeq wait_input
