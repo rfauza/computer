@@ -143,7 +143,7 @@ void Divider_Sequential::start()
         divisor->connect_input(inputs[num_bits + i], i);
     }
     divisor->connect_input(&write_enable->get_outputs()[0], num_bits);
-    divisor->update();
+    divisor->evaluate();
     
     // Clear remainder
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -151,7 +151,7 @@ void Divider_Sequential::start()
         remainder->connect_input(&zero_signal->get_outputs()[0], i);
     }
     remainder->connect_input(&write_enable->get_outputs()[0], num_bits);
-    remainder->update();
+    remainder->evaluate();
     
     // Clear quotient
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -159,12 +159,12 @@ void Divider_Sequential::start()
         quotient->connect_input(&zero_signal->get_outputs()[0], i);
     }
     quotient->connect_input(&write_enable->get_outputs()[0], num_bits);
-    quotient->update();
+    quotient->evaluate();
     
     // Set busy flag
     busy_flag->connect_input(&one_signal->get_outputs()[0], 0);  // Set
     busy_flag->connect_input(&zero_signal->get_outputs()[0], 1);  // Reset (inactive)
-    busy_flag->update();
+    busy_flag->evaluate();
     
     write_enable->go_low();
     cycle_count = 0;
@@ -199,7 +199,7 @@ void Divider_Sequential::evaluate()
     }
     remainder->connect_input(&dividend_bits[dividend_bit_index], 0);  // New bit at LSB
     remainder->connect_input(&write_enable->get_outputs()[0], num_bits);
-    remainder->update();
+    remainder->evaluate();
     
     // Step 2: Try subtracting divisor from remainder
     for (uint16_t i = 0; i < num_bits; ++i)
@@ -223,7 +223,7 @@ void Divider_Sequential::evaluate()
             remainder->connect_input(&subtractor->get_outputs()[i], i);
         }
         remainder->connect_input(&write_enable->get_outputs()[0], num_bits);
-        remainder->update();
+        remainder->evaluate();
         
         quotient_bit = true;
     }
@@ -255,7 +255,7 @@ void Divider_Sequential::evaluate()
         quotient->connect_input(&zero_signal->get_outputs()[0], 0);
     }
     quotient->connect_input(&write_enable->get_outputs()[0], num_bits);
-    quotient->update();
+    quotient->evaluate();
     
     // Step 5: Check if done
     cycle_count++;
@@ -264,7 +264,7 @@ void Divider_Sequential::evaluate()
         // Clear busy flag
         busy_flag->connect_input(&zero_signal->get_outputs()[0], 0);  // Set (inactive)
         busy_flag->connect_input(&one_signal->get_outputs()[0], 1);   // Reset (active)
-        busy_flag->update();
+        busy_flag->evaluate();
     }
     
     // Evaluate AND gates and copy outputs

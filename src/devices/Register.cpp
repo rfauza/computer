@@ -69,6 +69,36 @@ bool Register::connect_input(const bool* const upstream_output_p, uint16_t input
     return false;
 }
 
+bool Register::get_stored_bit(uint16_t bit) const
+{
+    return memory_bits[bit]->get_stored_bit();
+}
+
+void Register::zero()
+{
+    for (size_t i = 0; i < memory_bits.size(); ++i)
+    {
+        memory_bits[i]->force_reset();
+        outputs[i] = false;
+    }
+}
+
+void Register::set_bit(uint16_t bit, bool value)
+{
+    if (bit >= memory_bits.size())
+        return;
+    if (value)
+    {
+        memory_bits[bit]->force_set();
+        outputs[bit] = true;
+    }
+    else
+    {
+        memory_bits[bit]->force_reset();
+        outputs[bit] = false;
+    }
+}
+
 void Register::evaluate()
 {
     // Evaluate all memory bits and gather outputs
@@ -79,20 +109,20 @@ void Register::evaluate()
     }
 }
 
-void Register::update()
-{
-    // Phase 2: update memory bits so stored values are latched
-    for (uint16_t i = 0; i < memory_bits.size(); i++)
-    {
-        memory_bits[i]->update();
-    }
+// void Register::update()
+// {
+//     // Phase 2: update memory bits so stored values are latched
+//     for (uint16_t i = 0; i < memory_bits.size(); i++)
+//     {
+//         memory_bits[i]->update();
+//     }
 
-    // Refresh outputs from memory bits after update
-    for (uint16_t i = 0; i < memory_bits.size(); i++)
-    {
-        outputs[i] = memory_bits[i]->get_output(0);
-    }
+//     // Refresh outputs from memory bits after update
+//     for (uint16_t i = 0; i < memory_bits.size(); i++)
+//     {
+//         outputs[i] = memory_bits[i]->get_output(0);
+//     }
 
-    // Do not propagate updates from Register; higher-level components handle downstream updates.
-}
+//     // Do not propagate updates from Register; higher-level components handle downstream updates.
+// }
 

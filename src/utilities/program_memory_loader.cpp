@@ -70,12 +70,12 @@ static void set_pm_inputs(
     // Update all signal generators
     for (auto& sg : sig_gens)
     {
-        sg.update();
+        sg.evaluate();
     }
     
     // Evaluate and update PM
     pm.evaluate();
-    pm.update();
+    pm.evaluate();
 }
 
 /**

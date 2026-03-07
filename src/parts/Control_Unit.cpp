@@ -80,6 +80,16 @@ void Control_Unit::_create_program_counter()
     default_low_signal->go_low();  // Sets output to false directly, no need to evaluate
     // Default: no jump enabled, no jump address
     jump_enable_inverter->connect_input(&default_low_signal->get_outputs()[0], 0);
+    
+    // Create persistent signal generators for set_pc operations
+    pc_set_addr_sigs = new std::vector<Signal_Generator>();
+    pc_set_addr_sigs->reserve(pc_bits);
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        std::ostringstream name_str;
+        name_str << "pc_set_addr_signal_" << i << "_in_control_unit";
+        pc_set_addr_sigs->emplace_back(name_str.str());
+    }
 }
 
 void Control_Unit::_setup_run_halt_logic()
@@ -244,6 +254,7 @@ Control_Unit::~Control_Unit()
     delete pc_write_mux;
     delete jump_enable_inverter;
     delete default_low_signal;
+    delete pc_set_addr_sigs;
     delete pc_write_enable;
     delete pc_read_enable;
     delete opcode_decoder;
@@ -338,28 +349,28 @@ void Control_Unit::evaluate()
     //return_address->evaluate();  // DISABLED: inputs not connected
 }
 
-void Control_Unit::update()
-{
-    /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
-    (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
+// void Control_Unit::update()
+// {
+//     /* intentionally skips recomputing combinational logic and instead only latches sequential/storage elements 
+//     (flip‑flops and registers) then propagates updates to downstream parts. That preserves the intended two-phase model */
     
-    // update() should only latch storage elements, not re-compute combinational logic
-    // Update internal storage elements (flip-flops and registers)
-    run_halt_flag->update();
-    flag_register->update();
-    flag_clear_counter->update();
-    pc->update();
-    ram_page_register->update();
+//     // update() should only latch storage elements, not re-compute combinational logic
+//     // Update internal storage elements (flip-flops and registers)
+//     run_halt_flag->update();
+//     flag_register->update();
+//     flag_clear_counter->update();
+//     pc->update();
+//     ram_page_register->update();
     
-    // Signal all downstream components to update
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+//     // Signal all downstream components to update
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }
 
 bool Control_Unit::connect_pc_to_pm_address(bool** pm_address_input, uint16_t start_index)
 {
@@ -507,17 +518,67 @@ void Control_Unit::set_run_halt_flag(bool state)
 {
     if (state)
     {
-        // Set to running: Q = 1 (reset flip-flop, since reset is active low)
+        // Pulse Set HIGH to force Q=1 (running), then bring it back LOW so that
+        // a future HALT instruction can pull Q=0 without the forbidden S=1,R=1 state.
         halt_set_signal->go_high();
+        halt_set_signal->evaluate();
+        run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
+        run_halt_flag->evaluate();
+        halt_set_signal->go_low();
+        halt_set_signal->evaluate();
     }
     else
     {
-        // Set to halted: Q = 0 (set flip-flop)
+        // Set to halted: Q = 0
         halt_set_signal->go_low();
+        halt_set_signal->evaluate();
+        run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
+        run_halt_flag->evaluate();
     }
-    halt_set_signal->evaluate();
-    run_halt_flag->connect_input(&halt_set_signal->get_outputs()[0], 0);
-    run_halt_flag->evaluate();
+}
+
+void Control_Unit::reset_pc()
+{
+    // Temporarily connect all PC data inputs to the always-low signal,
+    // evaluate to latch zeros, then restore the mux outputs.
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&default_low_signal->get_outputs()[0], i);
+    }
+    pc->evaluate();
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
+    }
+}
+
+void Control_Unit::set_pc(uint16_t address)
+{
+    // Set PC to the specified address using persistent signal generators.
+    // Set each signal to match the corresponding address bit
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        bool bit = ((address >> i) & 1) != 0;
+        if (bit)
+        {
+            (*pc_set_addr_sigs)[i].go_high();
+        }
+        else
+        {
+            (*pc_set_addr_sigs)[i].go_low();
+        }
+        (*pc_set_addr_sigs)[i].evaluate();
+        pc->connect_input(&(*pc_set_addr_sigs)[i].get_outputs()[0], i);
+    }
+
+    // Evaluate the PC register to latch the new address
+    pc->evaluate();
+
+    // Restore the mux outputs
+    for (uint16_t i = 0; i < pc_bits; ++i)
+    {
+        pc->connect_input(&pc_write_mux->get_outputs()[i], i);
+    }
 }
 
 bool Control_Unit::connect_halt_signal(const bool* halt_signal)

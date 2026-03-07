@@ -1,46 +1,35 @@
+// Replace CLI runner with GUI launcher for the 3-bit computer
+// This main creates a Computer_3bit_v1, optionally loads a .mc program
+// passed as the first positional argument, and shows the ComputerWindow.
+
+#include <gtkmm.h>
 #include <iostream>
-#include "components/AND_Gate.hpp"
-#include "components/OR_Gate.hpp"
-#include "components/Inverter.hpp"
-#include "components/Buffer.hpp"
-#include "components/Signal_Generator.hpp"
-#include "components/NAND_Gate.hpp"
-#include "components/NOR_Gate.hpp"
-#include "components/XOR_Gate.hpp"
-#include "device_components/Half_Adder.hpp"
-#include "device_components/Full_Adder.hpp"
-#include "device_components/Full_Adder_Subtractor.hpp"
-#include "device_components/Memory_Bit.hpp"
-#include "device_components/Flip_Flop.hpp"
-#include "devices/Bus.hpp"
-#include "devices/Register.hpp"
-#include "devices/Adder.hpp"
-#include "devices/Adder_Subtractor.hpp"
-#include "devices/Decoder.hpp"
-#include "parts/Program_Memory.hpp"
-#include "testing/component_tests.hpp"
-#include "testing/program_memory_tester.hpp"
-#include "testing/arithmetic_unit_tests.hpp"
-#include "testing/alu_tests.hpp"
-#include "testing/control_unit_tests.hpp"
-#include "testing/cpu_tests.hpp"
-#include "utilities/program_memory_loader.hpp"
-#include "parts/Program_Memory.hpp"
-#include "parts/Main_Memory.hpp"
-#include "utilities/main_memory_loader.hpp"
-#include "testing/main_memory_tester.hpp"
+#include <memory>
 #include <filesystem>
+#include "gui/ComputerWindow.hpp"
 #include "computers/Computer_3bit_v1.hpp"
+
+// Utilities used by non-GUI runners/tests
 #include "utilities/assembler.hpp"
 #include "utilities/evaluator.hpp"
+#include "utilities/program_memory_loader.hpp"
+#include "utilities/main_memory_loader.hpp"
+#include "testing/program_memory_tester.hpp"
+#include "testing/main_memory_tester.hpp"
 
-// Forward declaration of testMainMemory
-void testMainMemory();
 
-// Forward declaration for optional 3-bit runner implemented in main_3bit.cpp
-extern int run_3bit_test(int argc, char* argv[]);
+int run_with_no_gui();
+int run_gui();
 
 int main()
+{
+    Assembler ass;
+    ass.assemble("../programs/3bit_v1/running_LEDs.ass", "../programs/3bit_v1/running_LEDs.mc");
+    
+    return run_gui();
+}
+
+int run_with_no_gui()
 {
     // Assemble the provided .ass file and then run the Evaluator on the
     // generated machine-code file. This allows automated verification.
@@ -50,12 +39,31 @@ int main()
     
     Assembler assembler;
     Evaluator eval;
-    
+
     assembler.assemble(asm_path, out_mc);
     bool pass = eval.evaluate(out_mc, true);
     std::cout << "Evaluator result: " << (pass ? "PASS" : "FAIL") << "\n";
 
     return pass ? 0 : 2;
+}
+
+int run_gui()
+{
+    auto app = Gtk::Application::create("org.comp3bit.gui");
+
+    auto computer = std::make_unique<Computer_3bit_v1>("gui_main");
+
+    Computer_3bit_v1* comp_ptr = computer.get();
+
+    app->signal_activate().connect([&app, comp_ptr]()
+    {
+        auto* window = new ComputerWindow(comp_ptr, 3);
+        app->add_window(*window);
+        window->signal_hide().connect([window]() { delete window; });
+        window->set_visible(true);
+    });
+
+    return app->run();
 }
 
 bool loadPM()

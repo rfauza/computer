@@ -215,24 +215,24 @@ void Main_Memory::evaluate()
     }
 }
 
-void Main_Memory::update()
-{
-    // Phase 2 of clock cycle: Only latch storage elements (registers)
-    // Do NOT call evaluate() here - that already happened in Phase 1
+// void Main_Memory::update()
+// {
+//     // Phase 2 of clock cycle: Only latch storage elements (registers)
+//     // Do NOT call evaluate() here - that already happened in Phase 1
     
-    for (uint16_t addr = 0; addr < num_addresses; ++addr)
-    {
-        registers[addr]->update();
-    }
+//     for (uint16_t addr = 0; addr < num_addresses; ++addr)
+//     {
+//         registers[addr]->update();
+//     }
     
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }
 
 uint16_t Main_Memory::get_register_value(uint16_t address) const
 {
@@ -245,6 +245,25 @@ uint16_t Main_Memory::get_register_value(uint16_t address) const
         value |= (registers[address]->get_output(bit) ? 1 : 0) << bit;
     }
     return value;
+}
+
+void Main_Memory::set_register_value(uint16_t address, uint16_t value)
+{
+    if (address >= num_addresses)
+        return;
+    
+    for (uint16_t bit = 0; bit < data_bits; ++bit)
+    {
+        registers[address]->set_bit(bit, (value >> bit) & 1);
+    }
+}
+
+void Main_Memory::zero_all()
+{
+    for (uint16_t addr = 0; addr < num_addresses; ++addr)
+    {
+        registers[addr]->zero();
+    }
 }
 
 void Main_Memory::print_pages(uint16_t num_pages) const

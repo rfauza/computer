@@ -30,11 +30,14 @@ public:
     ~Main_Memory() override;
     bool connect_input(const bool* const upstream_output_p, uint16_t input_index) override;
     void evaluate() override;
-    void update() override;
+    // void update() override;
     
     uint16_t get_address_bits() const { return address_bits; }
     uint16_t get_data_bits() const { return data_bits; }
     uint16_t get_num_addresses() const { return num_addresses; }
+
+    /** Directly zeroes every stored register without touching external connections. */
+    void zero_all();
     
     /**
      * @brief Get the value stored in a register at the given address
@@ -42,6 +45,13 @@ public:
      * @return The value stored in that register as a uint16_t
      */
     uint16_t get_register_value(uint16_t address) const;
+
+    /**
+     * @brief Directly write a value into a register at the given address
+     * @param address The address of the register (0 to num_addresses-1)
+     * @param value   The value to store
+     */
+    void set_register_value(uint16_t address, uint16_t value);
     
     /**
      * @brief Print RAM contents organized by pages in a grid format

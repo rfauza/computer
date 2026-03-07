@@ -39,7 +39,7 @@ public:
      * This method propagates updates through the circuit, ensuring all connected
      * components are notified of changes.
      */
-    virtual void update();
+    // virtual void update();
     
     /**
      * @brief Connects output of an upstream device to an input of this component

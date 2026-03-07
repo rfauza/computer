@@ -43,11 +43,23 @@ public:
      * @brief Evaluates all memory bits and updates outputs
      */
     void evaluate() override;
-    
+
+    /** Returns the raw stored Q value for the given bit, bypassing the read-enable gate. */
+    bool get_stored_bit(uint16_t bit) const;
+
+    /** Directly zeroes all stored bits without touching external connections. */
+    void zero();
+
+    /** Directly forces a single bit to the given value without touching external connections. */
+    void set_bit(uint16_t bit, bool value);
+
+    /** Returns the number of data bits stored in this register. */
+    uint16_t get_num_bits() const { return static_cast<uint16_t>(memory_bits.size()); }
+
     /**
      * @brief Performs update cycle: evaluates all memory bits and signals downstream
      */
-    void update() override;
+    // void update() override;
 
 private:
     std::vector<Memory_Bit*> memory_bits;  /**< Array of Memory_Bit cells */

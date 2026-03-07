@@ -77,6 +77,24 @@ public:
      */
     void reset();
 
+    /** @brief Reset the program counter to address 0 and clear halt state. */
+    void reset_pc();
+
+    /** @brief Set the program counter to a specific address. */
+    void set_pc(uint16_t address);
+
+    /** @brief Erase all RAM (write zeros to every address). */
+    void reset_ram();
+
+    /**
+     * @brief Full reset: zero all RAM, zero all PM, set PC to 0, clear halt.
+     * Leaves the machine ready to program from scratch.
+     */
+    void reset_all();
+
+    /** @brief Clear the halt state so execution can resume from the current PC. */
+    void clear_halt();
+
     void evaluate() override;
 
     // ── State query helpers (used by Evaluator) ───────────────────────────────
@@ -101,6 +119,13 @@ public:
      */
     uint16_t read_ram(uint16_t address) const;
 
+    /**
+     * @brief Directly write a value into RAM at the given full address.
+     * @param address Full RAM address (0 to num_ram_addresses-1).
+     * @param value   Value to store.
+     */
+    void write_ram(uint16_t address, uint16_t value);
+
     /** @brief Return data-path width in bits. */
     uint16_t get_num_bits() const { return num_bits; }
 
@@ -112,6 +137,59 @@ public:
 
     /** @brief Return whether the computer is still running (not halted). */
     bool get_is_running() const { return is_running; }
+    
+    /** @brief Return the PC width in bits. */
+    uint16_t get_pc_bits() const { return pc_bits; }
+    
+    /** @brief Return total number of PM addresses (2^pc_bits). */
+    uint16_t get_num_pm_addresses() const { return num_pm_addresses; }
+    
+    /** @brief Return the number of RAM address bits. */
+    uint16_t get_num_ram_addr_bits() const { return num_ram_address_bits; }
+    
+    // ── GUI support ──────────────────────────────────────────────────────────
+    
+    /**
+     * @brief Read an instruction from Program Memory at the given address.
+     *
+     * Directly reads register contents without modifying any connections
+     * or triggering evaluation.
+     */
+    void read_pm_instruction(uint16_t address, uint16_t& opcode,
+                             uint16_t& a, uint16_t& b, uint16_t& c) const;
+    
+    /**
+     * @brief Write an instruction to Program Memory at the given address.
+     *
+     * Uses internal signal generators to temporarily set the address and
+     * data, pulse write-enable, then restores the PC connection.
+     */
+    void write_pm_instruction(uint16_t address, uint16_t opcode,
+                              uint16_t a, uint16_t b, uint16_t c);
+    
+    /**
+     * @brief Read the current instruction from PM outputs.
+     *
+     * Reads the outputs array of program_memory which reflects the
+     * instruction at the current PC address.
+     */
+    void get_current_instruction(uint16_t& opcode, uint16_t& a,
+                                 uint16_t& b, uint16_t& c) const;
+    
+    /**
+     * @brief Get comparator flags from the CPU.
+     * @return Pointer to bool array [EQ, NEQ, LT_U, GT_U, LT_S, GT_S],
+     *         or nullptr if CPU has no flags.
+     */
+    bool* get_cmp_flags() const;
+    
+    /**
+     * @brief Prepare the computer for a fresh run after programming.
+     *
+     * Re-evaluates Program Memory so the first instruction is visible,
+     * resets the running flag, and clears execution count.
+     */
+    void prepare_run();
     
     // ───End:  State query helpers (used by Evaluator) ───────────────────────────────────
 
@@ -169,6 +247,7 @@ protected:
     // ── PM loading signal generators (kept alive to avoid use-after-free) ─────
     std::vector<Signal_Generator>*          pm_load_addr_sigs;
     std::vector<Signal_Generator>*          pm_load_data_sigs;
+    std::vector<Signal_Generator>*          pm_zero_sigs;   ///< Permanent zeros to restore PM data inputs after writes
     mutable std::vector<Signal_Generator>*  ram_addr_sigs;
 
     // ── CPU data-input pointer arrays (lifetime matches the Computer) ─────────

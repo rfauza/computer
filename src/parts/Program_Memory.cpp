@@ -179,27 +179,27 @@ void Program_Memory::evaluate()
     }
 }
 
-void Program_Memory::update()
-{
-    // Phase 2 of clock cycle: Only latch storage elements (registers)
-    // Do NOT call evaluate() here - that already happened in Phase 1
+// void Program_Memory::update()
+// {
+//     // Phase 2 of clock cycle: Only latch storage elements (registers)
+//     // Do NOT call evaluate() here - that already happened in Phase 1
     
-    for (uint16_t addr = 0; addr < num_addresses; ++addr)
-    {
-        for (uint16_t reg_index = 0; reg_index < 4; ++reg_index)
-        {
-            registers[reg_index][addr]->update();
-        }
-    }
+//     for (uint16_t addr = 0; addr < num_addresses; ++addr)
+//     {
+//         for (uint16_t reg_index = 0; reg_index < 4; ++reg_index)
+//         {
+//             registers[reg_index][addr]->update();
+//         }
+//     }
     
-    for (Component* downstream : downstream_components)
-    {
-        if (downstream)
-        {
-            downstream->update();
-        }
-    }
-}
+//     for (Component* downstream : downstream_components)
+//     {
+//         if (downstream)
+//         {
+//             downstream->update();
+//         }
+//     }
+// }
 
 uint16_t Program_Memory::get_selected_address() const
 {
@@ -210,4 +210,27 @@ uint16_t Program_Memory::get_selected_address() const
             return addr;
     }
     return 0;
+}
+
+void Program_Memory::get_instruction(uint16_t address, uint16_t& opcode,
+                                     uint16_t& a, uint16_t& b, uint16_t& c) const
+{
+    if (address >= num_addresses)
+    {
+        opcode = a = b = c = 0;
+        return;
+    }
+    
+    // reg_index 0 = opcode, 1 = A, 2 = B, 3 = C
+    opcode = 0;
+    a = 0;
+    b = 0;
+    c = 0;
+    for (uint16_t bit = 0; bit < data_bits; ++bit)
+    {
+        opcode |= (registers[0][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        a      |= (registers[1][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        b      |= (registers[2][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+        c      |= (registers[3][address]->get_stored_bit(bit) ? 1 : 0) << bit;
+    }
 }
