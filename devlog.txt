@@ -46,25 +46,30 @@ V2
 - write programs for shift mult, shift div
 - graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
 - color 8x8 led display (maybe larger screen with driver? keep 4 position values for each thing X,x,Y,y)
-- make paint (user input arrows to move and space to toggle LED)
+- make MS paint (user input arrows to move and space to toggle LED)
 - make pong
 - make breakout
 - galaga
+- make snake
 
 Todo next:
-- MS paint
+- update gui at 144Hz, break it off into a separate thread
 - pong ball program
 - 1 player pong
+- display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
 - display all letters, one at a time
-- snake (max size 8, pages 3 and 4 keep body x and y locations, pop/push queue)
 - tunnel keeper (polybius)
+(if can compact cursor program:)
+- snake (max size 8, pages 3 and 4 keep body x and y locations, pop/push queue)
+- MS paint
 - tag main -
 
-Mar 7 2026 :
+Mar 7 2026 : 2h total 98h
 1.5h wrote cursor program - works but is already 503 lines! our max is 512! I never thought I'd approach that many
     that means we won't be able to code snake on this ISA. probably not even 'MS Paint'
     brought it down to 453 lines
-    fixed assembler to recompile even if file exists
+    fixed assembler to recompile even if file exists, and name .mc extension in filename comment at top (was .ass)
+.5h thinking ISA's (num op/pm for different bits/paging architectures, 4bit v1 ISA)
 
 Mar 6 2026 : 2h total 96h
 .5h added pc/ram/rall clear buttons and menu items to gui

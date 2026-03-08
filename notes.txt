@@ -2,6 +2,18 @@
 windows powershell to call up linux terminal
 > wsl -d Ubuntu
 
+3-bit v1 (no paging): opcodes: 2^3 = 8 ; PM addresses: 2^9 = 512  (barely enough for cursor program. not enough for paint)
+3-bit vw (paging): opcodes: 2^9 pages of 8 = 4,096 ; PM addresses: 2^18 = 262,144 
+4-bit Minecraft (no paging): opcodes: 2^4 = 16 ; PM addresses: 2^4 = 16  
+4-bit v1 (no paging): opcodes: 2^4 = 16 ; PM addresses: 2^12 = 4,096  
+4-bit v2 (paging): opcodes: 2^12 pages of 16 = 65K ; PM addresses: 2^24 = 16,777,216 
+8-bit (no paging): opcodes: 2^8 = 256 ; PM addresses: 2^24 = 16,777,216 
+8-bit (paging): opcodes: 2^24 * 2^8 = 4G ; PM addresses: 2^48 = 281,474,976,710,656  (281 Tera addr ~ 7TB)
+16-bit (no paging): opcodes: 2^3 = 8 ; PM addresses: 2^48 = 182 Trillion 
+
+64 is the most we'll need for opcodes, so 6 bits
+
+
 3-bit ISA v1 - 8 working RAM addr, 8 RAM pages. LED display registers (late RAM pages) 512 PM addr
 (enables jmp flag with binary compare, clears with goto and jumps if flag true)
 000 halt
@@ -19,15 +31,14 @@ windows powershell to call up linux terminal
 3-bit ISA with opcode paging (currently 32 opcodes (2^5=32))
 probably better to have most used ops on page 1, backwards compatible with v1, so most likely to be on page 0 for halt
 or put halt on the jump op page (3)
-
 - page 1 - Moving Data / Arithmetic
 000 movLit litA->[B][C]
 001 movOUT A->BC (needed bc alu can only operate on 3 x 3-bit addr on same rampage)
 010 movIN AB->C to move data back into current page
 011 add (could use long ints (6-bit) if we first set the 2nd mem addr of the MSB's, OR have a carry register to add back to some addr later)
 100 sub
-101 >> A->C
-110 << A->C
+101 >> A->BC
+110 << A->BC
 111 page opcode ABC (can have 2^9=512 pages of opcodes, each with 7 codes = 3584 opcodes)
 - page 2 - Bitwise Logic
 000 
@@ -53,7 +64,7 @@ or put halt on the jump op page (3)
 010 RET (return)
 011 
 100 
-101 PMPage?
+101 PMPage
 110 RAMPage
 111 page opcode ABC
 - page 5 - graphics
@@ -77,31 +88,6 @@ or put halt on the jump op page (3)
 110 
 111 page opcode ABC
 
-- using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
-- add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.
-    we can either share the first page in all the pages, or just swap one with the swap reg when needed. 
-    can even have more swap regs if needed, there are plenty of addr per page now (64)
-011 >> (enables multiplication) AB>>->C
-100 << (enables division) AB<<->C
-110 rp rampage (was graph (write to graphics, sends RAM addresses [row][col][data]))
-111 goto (2^9=512 addr, or page PM for serial execute 2^12=4,096)
-- return - can have return if goto automatically uses one RAM (register) that prog can write to
-      you write your own addr into reg, hit goto func. func ends with goto without writing to addr reg.
-- don't need halt. just jump to last addr in PM, computer halts at last addr
-- graph - or replace graph opcode with RAM page and have mova A->BC, so we can have 8x8x8 x8x8 = 32k addresses and later pages can be 
-    hardwired to registers, like the 8x8 screen (which alone is 64). last addr (111 111 = 64) on every page can be swap reg.
-    this way screen can even be 4x 8x8 = 16x16 or even more
-- OR instead of having a rampage, make rampage a register too, so 8 pages of 64 
-    (minus: swapA, swapB, swapC, rampage, retaddrA, retaddrB, retaddrC) = 8x57=456 RAM addr
-- 8x8 screen would only take 8 registers (each is 3 bits) with a decoder in graphics processor
-    or 9x3=27 for 9x9 using direct binary for each pixel
-- can even expose PC as a register instead of goto command, and have a retaddr reg, so end of func calls goto [retaddr]
-    this frees up 2 opcodes that can be used for conditional jumps (A==B, A>B).
-    calling those enables/disables the jump flag. flag is cleared 2 clock ticks later so unconditional jumps can happen
-    No, this won't work because we'd need more than one cycle to write to PM so restricts us to 8 addresses
-    So we need goto/jmp
-- can make pong? snake?
-- could maybe even page opcodes? would that be cheating? lol
 
 Minecraft_4_bit
 Minecraft 4-bit ISA:
@@ -124,24 +110,45 @@ Minecraft 4-bit ISA:
 1110 >>
 1111 <<
 
+4-bit v1
+0000 halt
+0001 movl litA->[C] (stores literal value in A of PM into RAM addr C)
+0010 add A+B->C
+0011 sub A-B->C (maybe invert instead, which unlocks nand, nor and sub)
+0100 cmp A BC
+0101 jeq ABC
+0110 jgt ABC
+0111 movout (move data from current ram page to other pages) (allows to write to LED display registers)
+1000 movin
+1001 >>
+1010 <<
+1011 AND
+1100 OR
+1101 cmp AB C  or jlt (same effect) (or maybe doing this inverts equal flag, so jeq will be jne that can use on same page)
+1110 call
+1111 ret
+
 Super_4_bit ISA
 4-bit with PM paging and graphics:
 0000 halt
-0001 store litA->[B,C] (page with B addr, with C, so 8-bit RAM = 256) 
-0010 A+B->C
-0011 A-B->C
-0100 A*B->C (or store A->[B,C])
-0101 >> ((A>>1)->C)
-0110 << ((A<<1)->C)
-0111 ! (bitwise invert) ((!A)->C)
-1000 & (bitwise AND) ((A&B)->C)
-1001 | (bitwise OR) ((A|B)->C)
-1010 xor (bitwise XOR) ((AxorB)->C)
-1011 jmpen - jump enable: A,B are the addresses to compare. C is the type of comparison (A==B, A!=B, A>B, A<B). enables a jump flag. unconditional jump just compare addr==addr (jmpen 0001 0000 0000)
-1100 jmp (use all 3x4=12 bits to address PM = 4,096)
-1101 graphics write (signals graphcis unit to copy data from its register addresses in RAM, after we wrote to them with store)
+0001 movl litA->[B,C] (page with B addr, with C, so 8-bit RAM = 256) 
+0010 movout
+0011 movin
+0100 A+B->C
+0101 A-B->C
+0110 >> ((A>>1)->C)
+0111 << ((A<<1)->C)
+1000 ! (bitwise invert) ((!A)->C)
+1001 & (bitwise AND) ((A&B)->C)
+1010 | (bitwise OR) ((A|B)->C)
+1011 xor (bitwise XOR) ((AxorB)->C)
+1100 jmpen - jump enable: A,B are the addresses to compare. C is the type of comparison (A==B, A!=B, A>B, A<B). enables a jump flag. unconditional jump just compare addr==addr (jmpen 0001 0000 0000)
+1101 jmp (use all 3x4=12 bits to address PM = 4,096)
 1110 call
 1111 return
+
+0100 A*B->C (or store A->[B,C])
+1101 graphics write (signals graphcis unit to copy data from its register addresses in RAM, after we wrote to them with store)
 
 PM paging:
  - can either be unconditional goto with hardcoded addr, so A=page lv1, B=page lv2, C=addr on page = 4,096 addr
@@ -317,3 +324,27 @@ old:
     8-seg RAM addon:
         display numerical value for each ram addr
         rampage switches (and readout)
+        
+- using AND and XOR for jump conditionals, when want to just use func, put jmp to pc+1. that way result is ignored
+- add and & (jeq) is the only op that is actually 3-bit and can only work on first page of RAMPage, so we have 8 working registers.
+    we can either share the first page in all the pages, or just swap one with the swap reg when needed. 
+    can even have more swap regs if needed, there are plenty of addr per page now (64)
+011 >> (enables multiplication) AB>>->C
+100 << (enables division) AB<<->C
+110 rp rampage (was graph (write to graphics, sends RAM addresses [row][col][data]))
+111 goto (2^9=512 addr, or page PM for serial execute 2^12=4,096)
+- return - can have return if goto automatically uses one RAM (register) that prog can write to
+      you write your own addr into reg, hit goto func. func ends with goto without writing to addr reg.
+- don't need halt. just jump to last addr in PM, computer halts at last addr
+- graph - or replace graph opcode with RAM page and have mova A->BC, so we can have 8x8x8 x8x8 = 32k addresses and later pages can be 
+    hardwired to registers, like the 8x8 screen (which alone is 64). last addr (111 111 = 64) on every page can be swap reg.
+    this way screen can even be 4x 8x8 = 16x16 or even more
+- OR instead of having a rampage, make rampage a register too, so 8 pages of 64 
+    (minus: swapA, swapB, swapC, rampage, retaddrA, retaddrB, retaddrC) = 8x57=456 RAM addr
+- 8x8 screen would only take 8 registers (each is 3 bits) with a decoder in graphics processor
+    or 9x3=27 for 9x9 using direct binary for each pixel
+- can even expose PC as a register instead of goto command, and have a retaddr reg, so end of func calls goto [retaddr]
+    this frees up 2 opcodes that can be used for conditional jumps (A==B, A>B).
+    calling those enables/disables the jump flag. flag is cleared 2 clock ticks later so unconditional jumps can happen
+    No, this won't work because we'd need more than one cycle to write to PM so restricts us to 8 addresses
+    So we need goto/jmp
