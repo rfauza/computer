@@ -126,6 +126,12 @@ void ComputerWindow::build_ui()
     auto* seg_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     seg_spacer->set_vexpand(true);
     seg_unit->append(*seg_spacer);
+    // "Octal Display" label at the top of the content area
+    auto* octal_lbl = Gtk::manage(new Gtk::Label());
+    octal_lbl->set_markup("<span size='small' weight='bold'>Octal Display</span>");
+    octal_lbl->set_halign(Gtk::Align::CENTER);
+    octal_lbl->set_margin_bottom(2);
+    seg_unit->append(*octal_lbl);
     // Bottom row: reset buttons on the left, 7-seg bar on the right
     auto* seg_bottom = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 8));
     seg_bottom->set_margin_start(4);
@@ -159,6 +165,11 @@ void ComputerWindow::build_ui()
     mat_unit->add_css_class("panel-unit");
     mat_unit->append(*build_led_matrix_panel());
     top_row->append(*mat_unit);
+    
+    auto* dec_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    dec_unit->add_css_class("panel-unit");
+    dec_unit->append(*build_decimal_display_panel());
+    top_row->append(*dec_unit);
 
     root->append(*top_row);
 
@@ -786,6 +797,132 @@ Gtk::Box* ComputerWindow::build_led_matrix_panel()
     return panel;
 }
 
+// ── Decimal Display Panel ─────────────────────────────────────────────
+
+Gtk::Box* ComputerWindow::build_decimal_display_panel()
+{
+    auto* panel = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 8));
+    panel->set_margin_start(6);
+    panel->set_margin_end(6);
+    panel->set_margin_top(4);
+    panel->set_margin_bottom(4);
+    
+    // Left column: displays
+    auto* disp_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
+    
+    // Title
+    auto* title = Gtk::manage(new Gtk::Label());
+    title->set_markup("<span size='small' weight='bold'>Decimal Display</span>");
+    title->set_halign(Gtk::Align::CENTER);
+    disp_col->append(*title);
+    
+    // PM address in decimal: 3 seven-seg digits (max 511 for 9-bit PC)
+    auto* pm_dec_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    pm_dec_row->set_halign(Gtk::Align::CENTER);
+    for (int i = 0; i < 3; ++i)
+    {
+        auto* seg = Gtk::manage(new SevenSegDisplay());
+        seg->set_color(0.2, 0.6, 1.0);
+        dec_pm_segs_.push_back(seg);
+        pm_dec_row->append(*seg);
+    }
+    disp_col->append(*pm_dec_row);
+    
+    auto* pm_dec_lbl = Gtk::manage(new Gtk::Label());
+    pm_dec_lbl->set_markup("<span size='x-small'>PM Addr</span>");
+    pm_dec_lbl->set_halign(Gtk::Align::CENTER);
+    disp_col->append(*pm_dec_lbl);
+    
+    // Opcode name: 4 multi-seg displays (first 4 letters + padding)
+    auto* name_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
+    name_row->set_halign(Gtk::Align::CENTER);
+    for (int i = 0; i < 4; ++i)
+    {
+        auto* mseg = Gtk::manage(new MultiSegDisplay());
+        mseg->set_color(0.2, 0.6, 1.0);
+        opcode_name_segs_.push_back(mseg);
+        name_row->append(*mseg);
+    }
+    disp_col->append(*name_row);
+    
+    auto* name_lbl = Gtk::manage(new Gtk::Label());
+    name_lbl->set_markup("<span size='x-small'>OP Code</span>");
+    name_lbl->set_halign(Gtk::Align::CENTER);
+    disp_col->append(*name_lbl);
+    
+    panel->append(*disp_col);
+    
+    // Right column: switches
+    auto* sw_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    sw_col->set_valign(Gtk::Align::CENTER);
+    sw_col->set_margin_start(8);
+    
+    // Color switch (3-way: blue=0, red=1, green=2)
+    auto* color_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    auto* blue_lbl = Gtk::manage(new Gtk::Label());
+    blue_lbl->set_markup("<span size='x-small'>Blue</span>");
+    blue_lbl->set_halign(Gtk::Align::CENTER);
+    color_grp->append(*blue_lbl);
+    
+    dec_color_switch_ = Gtk::manage(new ThreeWaySwitch());
+    dec_color_switch_->set_size_request(28, 56);
+    dec_color_switch_->set_change_callback(
+        sigc::mem_fun(*this, &ComputerWindow::on_dec_color_changed));
+    color_grp->append(*dec_color_switch_);
+    
+    auto* green_lbl = Gtk::manage(new Gtk::Label());
+    green_lbl->set_markup("<span size='x-small'>Green</span>");
+    green_lbl->set_halign(Gtk::Align::CENTER);
+    color_grp->append(*green_lbl);
+    sw_col->append(*color_grp);
+    
+    // Style switch (LED / Nixie)
+    auto* style_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    auto* led_lbl = Gtk::manage(new Gtk::Label());
+    led_lbl->set_markup("<span size='x-small'>LED</span>");
+    led_lbl->set_halign(Gtk::Align::CENTER);
+    style_grp->append(*led_lbl);
+    
+    dec_style_switch_ = Gtk::manage(new ToggleSwitch());
+    dec_style_switch_->set_size_request(28, 48);
+    dec_style_switch_->set_toggle_callback(
+        sigc::mem_fun(*this, &ComputerWindow::on_dec_style_changed));
+    style_grp->append(*dec_style_switch_);
+    
+    auto* nixie_lbl = Gtk::manage(new Gtk::Label());
+    nixie_lbl->set_markup("<span size='x-small'>Nixie</span>");
+    nixie_lbl->set_halign(Gtk::Align::CENTER);
+    style_grp->append(*nixie_lbl);
+    sw_col->append(*style_grp);
+    
+    panel->append(*sw_col);
+    
+    // Far right: global LED color switch
+    auto* global_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    global_col->set_valign(Gtk::Align::CENTER);
+    global_col->set_margin_start(8);
+    
+    auto* red_g_lbl = Gtk::manage(new Gtk::Label());
+    red_g_lbl->set_markup("<span size='x-small'>Red</span>");
+    red_g_lbl->set_halign(Gtk::Align::CENTER);
+    global_col->append(*red_g_lbl);
+    
+    global_led_color_switch_ = Gtk::manage(new ThreeWaySwitch());
+    global_led_color_switch_->set_size_request(28, 56);
+    global_led_color_switch_->set_change_callback(
+        sigc::mem_fun(*this, &ComputerWindow::on_global_led_color_changed));
+    global_col->append(*global_led_color_switch_);
+    
+    auto* blue_g_lbl = Gtk::manage(new Gtk::Label());
+    blue_g_lbl->set_markup("<span size='x-small'>Blue</span>");
+    blue_g_lbl->set_halign(Gtk::Align::CENTER);
+    global_col->append(*blue_g_lbl);
+    
+    panel->append(*global_col);
+    
+    return panel;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Keyboard handling
 // ═══════════════════════════════════════════════════════════════════════
@@ -1094,6 +1231,68 @@ void ComputerWindow::on_slave_toggled()
     update_ram_seg_display();
 }
 
+void ComputerWindow::on_dec_color_changed(int pos)
+{
+    double r, g, b;
+    switch (pos)
+    {
+        case 0:  r = 0.2;  g = 0.6;  b = 1.0;  break;  // Blue
+        case 1:  r = 1.0;  g = 0.08; b = 0.0;  break;  // Red
+        default: r = 0.0;  g = 1.0;  b = 0.2;  break;  // Green
+    }
+    for (auto* seg : dec_pm_segs_)
+    {
+        seg->set_color(r, g, b);
+    }
+    for (auto* mseg : opcode_name_segs_)
+    {
+        mseg->set_color(r, g, b);
+    }
+}
+
+void ComputerWindow::on_dec_style_changed(bool nixie)
+{
+    auto seg_style = nixie ? SevenSegDisplay::Style::NIXIE
+                           : SevenSegDisplay::Style::LED;
+    auto mseg_style = nixie ? MultiSegDisplay::Style::NIXIE
+                            : MultiSegDisplay::Style::LED;
+    for (auto* seg : dec_pm_segs_)
+    {
+        seg->set_style(seg_style);
+    }
+    for (auto* mseg : opcode_name_segs_)
+    {
+        mseg->set_style(mseg_style);
+    }
+}
+
+void ComputerWindow::on_global_led_color_changed(int pos)
+{
+    double r, g, b;
+    switch (pos)
+    {
+        case 0:  r = 1.0;  g = 0.0;  b = 0.0;  break;  // Red
+        case 1:  r = 0.0;  g = 1.0;  b = 0.0;  break;  // Green
+        default: r = 0.2;  g = 0.5;  b = 1.0;  break;  // Blue
+    }
+    
+    // Update all LEDs in the main panel
+    auto set_all = [&](std::vector<LED*>& leds)
+    {
+        for (auto* led : leds) led->set_color(r, g, b);
+    };
+    set_all(pm_addr_leds_);
+    set_all(opcode_leds_);
+    set_all(a_leds_);
+    set_all(b_leds_);
+    set_all(c_leds_);
+    set_all(ram_page_leds_);
+    for (auto& row : ram_leds_)
+    {
+        set_all(row);
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Auto-run timer
 // ═══════════════════════════════════════════════════════════════════════
@@ -1179,6 +1378,7 @@ void ComputerWindow::update_all_displays()
     update_ram_led_display();
     update_ram_seg_display();
     update_led_matrix_display();
+    update_decimal_display();
 }
 
 void ComputerWindow::update_main_leds()
@@ -1371,6 +1571,55 @@ void ComputerWindow::update_led_matrix_display()
     }
     
     led_matrix_->refresh();
+}
+
+void ComputerWindow::update_decimal_display()
+{
+    // Safety check: ensure vectors have been populated by build_decimal_display_panel
+    if (dec_pm_segs_.size() < 3 || opcode_name_segs_.size() < 4)
+    {
+        return;
+    }
+    
+    // Get the same values that update_seven_segs uses
+    uint16_t addr;
+    uint16_t opcode;
+    
+    if (mode_ == Mode::PROGRAM)
+    {
+        addr = read_switch_value(pm_addr_switches_);
+        if (prog_sub_ == ProgSub::WRITE)
+        {
+            opcode = read_switch_value(opcode_switches_);
+        }
+        else
+        {
+            uint16_t a_val, b_val, c_val;
+            computer_->read_pm_instruction(addr, opcode, a_val, b_val, c_val);
+        }
+    }
+    else
+    {
+        addr = computer_->get_pc();
+        uint16_t a_val, b_val, c_val;
+        computer_->get_current_instruction(opcode, a_val, b_val, c_val);
+    }
+    
+    // PM address in decimal (3 digits, MSD first)
+    int dec_addr = static_cast<int>(addr);
+    for (int i = 2; i >= 0; --i)
+    {
+        dec_pm_segs_[i]->set_value(static_cast<uint8_t>(dec_addr % 10));
+        dec_addr /= 10;
+    }
+    
+    // Opcode name (first 4 letters, padded with spaces)
+    std::string name = computer_->opcode_name(opcode);
+    for (int i = 0; i < 4; ++i)
+    {
+        char ch = (i < static_cast<int>(name.size())) ? name[i] : ' ';
+        opcode_name_segs_[i]->set_char(ch);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════

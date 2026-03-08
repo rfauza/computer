@@ -64,12 +64,16 @@ Todo next:
 - MS paint
 - tag main -
 
-Mar 7 2026 : 2h total 98h
+Mar 8 2026 : 
+1h pong ball program
+1h added decimal display section to GUI
+
+Mar 7 2026 : 2.5h total 98.5h
 1.5h wrote cursor program - works but is already 503 lines! our max is 512! I never thought I'd approach that many
     that means we won't be able to code snake on this ISA. probably not even 'MS Paint'
     brought it down to 453 lines
     fixed assembler to recompile even if file exists, and name .mc extension in filename comment at top (was .ass)
-.5h thinking ISA's (num op/pm for different bits/paging architectures, 4bit v1 ISA)
+1h thinking ISA's (num op/pm for different bits/paging architectures, 4bit v1 ISA)
 
 Mar 6 2026 : 2h total 96h
 .5h added pc/ram/rall clear buttons and menu items to gui

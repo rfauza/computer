@@ -24,7 +24,7 @@ int run_gui();
 int main()
 {
     Assembler ass;
-    ass.assemble("../programs/3bit_v1/cursor.ass", "../programs/3bit_v1/cursor.mc");
+    ass.assemble("../programs/3bit_v1/pong_ball.ass", "../programs/3bit_v1/pong_ball.mc");
     
     return run_gui();
 }

@@ -4,16 +4,25 @@
 /**
  * @brief Seven-segment display drawn with Cairo.
  *
- * Displays a single hex digit (0-F).  Segments glow red-on-black.
+ * Displays a single hex digit (0-F).  Segments glow in configurable color.
+ * Supports LED and Nixie tube visual styles.
  */
 class SevenSegDisplay : public Gtk::DrawingArea
 {
 public:
+    enum class Style { LED, NIXIE };
+    
     SevenSegDisplay();
     
     /** @brief Set the digit to display (0-15, clamped). */
     void set_value(uint8_t val);
     uint8_t get_value() const { return value_; }
+    
+    /** @brief Set display color (r, g, b). */
+    void set_color(double r, double g, double b);
+    
+    /** @brief Set display style (LED or Nixie). */
+    void set_style(Style style);
     
 private:
     void on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
@@ -24,6 +33,8 @@ private:
                       bool horizontal, bool on);
     
     uint8_t value_ = 0;
+    double r_ = 1.0, g_ = 0.08, b_ = 0.0;  // default red
+    Style style_ = Style::LED;
     
     // Segment truth table: segments a-g for digits 0-F
     static constexpr uint8_t seg_table[16] = {

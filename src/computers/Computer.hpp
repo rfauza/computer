@@ -191,6 +191,9 @@ public:
      */
     void prepare_run();
     
+    /** @brief Return the human-readable mnemonic for the given opcode. */
+    std::string opcode_name(uint16_t opcode) const { return get_opcode_name(opcode); }
+    
     // ───End:  State query helpers (used by Evaluator) ───────────────────────────────────
 
 protected:

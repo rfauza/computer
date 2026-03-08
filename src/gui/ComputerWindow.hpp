@@ -7,6 +7,8 @@
 #include "LED.hpp"
 #include "ToggleSwitch.hpp"
 #include "SevenSegDisplay.hpp"
+#include "MultiSegDisplay.hpp"
+#include "ThreeWaySwitch.hpp"
 #include "RotaryKnob.hpp"
 #include "PushButton.hpp"
 #include "LEDMatrix.hpp"
@@ -54,6 +56,7 @@ private:
     Gtk::Box* build_ram_led_panel();
     Gtk::Box* build_ram_seg_panel();
     Gtk::Box* build_led_matrix_panel();
+    Gtk::Box* build_decimal_display_panel();
     
     // ── Event handlers ─────────────────────────────────────────────────
     bool on_key_pressed(guint keyval, guint keycode, Gdk::ModifierType state);
@@ -65,6 +68,9 @@ private:
     void on_ram_page_changed();
     void on_ram_page2_changed();
     void on_slave_toggled();
+    void on_dec_color_changed(int pos);
+    void on_dec_style_changed(bool nixie);
+    void on_global_led_color_changed(int pos);
     void on_reset_pc();
     void on_reset_ram();
     void on_reset_all();
@@ -81,6 +87,7 @@ private:
     void update_ram_led_display();
     void update_ram_seg_display();
     void update_led_matrix_display();
+    void update_decimal_display();
     
     /** Read the value from a group of toggle switches (index 0 = bit 0). */
     uint16_t read_switch_value(const std::vector<ToggleSwitch*>& sw) const;
@@ -150,6 +157,13 @@ private:
     
     // ── Widgets: LED matrix ────────────────────────────────────────────
     LEDMatrix* led_matrix_ = nullptr;
+    
+    // ── Widgets: Decimal Display panel ─────────────────────────────────
+    std::vector<SevenSegDisplay*>  dec_pm_segs_;    // 3 digits for decimal PM addr
+    std::vector<MultiSegDisplay*> opcode_name_segs_; // 4 chars for opcode name
+    ThreeWaySwitch* dec_color_switch_  = nullptr;   // blue/red/green
+    ToggleSwitch*   dec_style_switch_  = nullptr;   // LED/Nixie
+    ThreeWaySwitch* global_led_color_switch_ = nullptr; // global LED color
     
     // ── Keyboard selection ─────────────────────────────────────────────
     int selected_index_ = -1;
