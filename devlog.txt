@@ -26,7 +26,7 @@ clock tick is logic. needs to be gates
 - figure out negatives and floats
 - make 16-bit version with OS and graphics
 - try architecture with all in RAM (and storage) and no program memory
-
+- make platformer (mario)
 
 
 
@@ -45,15 +45,26 @@ V2
     (or better: save arguments to new rampage, page, then call func. page back on ret, retrieve result from that page)
 - write programs for shift mult, shift div
 - graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
+- color 8x8 led display (maybe larger screen with driver? keep 4 position values for each thing X,x,Y,y)
 - make paint (user input arrows to move and space to toggle LED)
 - make pong
+- make breakout
+- galaga
 
 Todo next:
-- pong bar with keyboard inputs
 - MS paint
-- watch-only pong?
-- 1 player pong?
+- pong ball program
+- 1 player pong
+- display all letters, one at a time
+- snake (max size 8, pages 3 and 4 keep body x and y locations, pop/push queue)
+- tunnel keeper (polybius)
 - tag main -
+
+Mar 7 2026 :
+1.5h wrote cursor program - works but is already 503 lines! our max is 512! I never thought I'd approach that many
+    that means we won't be able to code snake on this ISA. probably not even 'MS Paint'
+    brought it down to 453 lines
+    fixed assembler to recompile even if file exists
 
 Mar 6 2026 : 2h total 96h
 .5h added pc/ram/rall clear buttons and menu items to gui

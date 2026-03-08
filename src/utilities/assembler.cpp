@@ -38,7 +38,12 @@ std::string Assembler::derive_output_path(const std::string& input_file) const
 
 std::string Assembler::derive_filename(const std::string& path) const
 {
-    return std::filesystem::path(path).stem().string();
+    std::filesystem::path p(path);
+    std::filesystem::path name = p.filename();
+    // Strip repeated extensions (e.g. "cursor.ass.mc" -> "cursor")
+    while (name.has_extension())
+        name = name.stem();
+    return name.string();
 }
 
 std::string Assembler::to_upper(const std::string& s) const
@@ -377,16 +382,33 @@ bool Assembler::assemble(const std::string& input_file,
     std::string out_path = output_file_arg.empty()
                          ? derive_output_path(input_file)
                          : output_file_arg;
+    // If the source provided a filename header, normalize it by stripping
+    // any extensions (so "cursor.ass" -> "cursor"). Otherwise derive
+    // the filename from the output path.
+    std::string filename_base;
     if (filename_meta.empty())
-        filename_meta = derive_filename(out_path);
+        filename_base = derive_filename(out_path);
+    else
+        filename_base = derive_filename(filename_meta);
+    // Always present the filename metadata with a .mc extension
+    filename_meta = filename_base + ".mc";
     if (description_meta.empty())
         description_meta = filename_meta;
 
-    // ── Write .mc file ────────────────────────────────────────────────────────
-    std::ofstream out(out_path);
+    // ── Write .mc file (write to temp then atomically replace existing file) ──
+    std::filesystem::path target(out_path);
+    std::filesystem::path temp_path = target;
+    temp_path += ".tmp";
+
+    // Remove any existing temp file
+    std::error_code ec;
+    if (std::filesystem::exists(temp_path, ec))
+        std::filesystem::remove(temp_path, ec);
+
+    std::ofstream out(temp_path);
     if (!out.is_open())
     {
-        emit_error(0, "cannot write output file: " + out_path);
+        emit_error(0, "cannot write temporary output file: " + temp_path.string());
         return false;
     }
 
@@ -419,7 +441,28 @@ bool Assembler::assemble(const std::string& input_file,
 
     out.close();
 
+    // Replace existing target file with the temp file
+    if (std::filesystem::exists(target, ec))
+    {
+        if (!std::filesystem::remove(target, ec))
+        {
+            emit_error(0, "cannot remove existing output file: " + target.string());
+            // attempt to clean temp then fail
+            std::filesystem::remove(temp_path, ec);
+            return false;
+        }
+    }
+
+    std::filesystem::rename(temp_path, target, ec);
+    if (ec)
+    {
+        emit_error(0, "cannot move temporary file to output path: " + ec.message());
+        // attempt to clean temp
+        std::filesystem::remove(temp_path, ec);
+        return false;
+    }
+
     std::cout << "[assembler] wrote " << encoded.size()
-              << " instruction(s) to " << out_path << "\n";
+              << " instruction(s) to " << target.string() << "\n";
     return true;
 }

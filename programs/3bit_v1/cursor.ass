@@ -1,0 +1,615 @@
+# ms_paint 3-bit v1
+# filename: cursor.ass
+# isa: 3bit_v1
+# light up one LED of the 8x8 display at a time, going down the line
+# 3-bit v1 ISA:
+# 000 HALT   - Stop execution
+# 001 MOVL   - Move literal: litA -> [BC]
+# 010 ADD    - Add: [A] + [B] -> [C]
+# 011 SUB    - Subtract: [A] - [B] -> [C]
+# 100 CMP    - Compare: flags <- [0:A] vs [B:C]
+# 101 JEQ    - Jump if equal: if flag then goto ABC
+# 110 JGT    - Jump if greater: if flag then goto ABC
+# 111 NOP    - No operation
+
+# setup
+# &0 is zero ref
+movl 1 0 1 # &1 is 1 ref
+movl 2 0 2 # &2 is 2 ref
+movl 4 0 4 # &4 is 4 ref
+# cursor x position &6
+# cursor y position &7
+
+movl 1 1 1 # use page 1 for comparing
+movl 2 1 2
+movl 3 1 3
+movl 4 1 4
+movl 5 1 5
+movl 6 1 6
+movl 7 1 7
+
+########################
+### FIND Y POSITION  ###
+########################
+
+def place_cursor
+def find_y_pos
+cmp 7 1 0
+jeq y_0
+cmp 7 1 1
+jeq y_1
+cmp 7 1 2
+jeq y_2
+cmp 7 1 3
+jeq y_3
+cmp 7 1 4
+jeq y_4
+cmp 7 1 5
+jeq y_5
+cmp 7 1 6
+jeq y_6
+cmp 7 1 7
+jeq y_7
+
+########################
+### FIND X POSITION  ###
+########################
+
+def y_0
+movout 0 5 1 # clear line below in case of up movement
+movout 0 6 1
+movout 0 7 1
+cmp 6 1 0 # check if x pos is 0
+jeq 0_0
+cmp 6 1 1 # check if x pos is 1
+jeq 1_0
+cmp 6 1 2 # check if x pos is 2
+jeq 2_0
+cmp 6 1 3 # check if x pos is 3
+jeq 3_0
+cmp 6 1 4 # check if x pos is 4
+jeq 4_0
+cmp 6 1 5 # check if x pos is 5
+jeq 5_0
+cmp 6 1 6 # check if x pos is 6
+jeq 6_0
+cmp 6 1 7 # check if x pos is 7
+jeq 7_0
+
+def y_1
+movout 0 5 0  # clear line above in case of down movement
+movout 0 6 0
+movout 0 7 0
+movout 0 5 2  # clear line below in case of up movement
+movout 0 6 2
+movout 0 7 2
+cmp 6 1 0 # check if x pos is 0
+jeq 0_1
+cmp 6 1 1 # check if x pos is 1
+jeq 1_1
+cmp 6 1 2 # check if x pos is 2
+jeq 2_1
+cmp 6 1 3 # check if x pos is 3
+jeq 3_1
+cmp 6 1 4 # check if x pos is 4
+jeq 4_1
+cmp 6 1 5 # check if x pos is 5
+jeq 5_1
+cmp 6 1 6 # check if x pos is 6
+jeq 6_1
+cmp 6 1 7 # check if x pos is 7
+jeq 7_1
+
+def y_2
+movout 0 5 1  # clear line above in case of down movement
+movout 0 6 1
+movout 0 7 1
+movout 0 5 3  # clear line below in case of up movement
+movout 0 6 3
+movout 0 7 3
+cmp 6 1 0 # check if x pos is 0
+jeq 0_2
+cmp 6 1 1 # check if x pos is 1
+jeq 1_2
+cmp 6 1 2 # check if x pos is 2
+jeq 2_2
+cmp 6 1 3 # check if x pos is 3
+jeq 3_2
+cmp 6 1 4 # check if x pos is 4
+jeq 4_2
+cmp 6 1 5 # check if x pos is 5
+jeq 5_2
+cmp 6 1 6 # check if x pos is 6
+jeq 6_2
+cmp 6 1 7 # check if x pos is 7
+jeq 7_2
+
+def y_3
+movout 0 5 2  # clear line above in case of down movement
+movout 0 6 2
+movout 0 7 2
+movout 0 5 4  # clear line below in case of up movement
+movout 0 6 4
+movout 0 7 4
+cmp 6 1 0 # check if x pos is 0
+jeq 0_3
+cmp 6 1 1 # check if x pos is 1
+jeq 1_3
+cmp 6 1 2 # check if x pos is 2
+jeq 2_3
+cmp 6 1 3 # check if x pos is 3
+jeq 3_3
+cmp 6 1 4 # check if x pos is 4
+jeq 4_3
+cmp 6 1 5 # check if x pos is 5
+jeq 5_3
+cmp 6 1 6 # check if x pos is 6
+jeq 6_3
+cmp 6 1 7 # check if x pos is 7
+jeq 7_3
+
+def y_4
+movout 0 5 3  # clear line above in case of down movement
+movout 0 6 3
+movout 0 7 3
+movout 0 5 5  # clear line below in case of up movement
+movout 0 6 5
+movout 0 7 5
+cmp 6 1 0 # check if x pos is 0
+jeq 0_4
+cmp 6 1 1 # check if x pos is 1
+jeq 1_4
+cmp 6 1 2 # check if x pos is 2
+jeq 2_4
+cmp 6 1 3 # check if x pos is 3
+jeq 3_4
+cmp 6 1 4 # check if x pos is 4
+jeq 4_4
+cmp 6 1 5 # check if x pos is 5
+jeq 5_4
+cmp 6 1 6 # check if x pos is 6
+jeq 6_4
+cmp 6 1 7 # check if x pos is 7
+jeq 7_4
+
+def y_5
+movout 0 5 4  # clear line above in case of down movement
+movout 0 6 4
+movout 0 7 4
+movout 0 5 6  # clear line below in case of up movement
+movout 0 6 6
+movout 0 7 6
+cmp 6 1 0 # check if x pos is 0
+jeq 0_5
+cmp 6 1 1 # check if x pos is 1
+jeq 1_5
+cmp 6 1 2 # check if x pos is 2
+jeq 2_5
+cmp 6 1 3 # check if x pos is 3
+jeq 3_5
+cmp 6 1 4 # check if x pos is 4
+jeq 4_5
+cmp 6 1 5 # check if x pos is 5
+jeq 5_5
+cmp 6 1 6 # check if x pos is 6
+jeq 6_5
+cmp 6 1 7 # check if x pos is 7
+jeq 7_5
+
+def y_6
+movout 0 5 5  # clear line above in case of down movement
+movout 0 6 5
+movout 0 7 5
+movout 0 5 7  # clear line below in case of up movement
+movout 0 6 7
+movout 0 7 7
+cmp 6 1 0 # check if x pos is 0
+jeq 0_6
+cmp 6 1 1 # check if x pos is 1
+jeq 1_6
+cmp 6 1 2 # check if x pos is 2
+jeq 2_6
+cmp 6 1 3 # check if x pos is 3
+jeq 3_6
+cmp 6 1 4 # check if x pos is 4
+jeq 4_6
+cmp 6 1 5 # check if x pos is 5
+jeq 5_6
+cmp 6 1 6 # check if x pos is 6
+jeq 6_6
+cmp 6 1 7 # check if x pos is 7
+jeq 7_6
+
+def y_7
+movout 0 5 6  # clear line above in case of down movement
+movout 0 6 6
+movout 0 7 6
+cmp 6 1 0 # check if x pos is 0
+jeq 0_7
+cmp 6 1 1 # check if x pos is 1
+jeq 1_7
+cmp 6 1 2 # check if x pos is 2
+jeq 2_7
+cmp 6 1 3 # check if x pos is 3
+jeq 3_7
+cmp 6 1 4 # check if x pos is 4
+jeq 4_7
+cmp 6 1 5 # check if x pos is 5
+jeq 5_7
+cmp 6 1 6 # check if x pos is 6
+jeq 6_7
+cmp 6 1 7 # check if x pos is 7
+jeq 7_7
+
+########################
+### WRITE TO SCREEN  ###
+########################
+
+# if y is 0 (all x's)
+# write all x positions for y=0
+def 0_0
+movout 1 5 0
+cmp 0 0 0
+jeq wait_input
+def 1_0
+movout 2 5 0
+cmp 0 0 0
+jeq wait_input
+def 2_0
+movout 4 5 0
+movout 0 6 0 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_0
+movout 0 5 0 # clear block to the left in case of right move
+movout 1 6 0
+cmp 0 0 0
+jeq wait_input
+def 4_0
+movout 2 6 0
+cmp 0 0 0
+jeq wait_input
+def 5_0
+movout 4 6 0
+movout 0 7 0 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_0
+movout 1 7 0
+movout 0 6 0 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_0
+movout 2 7 0
+cmp 0 0 0
+jeq wait_input
+
+# if y is 1
+# write all x positions for y=1
+def 0_1
+movout 1 5 1
+cmp 0 0 0
+jeq wait_input
+def 1_1
+movout 2 5 1
+cmp 0 0 0
+jeq wait_input
+def 2_1
+movout 4 5 1
+movout 0 6 1 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_1
+movout 1 6 1
+movout 0 5 1 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_1
+movout 2 6 1
+cmp 0 0 0
+jeq wait_input
+def 5_1
+movout 4 6 1
+movout 0 7 1 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_1
+movout 1 7 1
+movout 0 6 1 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_1
+movout 2 7 1
+cmp 0 0 0
+jeq wait_input
+
+# if y is 2
+# write all x positions for y=2
+def 0_2
+movout 1 5 2
+cmp 0 0 0
+jeq wait_input
+def 1_2
+movout 2 5 2
+cmp 0 0 0
+jeq wait_input
+def 2_2
+movout 4 5 2
+movout 0 6 2 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_2
+movout 1 6 2
+movout 0 5 2 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_2
+movout 2 6 2
+cmp 0 0 0
+jeq wait_input
+def 5_2
+movout 4 6 2
+movout 0 7 2 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_2
+movout 1 7 2
+movout 0 6 2 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_2
+movout 2 7 2
+cmp 0 0 0
+jeq wait_input
+
+# if y is 3
+# write all x positions for y=3
+def 0_3
+movout 1 5 3
+cmp 0 0 0
+jeq wait_input
+def 1_3
+movout 2 5 3
+cmp 0 0 0
+jeq wait_input
+def 2_3
+movout 4 5 3
+movout 0 6 3 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_3
+movout 1 6 3
+movout 0 5 3 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_3
+movout 2 6 3
+cmp 0 0 0
+jeq wait_input
+def 5_3
+movout 4 6 3
+movout 0 7 3 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_3
+movout 1 7 3
+movout 0 6 3 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_3
+movout 2 7 3
+cmp 0 0 0
+jeq wait_input
+
+# if y is 4
+# write all x positions for y=4
+def 0_4
+movout 1 5 4
+cmp 0 0 0
+jeq wait_input
+def 1_4
+movout 2 5 4
+cmp 0 0 0
+jeq wait_input
+def 2_4
+movout 4 5 4
+movout 0 6 4 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_4
+movout 1 6 4
+movout 0 5 4 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_4
+movout 2 6 4
+cmp 0 0 0
+jeq wait_input
+def 5_4
+movout 4 6 4
+movout 0 7 4 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_4
+movout 1 7 4
+movout 0 6 4 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_4
+movout 2 7 4
+cmp 0 0 0
+jeq wait_input
+
+# if y is 5
+# write all x positions for y=5
+def 0_5
+movout 1 5 5
+cmp 0 0 0
+jeq wait_input
+def 1_5
+movout 2 5 5
+cmp 0 0 0
+jeq wait_input
+def 2_5
+movout 4 5 5
+movout 0 6 5 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_5
+movout 1 6 5
+movout 0 5 5 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_5
+movout 2 6 5
+cmp 0 0 0
+jeq wait_input
+def 5_5
+movout 4 6 5
+movout 0 7 5 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_5
+movout 1 7 5
+movout 0 6 5 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_5
+movout 2 7 5
+cmp 0 0 0
+jeq wait_input
+
+# if y is 6
+# write all x positions for y=6
+def 0_6
+movout 1 5 6
+cmp 0 0 0
+jeq wait_input
+def 1_6
+movout 2 5 6
+cmp 0 0 0
+jeq wait_input
+def 2_6
+movout 4 5 6
+movout 0 6 6 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_6
+movout 1 6 6
+movout 0 5 6 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_6
+movout 2 6 6
+cmp 0 0 0
+jeq wait_input
+def 5_6
+movout 4 6 6
+movout 0 7 6 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_6
+movout 1 7 6
+movout 0 6 6 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_6
+movout 2 7 6
+cmp 0 0 0
+jeq wait_input
+
+# if y is 7
+# write all x positions for y=7
+def 0_7
+movout 1 5 7
+cmp 0 0 0
+jeq wait_input
+def 1_7
+movout 2 5 7
+cmp 0 0 0
+jeq wait_input
+def 2_7
+movout 4 5 7
+movout 0 6 7 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 3_7
+movout 1 6 7
+movout 0 5 7 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 4_7
+movout 2 6 7
+cmp 0 0 0
+jeq wait_input
+def 5_7
+movout 4 6 7
+movout 0 7 7 # clear block to the right in case of left move
+cmp 0 0 0
+jeq wait_input
+def 6_7
+movout 1 7 7
+movout 0 6 7 # clear block to the left in case of right move
+cmp 0 0 0
+jeq wait_input
+def 7_7
+movout 2 7 7
+cmp 0 0 0
+jeq wait_input
+
+
+
+
+########################
+### INPUT PROCESSING ###
+########################
+
+def wait_input
+cmp 1 4 1 # compare 1 and 4.1: detect w input
+jeq move_up
+cmp 1 4 2 # compare 1 and 4.2: detect a input
+jeq move_left
+cmp 1 4 3 # compare 1 and 4.3: detect s input
+jeq move_down
+cmp 1 4 4 # compare 1 and 4.4: detect d input
+jeq move_right
+# cmp 1 4 0 # compare 1 and 4.0: detect space input
+# jeq toggle
+cmp 0 0 0 # if no inputs, repeat loop
+jeq wait_input # loop and wait for input
+
+def move_up
+movout 0 4 1 # clear a input
+cmp 7 1 0 # check for boundaries
+jeq place_cursor # if at boundary, ignore input
+sub 7 1 7 # deccrement y pos
+cmp 0 0 0
+jeq place_cursor
+
+def move_left
+movout 0 4 2 # clear a input
+cmp 6 1 0 # check for boundaries
+jeq place_cursor # if at boundary, ignore input
+sub 6 1 6 # decrement x pos
+cmp 0 0 0
+jeq place_cursor
+
+def move_down
+movout 0 4 3 # clear a input
+cmp 7 1 7 # check for boundaries
+jeq place_cursor # if at boundary, ignore input
+add 7 1 7 # increment y pos
+cmp 0 0 0
+jeq place_cursor
+
+def move_right
+movout 0 4 4 # clear d input
+cmp 6 1 7 # check for boundaries
+jeq place_cursor # if at boundary, ignore input
+add 6 1 6 # increment x pos
+cmp 0 0 0
+jeq place_cursor
+
+# def toggle
+# cmp 0 0 0
+# jeq place_cursor

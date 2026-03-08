@@ -9,7 +9,7 @@
 # 110 JGT    - Jump if greater: if flag then goto ABC
 # 111 NOP    - No operation
 
-#divide 7 by 2
+#divide 6 by 2
 
 
 001 110 000 000 # 0 - write 6 into &0-0
