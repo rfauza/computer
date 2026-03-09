@@ -3,7 +3,7 @@
 
 ThreeWaySwitch::ThreeWaySwitch()
 {
-    set_content_width(28);
+    set_content_width(32);
     set_content_height(56);
     set_draw_func(sigc::mem_fun(*this, &ThreeWaySwitch::on_draw));
     

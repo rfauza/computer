@@ -64,13 +64,17 @@ void LED::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     }
     else
     {
-        // Dim LED body
+        // Dim LED body — normalize by max component first so changing color
+        // doesn't change off-state brightness. Dominant channel is always 0.32.
         auto body = Cairo::RadialGradient::create(cx - radius * 0.2,
                                                    cy - radius * 0.2,
                                                    radius * 0.1,
                                                    cx, cy, radius);
-        body->add_color_stop_rgb(0.0, r_ * 0.35, g_ * 0.35, b_ * 0.35);
-        body->add_color_stop_rgb(1.0, r_ * 0.15, g_ * 0.15, b_ * 0.15);
+        double max_c = std::max({r_, g_, b_});
+        if (max_c < 1e-6) max_c = 1.0;
+        double nr = r_ / max_c, ng = g_ / max_c, nb = b_ / max_c;
+        body->add_color_stop_rgb(0.0, nr * 0.32, ng * 0.32, nb * 0.32);
+        body->add_color_stop_rgb(1.0, nr * 0.13, ng * 0.13, nb * 0.13);
         cr->arc(cx, cy, radius, 0, 2 * M_PI);
         cr->set_source(body);
         cr->fill();

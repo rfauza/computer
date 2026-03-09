@@ -906,7 +906,7 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
     global_grid->attach(*red_g_lbl, 0, 0, 1, 1);
 
     global_led_color_switch_ = Gtk::manage(new ThreeWaySwitch());
-    global_led_color_switch_->set_size_request(28, 56);
+    global_led_color_switch_->set_size_request(32, 56);
     global_led_color_switch_->set_change_callback(
         sigc::mem_fun(*this, &ComputerWindow::on_global_led_color_changed));
     global_grid->attach(*global_led_color_switch_, 0, 1, 1, 1);

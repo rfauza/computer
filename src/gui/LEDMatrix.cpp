@@ -136,18 +136,23 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
             }
             else
             {
-                // Dim body
+                // Dim body — perceptually equalize but at half strength for red/blue.
+                // Green gets full brightness (previous state).
                 auto body = Cairo::RadialGradient::create(
                     cx - led_r * 0.2, cy - led_r * 0.2, led_r * 0.1,
                     cx, cy, led_r);
-                // Use a subdued, desaturated version of the current color
-                double lum = 0.3 * r_ + 0.59 * g_ + 0.11 * b_;
-                double mix_fac = 0.6;
-                double ir = (r_ * (1.0 - mix_fac) + lum * mix_fac);
-                double ig = (g_ * (1.0 - mix_fac) + lum * mix_fac);
-                double ib = (b_ * (1.0 - mix_fac) + lum * mix_fac);
-                body->add_color_stop_rgb(0.0, std::min(1.0, ir * 0.5), std::min(1.0, ig * 0.5), std::min(1.0, ib * 0.5));
-                body->add_color_stop_rgb(1.0, std::min(1.0, ir * 0.25), std::min(1.0, ig * 0.25), std::min(1.0, ib * 0.25));
+                double max_c = std::max({r_, g_, b_});
+                if (max_c < 1e-6) max_c = 1.0;
+                double nr = r_ / max_c, ng = g_ / max_c, nb = b_ / max_c;
+                const double BASE = 0.22;
+                double norm_lum = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+                double factor = (0.736 * BASE) / std::max(norm_lum, 0.05);
+                factor = std::min(factor, 0.65);
+                // Green only: use full brightness; red/blue: halved
+                bool is_green = (g_ > r_ && g_ > b_);
+                if (!is_green) factor *= 0.60;
+                body->add_color_stop_rgb(0.0, nr * factor, ng * factor, nb * factor);
+                body->add_color_stop_rgb(1.0, nr * factor * 0.45, ng * factor * 0.45, nb * factor * 0.45);
                 cr->arc(cx, cy, led_r, 0, 2 * M_PI);
                 cr->set_source(body);
                 cr->fill();
