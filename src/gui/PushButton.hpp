@@ -20,6 +20,9 @@ public:
     
     /** Flash the pressed visual for a moment. */
     void flash();
+
+    /** Enable or disable the small gloss/specular highlight. */
+    void set_gloss_enabled(bool en) { gloss_enabled_ = en; queue_draw(); }
     
 private:
     void on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
@@ -35,4 +38,5 @@ private:
     Glib::RefPtr<Gtk::GestureClick> click_;
     Glib::RefPtr<Gtk::EventControllerMotion> motion_;
     double r_ = 0.9, g_ = 0.08, b_ = 0.02; // default red-ish
+    bool gloss_enabled_ = true;
 };

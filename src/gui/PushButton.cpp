@@ -146,7 +146,10 @@ void PushButton::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->fill();
 
     // ── 5. Minimal gloss highlight (very subtle for flatter look) ──
-    cr->arc(cx - inner_r * 0.15, cy - inner_r * 0.20, inner_r * 0.20, 0, 2 * M_PI);
-    cr->set_source_rgba(1.0, 1.0, 1.0, pressed_ ? 0.03 : 0.08);
-    cr->fill();
+    if (gloss_enabled_)
+    {
+        cr->arc(cx - inner_r * 0.15, cy - inner_r * 0.20, inner_r * 0.20, 0, 2 * M_PI);
+        cr->set_source_rgba(1.0, 1.0, 1.0, pressed_ ? 0.03 : 0.08);
+        cr->fill();
+    }
 }

@@ -465,6 +465,7 @@ Gtk::Box* ComputerWindow::build_control_column()
 
     pulse_button_ = Gtk::manage(new PushButton());
     pulse_button_->set_size_request(52, 52);
+    pulse_button_->set_gloss_enabled(false);
     pulse_button_->set_margin_top(-4);
     pulse_button_->set_press_callback(sigc::mem_fun(*this, &ComputerWindow::on_pulse_pressed));
     left_grp->append(*pulse_button_);
