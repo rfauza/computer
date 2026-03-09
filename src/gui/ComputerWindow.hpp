@@ -12,6 +12,7 @@
 #include "RotaryKnob.hpp"
 #include "PushButton.hpp"
 #include "LEDMatrix.hpp"
+#include "BacklitButton.hpp"
 
 // Forward-declare the simulator base class so we only need the header
 // in the .cpp file.
@@ -120,10 +121,10 @@ private:
     ToggleSwitch* mode_switch_  = nullptr;   // up=Program, down=Run
     ToggleSwitch* sub_switch_   = nullptr;   // Program: up=Write, down=Read
                                               // Run:     up=Auto,  down=Pulse
-    Gtk::Button* goto_pc_button_ = nullptr;
-    Gtk::Button* reset_pc_btn_  = nullptr;
-    Gtk::Button* reset_ram_btn_ = nullptr;
-    Gtk::Button* reset_all_btn_ = nullptr;
+    BacklitButton* goto_pc_button_ = nullptr;
+    BacklitButton* reset_pc_btn_   = nullptr;
+    BacklitButton* reset_ram_btn_  = nullptr;
+    BacklitButton* reset_all_btn_  = nullptr;
     
     // ── Widgets: main switch/LED columns ───────────────────────────────
     std::vector<ToggleSwitch*> pm_addr_switches_;

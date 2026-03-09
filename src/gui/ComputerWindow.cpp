@@ -140,18 +140,18 @@ void ComputerWindow::build_ui()
     auto* rst_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
     rst_col->set_valign(Gtk::Align::END);
     rst_col->set_margin_end(4);
-    goto_pc_button_ = Gtk::manage(new Gtk::Button("GoTo PC"));
-    reset_pc_btn_  = Gtk::manage(new Gtk::Button("Reset PC"));
-    reset_ram_btn_ = Gtk::manage(new Gtk::Button("Reset RAM"));
-    reset_all_btn_ = Gtk::manage(new Gtk::Button("Reset All"));
+    goto_pc_button_ = Gtk::manage(new BacklitButton("GoTo PC"));
+    reset_pc_btn_   = Gtk::manage(new BacklitButton("Reset PC"));
+    reset_ram_btn_  = Gtk::manage(new BacklitButton("Reset RAM"));
+    reset_all_btn_  = Gtk::manage(new BacklitButton("Reset All"));
     for (auto* b : {goto_pc_button_, reset_pc_btn_, reset_ram_btn_, reset_all_btn_})
     {
-        b->set_size_request(80, 28);
+        b->set_size_request(80, 36);
     }
-    goto_pc_button_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_goto_pc_pressed));
-    reset_pc_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_pc));
-    reset_ram_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_ram));
-    reset_all_btn_->signal_clicked().connect(sigc::mem_fun(*this, &ComputerWindow::on_reset_all));
+    goto_pc_button_->set_click_callback([this]() { on_goto_pc_pressed(); });
+    reset_pc_btn_->set_click_callback([this]()   { on_reset_pc(); });
+    reset_ram_btn_->set_click_callback([this]()  { on_reset_ram(); });
+    reset_all_btn_->set_click_callback([this]()  { on_reset_all(); });
     rst_col->append(*goto_pc_button_);
     rst_col->append(*reset_pc_btn_);
     rst_col->append(*reset_ram_btn_);
@@ -1304,6 +1304,12 @@ void ComputerWindow::on_global_led_color_changed(int pos)
     if (dec_a_seg_) dec_a_seg_->set_color(r, g, b);
     if (dec_b_seg_) dec_b_seg_->set_color(r, g, b);
     if (dec_c_seg_) dec_c_seg_->set_color(r, g, b);
+
+    // Update backlit action buttons
+    if (goto_pc_button_) goto_pc_button_->set_color(r, g, b);
+    if (reset_pc_btn_)   reset_pc_btn_->set_color(r, g, b);
+    if (reset_ram_btn_)  reset_ram_btn_->set_color(r, g, b);
+    if (reset_all_btn_)  reset_all_btn_->set_color(r, g, b);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
