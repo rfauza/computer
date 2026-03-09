@@ -43,19 +43,12 @@ void PushButton::set_color(double r, double g, double b)
 
 void PushButton::on_press(int /*n_press*/, double x, double y)
 {
-    // Only mark pressed if the pointer is inside the color diffuser area
+    // Mark pressed when clicked anywhere on the button
     auto alloc = get_allocation();
     double w = alloc.get_width();
     double h = alloc.get_height();
-    double cx = w / 2.0;
-    double cy = h / 2.0;
-    double radius = std::min(cx, cy) * 0.8;
-    double dx = x - cx;
-    double dy = y - cy;
-    double inner_r = radius * 0.64; // match diffuser disk radius
-    bool inside = (dx * dx + dy * dy) <= (inner_r * inner_r);
-
-    if (inside)
+    
+    if (x >= 0 && x <= w && y >= 0 && y <= h)
     {
         pressed_ = true;
         pressed_inside_ = true;
@@ -65,19 +58,12 @@ void PushButton::on_press(int /*n_press*/, double x, double y)
 
 void PushButton::on_release(int /*n_press*/, double x, double y)
 {
-    // on release, determine if release happened inside the active area
+    // on release, determine if release happened inside the button
     auto alloc = get_allocation();
     double w = alloc.get_width();
     double h = alloc.get_height();
-    double cx = w / 2.0;
-    double cy = h / 2.0;
-    double radius = std::min(cx, cy) * 0.8;
-    double dx = x - cx;
-    double dy = y - cy;
-    double dist2 = dx * dx + dy * dy;
-    double inner_r = radius * 0.64;
-
-    bool released_inside = dist2 <= (inner_r * inner_r);
+    
+    bool released_inside = (x >= 0 && x <= w && y >= 0 && y <= h);
 
     // clear visual state
     pressed_ = false;
@@ -98,14 +84,7 @@ void PushButton::on_motion(double x, double y)
     auto alloc = get_allocation();
     double w = alloc.get_width();
     double h = alloc.get_height();
-    double cx = w / 2.0;
-    double cy = h / 2.0;
-    double radius = std::min(cx, cy) * 0.8;
-    double dx = x - cx;
-    double dy = y - cy;
-    double dist2 = dx * dx + dy * dy;
-    double inner_r = radius * 0.64;
-    bool inside = dist2 <= (inner_r * inner_r);
+    bool inside = (x >= 0 && x <= w && y >= 0 && y <= h);
 
     if (inside && !pressed_inside_)
     {
@@ -127,43 +106,63 @@ void PushButton::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
 {
     double cx = width / 2.0;
     double cy = height / 2.0;
-    double r = std::min(cx, cy) * 0.8;
+    double outer_r = std::min(cx, cy) * 0.85;
 
-    // Outer bezel ring (neutral grey)
-    cr->arc(cx, cy, r + 2.0, 0, 2 * M_PI);
-    cr->set_source_rgb(0.32, 0.32, 0.32);
+    // Normalize color like backlit buttons do
+    double max_c = std::max({r_, g_, b_});
+    if (max_c < 1e-6) max_c = 1.0;
+    double nr = r_ / max_c, ng = g_ / max_c, nb = b_ / max_c;
+
+    // ── 1. Outer bezel ring (neutral grey) ─────────────────────────
+    cr->arc(cx, cy, outer_r + 1.5, 0, 2 * M_PI);
+    cr->set_source_rgb(0.28, 0.28, 0.30);
     cr->fill();
 
-    // Bright glowing diffuser with radial gradient
-    // Center is very bright (nearly white-ish tinted with color),
-    // fades to edge which approaches the bezel color
-    double intensity = pressed_ ? 0.6 : 1.0;
-    auto glow = Cairo::RadialGradient::create(cx, cy, r * 0.1,
-                                              cx, cy, r);
+    // ── 2. Black plastic ring (thicker band) ──────────────────────
+    double ring_width = outer_r * 0.35;
+    double inner_r = outer_r - ring_width;
     
-    // Center: very bright, tinted with the button color
-    glow->add_color_stop_rgba(0.0, 
-        std::min(1.0, r_ * intensity + 0.3),
-        std::min(1.0, g_ * intensity + 0.3),
-        std::min(1.0, b_ * intensity + 0.3),
-        1.0);
-    
-    // Mid: still bright, more saturated color
-    glow->add_color_stop_rgba(0.5,
-        std::min(1.0, r_ * intensity),
-        std::min(1.0, g_ * intensity),
-        std::min(1.0, b_ * intensity),
-        1.0);
-    
-    // Edge: fades to dark
-    glow->add_color_stop_rgba(1.0, 0.12, 0.12, 0.12, 1.0);
-
-    cr->arc(cx, cy, r * 0.95, 0, 2 * M_PI);
-    cr->set_source(glow);
+    cr->arc(cx, cy, outer_r * 0.95, 0, 2 * M_PI);
+    cr->set_source_rgb(0.08, 0.08, 0.09);
     cr->fill();
 
-    // Glossy highlight on upper part (like a dome's reflection)
-    cr->set_source_rgba(1.0, 1.0, 1.0, pressed_ ? 0.08 : 0.22);
-    cr->arc(cx - r * 0.25, cy - r * 0.30, r * 0.22, 0, 2 * M_PI);
+    // ── 3. Lit center disk (flatter, less gradient) ────────────────
+    auto center = Cairo::RadialGradient::create(cx, cy, inner_r * 0.2,
+                                                 cx, cy, inner_r);
+    if (pressed_)
+    {
+        // Pressed: bright, less extreme gradient for flatter look
+        center->add_color_stop_rgba(0.0, r_, g_, b_, 1.0);
+        center->add_color_stop_rgba(1.0, r_ * 0.8, g_ * 0.8, b_ * 0.8, 1.0);
+    }
+    else
+    {
+        // Unpressed: dim, flatter appearance
+        center->add_color_stop_rgba(0.0, nr * 0.32, ng * 0.32, nb * 0.32, 1.0);
+        center->add_color_stop_rgba(1.0, nr * 0.25, ng * 0.25, nb * 0.25, 1.0);
+    }
+    cr->arc(cx, cy, inner_r * 0.95, 0, 2 * M_PI);
+    cr->set_source(center);
+    cr->fill();
+
+    // ── 4. Colored edge border (inset from outer rim) ──────────────
+    cr->save();
+    const double edge_inset = 2.5;
+    cr->arc(cx, cy, outer_r - edge_inset, 0, 2 * M_PI);
+    cr->set_line_width(1.3);
+    if (pressed_)
+    {
+        cr->set_source_rgba(r_, g_, b_, 0.85);
+    }
+    else
+    {
+        cr->set_source_rgba(nr * 0.32, ng * 0.32, nb * 0.32, 0.6);
+    }
+    cr->stroke();
+    cr->restore();
+
+    // ── 5. Minimal gloss highlight (very subtle for flatter look) ──
+    cr->arc(cx - inner_r * 0.15, cy - inner_r * 0.20, inner_r * 0.20, 0, 2 * M_PI);
+    cr->set_source_rgba(1.0, 1.0, 1.0, pressed_ ? 0.03 : 0.08);
     cr->fill();
 }

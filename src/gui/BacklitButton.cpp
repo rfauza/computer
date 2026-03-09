@@ -15,6 +15,10 @@ BacklitButton::BacklitButton(const std::string& label)
         sigc::mem_fun(*this, &BacklitButton::on_release));
     add_controller(click_);
 
+    motion_ = Gtk::EventControllerMotion::create();
+    motion_->signal_motion().connect(sigc::mem_fun(*this, &BacklitButton::on_motion));
+    add_controller(motion_);
+
     set_focusable(true);
 }
 
@@ -30,11 +34,45 @@ void BacklitButton::on_press(int /*n*/, double /*x*/, double /*y*/)
     queue_draw();
 }
 
-void BacklitButton::on_release(int /*n*/, double /*x*/, double /*y*/)
+void BacklitButton::on_release(int /*n*/, double x, double y)
 {
+    // Determine button bounds for release-inside check
+    auto alloc = get_allocation();
+    double w = alloc.get_width();
+    double h = alloc.get_height();
+    bool released_inside = (x >= 0 && x <= w && y >= 0 && y <= h);
+
     pressed_ = false;
+    bool triggered = pressed_inside_ && released_inside;
+    pressed_inside_ = false;
     queue_draw();
-    if (cb_) cb_();
+
+    if (triggered && cb_) cb_();
+}
+
+void BacklitButton::on_motion(double x, double y)
+{
+    // If not pressed, ignore motion
+    if (!pressed_ && !pressed_inside_)
+        return;
+
+    auto alloc = get_allocation();
+    double w = alloc.get_width();
+    double h = alloc.get_height();
+    bool inside = (x >= 0 && x <= w && y >= 0 && y <= h);
+
+    if (inside && !pressed_inside_)
+    {
+        pressed_inside_ = true;
+        pressed_ = true;
+        queue_draw();
+    }
+    else if (!inside && pressed_inside_)
+    {
+        pressed_inside_ = false;
+        pressed_ = false;
+        queue_draw();
+    }
 }
 
 void BacklitButton::rounded_rect(const Cairo::RefPtr<Cairo::Context>& cr,

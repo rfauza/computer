@@ -28,12 +28,15 @@ private:
     void on_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w, int h);
     void on_press(int n, double x, double y);
     void on_release(int n, double x, double y);
+    void on_motion(double x, double y);
     static void rounded_rect(const Cairo::RefPtr<Cairo::Context>& cr,
                               double x, double y, double w, double h, double r);
 
     std::string label_;
     bool pressed_  = false;
+    bool pressed_inside_ = false;
     double r_ = 1.5, g_ = 0.0, b_ = 0.0;   // default red (un-normalised)
     ClickCB cb_;
     Glib::RefPtr<Gtk::GestureClick> click_;
+    Glib::RefPtr<Gtk::EventControllerMotion> motion_;
 };
