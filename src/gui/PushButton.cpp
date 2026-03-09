@@ -118,8 +118,8 @@ void PushButton::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->set_source_rgb(0.28, 0.28, 0.30);
     cr->fill();
 
-    // ── 2. Black plastic ring (thicker band) ──────────────────────
-    double ring_width = outer_r * 0.35;
+    // ── 2. Black plastic ring (thinner band) ──────────────────────
+    double ring_width = outer_r * 0.28;
     double inner_r = outer_r - ring_width;
     
     cr->arc(cx, cy, outer_r * 0.95, 0, 2 * M_PI);
@@ -144,22 +144,6 @@ void PushButton::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->arc(cx, cy, inner_r * 0.95, 0, 2 * M_PI);
     cr->set_source(center);
     cr->fill();
-
-    // ── 4. Colored edge border (inset from outer rim) ──────────────
-    cr->save();
-    const double edge_inset = 2.5;
-    cr->arc(cx, cy, outer_r - edge_inset, 0, 2 * M_PI);
-    cr->set_line_width(1.3);
-    if (pressed_)
-    {
-        cr->set_source_rgba(r_, g_, b_, 0.85);
-    }
-    else
-    {
-        cr->set_source_rgba(nr * 0.32, ng * 0.32, nb * 0.32, 0.6);
-    }
-    cr->stroke();
-    cr->restore();
 
     // ── 5. Minimal gloss highlight (very subtle for flatter look) ──
     cr->arc(cx - inner_r * 0.15, cy - inner_r * 0.20, inner_r * 0.20, 0, 2 * M_PI);
