@@ -117,8 +117,8 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
                 // Glow
                 auto glow = Cairo::RadialGradient::create(cx, cy, led_r * 0.3,
                                                            cx, cy, led_r * 2.0);
-                glow->add_color_stop_rgba(0.0, 1.0, 0.1, 0.0, 0.5);
-                glow->add_color_stop_rgba(1.0, 1.0, 0.0, 0.0, 0.0);
+                glow->add_color_stop_rgba(0.0, r_, g_, b_, 0.5);
+                glow->add_color_stop_rgba(1.0, r_, g_, b_, 0.0);
                 cr->arc(cx, cy, led_r * 2.0, 0, 2 * M_PI);
                 cr->set_source(glow);
                 cr->fill();
@@ -127,9 +127,9 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
                 auto body = Cairo::RadialGradient::create(
                     cx - led_r * 0.2, cy - led_r * 0.2, led_r * 0.1,
                     cx, cy, led_r);
-                body->add_color_stop_rgb(0.0, 1.0, 0.5, 0.4);
-                body->add_color_stop_rgb(0.5, 1.0, 0.1, 0.0);
-                body->add_color_stop_rgb(1.0, 0.7, 0.05, 0.0);
+                body->add_color_stop_rgb(0.0, std::min(1.0, r_ * 1.2), std::min(1.0, g_ * 1.2), std::min(1.0, b_ * 1.2));
+                body->add_color_stop_rgb(0.5, r_, g_, b_);
+                body->add_color_stop_rgb(1.0, r_ * 0.6, g_ * 0.6, b_ * 0.6);
                 cr->arc(cx, cy, led_r, 0, 2 * M_PI);
                 cr->set_source(body);
                 cr->fill();
@@ -140,12 +140,24 @@ void LEDMatrix::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
                 auto body = Cairo::RadialGradient::create(
                     cx - led_r * 0.2, cy - led_r * 0.2, led_r * 0.1,
                     cx, cy, led_r);
-                body->add_color_stop_rgb(0.0, 0.28, 0.06, 0.04);
-                body->add_color_stop_rgb(1.0, 0.12, 0.02, 0.01);
+                // Use a subdued, desaturated version of the current color
+                double lum = 0.3 * r_ + 0.59 * g_ + 0.11 * b_;
+                double mix_fac = 0.6;
+                double ir = (r_ * (1.0 - mix_fac) + lum * mix_fac);
+                double ig = (g_ * (1.0 - mix_fac) + lum * mix_fac);
+                double ib = (b_ * (1.0 - mix_fac) + lum * mix_fac);
+                body->add_color_stop_rgb(0.0, std::min(1.0, ir * 0.5), std::min(1.0, ig * 0.5), std::min(1.0, ib * 0.5));
+                body->add_color_stop_rgb(1.0, std::min(1.0, ir * 0.25), std::min(1.0, ig * 0.25), std::min(1.0, ib * 0.25));
                 cr->arc(cx, cy, led_r, 0, 2 * M_PI);
                 cr->set_source(body);
                 cr->fill();
             }
         }
     }
+}
+
+void LEDMatrix::set_color(double r, double g, double b)
+{
+    r_ = r; g_ = g; b_ = b;
+    queue_draw();
 }

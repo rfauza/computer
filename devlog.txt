@@ -65,6 +65,7 @@ Todo next:
 - tag main -
 
 Mar 8 2026 : 
+2h added color select to gui, tweaked colors
 1h pong ball program
 1h added decimal display section to GUI
 

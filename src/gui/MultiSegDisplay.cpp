@@ -27,14 +27,7 @@ void MultiSegDisplay::set_color(double r, double g, double b)
     queue_draw();
 }
 
-void MultiSegDisplay::set_style(Style style)
-{
-    if (style_ != style)
-    {
-        style_ = style;
-        queue_draw();
-    }
-}
+//
 
 // 14-segment encoding
 // Segment bits (MSB first):
@@ -110,14 +103,7 @@ void MultiSegDisplay::draw_hseg(const Cairo::RefPtr<Cairo::Context>& cr,
     }
     else
     {
-        if (style_ == Style::NIXIE)
-        {
-            cr->set_source_rgba(r_ * dim, g_ * dim, b_ * dim, 0.15);
-        }
-        else
-        {
-            cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
-        }
+        cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
     }
     
     // Hexagonal horizontal segment
@@ -146,14 +132,7 @@ void MultiSegDisplay::draw_vseg(const Cairo::RefPtr<Cairo::Context>& cr,
     }
     else
     {
-        if (style_ == Style::NIXIE)
-        {
-            cr->set_source_rgba(r_ * dim, g_ * dim, b_ * dim, 0.15);
-        }
-        else
-        {
-            cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
-        }
+        cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
     }
     
     // Hexagonal vertical segment
@@ -190,14 +169,7 @@ void MultiSegDisplay::draw_diag(const Cairo::RefPtr<Cairo::Context>& cr,
     }
     else
     {
-        if (style_ == Style::NIXIE)
-        {
-            cr->set_source_rgba(r_ * dim, g_ * dim, b_ * dim, 0.15);
-        }
-        else
-        {
-            cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
-        }
+        cr->set_source_rgb(r_ * dim, g_ * dim, b_ * dim);
     }
     
     double dx = x2 - x1, dy = y2 - y1;
@@ -212,55 +184,7 @@ void MultiSegDisplay::draw_diag(const Cairo::RefPtr<Cairo::Context>& cr,
     cr->fill();
 }
 
-void MultiSegDisplay::draw_nixie_bg(const Cairo::RefPtr<Cairo::Context>& cr,
-                                    int width, int height)
-{
-    double cx = width / 2.0;
-    double cy = height / 2.0;
-    double rx = width / 2.0 - 1;
-    double ry = height / 2.0 - 1;
-    
-    // Glass tube shape — rounded rectangle with strong curvature
-    double corner = std::min(rx, ry) * 0.4;
-    cr->move_to(corner + 1, 1);
-    cr->line_to(width - corner - 1, 1);
-    cr->arc(width - corner - 1, corner + 1, corner, -M_PI / 2, 0);
-    cr->line_to(width - 1, height - corner - 1);
-    cr->arc(width - corner - 1, height - corner - 1, corner, 0, M_PI / 2);
-    cr->line_to(corner + 1, height - 1);
-    cr->arc(corner + 1, height - corner - 1, corner, M_PI / 2, M_PI);
-    cr->line_to(1, corner + 1);
-    cr->arc(corner + 1, corner + 1, corner, M_PI, 3 * M_PI / 2);
-    cr->close_path();
-    
-    // Dark smoked glass background
-    cr->set_source_rgb(0.04, 0.04, 0.06);
-    cr->fill_preserve();
-    
-    // Glass edge highlight
-    cr->set_source_rgba(0.3, 0.35, 0.4, 0.3);
-    cr->set_line_width(1.5);
-    cr->stroke();
-    
-    // Inner warm glow (subtle orange tint)
-    auto glow = Cairo::RadialGradient::create(cx, cy, 2,
-                                               cx, cy, std::max(rx, ry));
-    glow->add_color_stop_rgba(0.0, 1.0, 0.6, 0.2, 0.08);
-    glow->add_color_stop_rgba(0.5, 0.8, 0.4, 0.1, 0.04);
-    glow->add_color_stop_rgba(1.0, 0.0, 0.0, 0.0, 0.0);
-    cr->rectangle(0, 0, width, height);
-    cr->set_source(glow);
-    cr->fill();
-    
-    // Glass specular reflection (top-left highlight)
-    auto spec = Cairo::LinearGradient::create(0, 0, width * 0.5, height * 0.4);
-    spec->add_color_stop_rgba(0.0, 1.0, 1.0, 1.0, 0.08);
-    spec->add_color_stop_rgba(0.5, 1.0, 1.0, 1.0, 0.02);
-    spec->add_color_stop_rgba(1.0, 1.0, 1.0, 1.0, 0.0);
-    cr->rectangle(2, 2, width * 0.4, height * 0.35);
-    cr->set_source(spec);
-    cr->fill();
-}
+//
 
 void MultiSegDisplay::draw_led_bg(const Cairo::RefPtr<Cairo::Context>& cr,
                                   int width, int height)
@@ -284,15 +208,8 @@ void MultiSegDisplay::draw_led_bg(const Cairo::RefPtr<Cairo::Context>& cr,
 void MultiSegDisplay::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
                               int width, int height)
 {
-    // Background
-    if (style_ == Style::NIXIE)
-    {
-        draw_nixie_bg(cr, width, height);
-    }
-    else
-    {
-        draw_led_bg(cr, width, height);
-    }
+    // Background (LED style only)
+    draw_led_bg(cr, width, height);
     
     uint16_t segs = char_to_segs(char_);
     

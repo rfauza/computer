@@ -826,13 +826,11 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
         dec_pm_segs_.push_back(seg);
         pm_dec_row->append(*seg);
     }
-    disp_col->append(*pm_dec_row);
-    
+
     auto* pm_dec_lbl = Gtk::manage(new Gtk::Label());
     pm_dec_lbl->set_markup("<span size='x-small'>PM Addr</span>");
     pm_dec_lbl->set_halign(Gtk::Align::CENTER);
-    disp_col->append(*pm_dec_lbl);
-    
+
     // Opcode name: 4 multi-seg displays (first 4 letters + padding)
     auto* name_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
     name_row->set_halign(Gtk::Align::CENTER);
@@ -843,12 +841,48 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
         opcode_name_segs_.push_back(mseg);
         name_row->append(*mseg);
     }
-    disp_col->append(*name_row);
-    
+
     auto* name_lbl = Gtk::manage(new Gtk::Label());
     name_lbl->set_markup("<span size='x-small'>OP Code</span>");
     name_lbl->set_halign(Gtk::Align::CENTER);
-    disp_col->append(*name_lbl);
+
+    // Arrange PM address and opcode side-by-side
+    auto* addr_and_op_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 16));
+
+    auto* addr_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    addr_col->set_halign(Gtk::Align::CENTER);
+    addr_col->append(*pm_dec_row);
+    addr_col->append(*pm_dec_lbl);
+
+    auto* op_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    op_col->set_halign(Gtk::Align::CENTER);
+    op_col->append(*name_row);
+    op_col->append(*name_lbl);
+
+    // ABC displays to the right of opcode
+    auto* abc_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    abc_col->set_halign(Gtk::Align::CENTER);
+    auto* abc_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 4));
+    dec_a_seg_ = Gtk::manage(new SevenSegDisplay());
+    dec_a_seg_->set_color(0.2, 0.6, 1.0);
+    abc_row->append(*dec_a_seg_);
+    dec_b_seg_ = Gtk::manage(new SevenSegDisplay());
+    dec_b_seg_->set_color(0.2, 0.6, 1.0);
+    abc_row->append(*dec_b_seg_);
+    dec_c_seg_ = Gtk::manage(new SevenSegDisplay());
+    dec_c_seg_->set_color(0.2, 0.6, 1.0);
+    abc_row->append(*dec_c_seg_);
+    abc_col->append(*abc_row);
+    auto* abc_lbl = Gtk::manage(new Gtk::Label());
+    abc_lbl->set_markup("<span size='x-small'>A   B   C</span>");
+    abc_lbl->set_halign(Gtk::Align::CENTER);
+    abc_col->append(*abc_lbl);
+
+    addr_and_op_row->append(*addr_col);
+    addr_and_op_row->append(*op_col);
+    addr_and_op_row->append(*abc_col);
+
+    disp_col->append(*addr_and_op_row);
     
     panel->append(*disp_col);
     
@@ -857,68 +891,41 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
     sw_col->set_valign(Gtk::Align::CENTER);
     sw_col->set_margin_start(8);
     
-    // Color switch (3-way: blue=0, red=1, green=2)
-    auto* color_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    auto* blue_lbl = Gtk::manage(new Gtk::Label());
-    blue_lbl->set_markup("<span size='x-small'>Blue</span>");
-    blue_lbl->set_halign(Gtk::Align::CENTER);
-    color_grp->append(*blue_lbl);
-    
-    dec_color_switch_ = Gtk::manage(new ThreeWaySwitch());
-    dec_color_switch_->set_size_request(28, 56);
-    dec_color_switch_->set_change_callback(
-        sigc::mem_fun(*this, &ComputerWindow::on_dec_color_changed));
-    color_grp->append(*dec_color_switch_);
-    
-    auto* green_lbl = Gtk::manage(new Gtk::Label());
-    green_lbl->set_markup("<span size='x-small'>Green</span>");
-    green_lbl->set_halign(Gtk::Align::CENTER);
-    color_grp->append(*green_lbl);
-    sw_col->append(*color_grp);
-    
-    // Style switch (LED / Nixie)
-    auto* style_grp = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    auto* led_lbl = Gtk::manage(new Gtk::Label());
-    led_lbl->set_markup("<span size='x-small'>LED</span>");
-    led_lbl->set_halign(Gtk::Align::CENTER);
-    style_grp->append(*led_lbl);
-    
-    dec_style_switch_ = Gtk::manage(new ToggleSwitch());
-    dec_style_switch_->set_size_request(28, 48);
-    dec_style_switch_->set_toggle_callback(
-        sigc::mem_fun(*this, &ComputerWindow::on_dec_style_changed));
-    style_grp->append(*dec_style_switch_);
-    
-    auto* nixie_lbl = Gtk::manage(new Gtk::Label());
-    nixie_lbl->set_markup("<span size='x-small'>Nixie</span>");
-    nixie_lbl->set_halign(Gtk::Align::CENTER);
-    style_grp->append(*nixie_lbl);
-    sw_col->append(*style_grp);
+    // (Per-display color switch removed — single global color switch used)
     
     panel->append(*sw_col);
     
     // Far right: global LED color switch
-    auto* global_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    global_col->set_valign(Gtk::Align::CENTER);
-    global_col->set_margin_start(8);
-    
+    auto* global_grid = Gtk::manage(new Gtk::Grid());
+    global_grid->set_valign(Gtk::Align::CENTER);
+    global_grid->set_margin_start(8);
+
     auto* red_g_lbl = Gtk::manage(new Gtk::Label());
     red_g_lbl->set_markup("<span size='x-small'>Red</span>");
     red_g_lbl->set_halign(Gtk::Align::CENTER);
-    global_col->append(*red_g_lbl);
-    
+    global_grid->attach(*red_g_lbl, 0, 0, 1, 1);
+
     global_led_color_switch_ = Gtk::manage(new ThreeWaySwitch());
     global_led_color_switch_->set_size_request(28, 56);
     global_led_color_switch_->set_change_callback(
         sigc::mem_fun(*this, &ComputerWindow::on_global_led_color_changed));
-    global_col->append(*global_led_color_switch_);
-    
+    global_grid->attach(*global_led_color_switch_, 0, 1, 1, 1);
+    // Default to red
+    global_led_color_switch_->set_position(0);
+    // Apply the default color immediately
+    on_global_led_color_changed(global_led_color_switch_->get_position());
+
+    auto* green_lbl = Gtk::manage(new Gtk::Label());
+    green_lbl->set_markup("<span size='x-small'>Green</span>");
+    green_lbl->set_halign(Gtk::Align::START);
+    global_grid->attach(*green_lbl, 1, 1, 1, 1);
+
     auto* blue_g_lbl = Gtk::manage(new Gtk::Label());
     blue_g_lbl->set_markup("<span size='x-small'>Blue</span>");
     blue_g_lbl->set_halign(Gtk::Align::CENTER);
-    global_col->append(*blue_g_lbl);
-    
-    panel->append(*global_col);
+    global_grid->attach(*blue_g_lbl, 0, 2, 1, 1);
+
+    panel->append(*global_grid);
     
     return panel;
 }
@@ -1231,49 +1238,18 @@ void ComputerWindow::on_slave_toggled()
     update_ram_seg_display();
 }
 
-void ComputerWindow::on_dec_color_changed(int pos)
-{
-    double r, g, b;
-    switch (pos)
-    {
-        case 0:  r = 0.2;  g = 0.6;  b = 1.0;  break;  // Blue
-        case 1:  r = 1.0;  g = 0.08; b = 0.0;  break;  // Red
-        default: r = 0.0;  g = 1.0;  b = 0.2;  break;  // Green
-    }
-    for (auto* seg : dec_pm_segs_)
-    {
-        seg->set_color(r, g, b);
-    }
-    for (auto* mseg : opcode_name_segs_)
-    {
-        mseg->set_color(r, g, b);
-    }
-}
+// Per-display color handler removed. Global handler updates all displays.
 
-void ComputerWindow::on_dec_style_changed(bool nixie)
-{
-    auto seg_style = nixie ? SevenSegDisplay::Style::NIXIE
-                           : SevenSegDisplay::Style::LED;
-    auto mseg_style = nixie ? MultiSegDisplay::Style::NIXIE
-                            : MultiSegDisplay::Style::LED;
-    for (auto* seg : dec_pm_segs_)
-    {
-        seg->set_style(seg_style);
-    }
-    for (auto* mseg : opcode_name_segs_)
-    {
-        mseg->set_style(mseg_style);
-    }
-}
+//
 
 void ComputerWindow::on_global_led_color_changed(int pos)
 {
     double r, g, b;
     switch (pos)
     {
-        case 0:  r = 1.0;  g = 0.0;  b = 0.0;  break;  // Red
+        case 0:  r = 1.5;  g = 0.0;  b = 0.0;  break;  // Red
         case 1:  r = 0.0;  g = 1.0;  b = 0.0;  break;  // Green
-        default: r = 0.2;  g = 0.5;  b = 1.0;  break;  // Blue
+        default: r = 0.2;  g = 0.6;  b = 2.7;  break;  // Blue
     }
     
     // Update all LEDs in the main panel
@@ -1291,6 +1267,43 @@ void ComputerWindow::on_global_led_color_changed(int pos)
     {
         set_all(row);
     }
+
+    // Update seven-seg and multi-seg displays to match global color
+    for (auto* seg : pm_addr_segs_)
+    {
+        seg->set_color(r, g, b);
+    }
+    if (opcode_seg_) opcode_seg_->set_color(r, g, b);
+    if (a_seg_) a_seg_->set_color(r, g, b);
+    if (b_seg_) b_seg_->set_color(r, g, b);
+    if (c_seg_) c_seg_->set_color(r, g, b);
+
+    for (auto* seg : dec_pm_segs_)
+    {
+        seg->set_color(r, g, b);
+    }
+    for (auto* mseg : opcode_name_segs_)
+    {
+        mseg->set_color(r, g, b);
+    }
+    for (auto* seg : ram_segs_)
+    {
+        seg->set_color(r, g, b);
+    }
+
+    // Update RAM page 7-seg that shows current page
+    if (ram_page_seg_) ram_page_seg_->set_color(r, g, b);
+
+    // Update 8x8 LED matrix color
+    if (led_matrix_) led_matrix_->set_color(r, g, b);
+
+    // Update pulse/write button color
+    if (pulse_button_) pulse_button_->set_color(r, g, b);
+
+    // Update decimal-panel A/B/C displays
+    if (dec_a_seg_) dec_a_seg_->set_color(r, g, b);
+    if (dec_b_seg_) dec_b_seg_->set_color(r, g, b);
+    if (dec_c_seg_) dec_c_seg_->set_color(r, g, b);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1474,6 +1487,11 @@ void ComputerWindow::update_seven_segs()
     a_seg_->set_value(static_cast<uint8_t>(a_val & 0x0F));
     b_seg_->set_value(static_cast<uint8_t>(b_val & 0x0F));
     c_seg_->set_value(static_cast<uint8_t>(c_val & 0x0F));
+
+    // Mirror values to decimal-panel copies if present
+    if (dec_a_seg_) dec_a_seg_->set_value(static_cast<uint8_t>(a_val & 0x0F));
+    if (dec_b_seg_) dec_b_seg_->set_value(static_cast<uint8_t>(b_val & 0x0F));
+    if (dec_c_seg_) dec_c_seg_->set_value(static_cast<uint8_t>(c_val & 0x0F));
 }
 
 void ComputerWindow::update_ram_led_display()

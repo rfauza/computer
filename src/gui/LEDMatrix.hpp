@@ -26,6 +26,12 @@ public:
     /** Clear all LEDs. */
     void clear();
     
+    /** Set the global color used for on/off rendering (r,g,b in 0..1). */
+    void set_color(double r, double g, double b);
+    
+    /** Get the last-set color. */
+    void get_color(double &r, double &g, double &b) const { r = r_; g = g_; b = b_; }
+
     /** Call after a batch of set_led/set_row calls to repaint. */
     void refresh() { queue_draw(); }
     
@@ -37,4 +43,5 @@ private:
                  int width, int height);
     
     bool grid_[ROWS][COLS] = {};
+    double r_ = 0.9, g_ = 0.08, b_ = 0.02;
 };

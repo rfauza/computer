@@ -164,6 +164,9 @@ private:
     ThreeWaySwitch* dec_color_switch_  = nullptr;   // blue/red/green
     ToggleSwitch*   dec_style_switch_  = nullptr;   // LED/Nixie
     ThreeWaySwitch* global_led_color_switch_ = nullptr; // global LED color
+    SevenSegDisplay* dec_a_seg_ = nullptr;
+    SevenSegDisplay* dec_b_seg_ = nullptr;
+    SevenSegDisplay* dec_c_seg_ = nullptr;
     
     // ── Keyboard selection ─────────────────────────────────────────────
     int selected_index_ = -1;
