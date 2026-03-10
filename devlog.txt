@@ -70,7 +70,7 @@ Todo next:
 - tag main -
 
 Mar 9 2026 : 
-7p removed the light reflection on the pulse button
+.5h removed the light reflection on the pulse button, gui spacing
 
 Mar 8 2026 : 6h total 104.5h
 1h changed pulse button to soft backlit , centered 8-segs in octal and decimal areas

@@ -126,13 +126,12 @@ void ComputerWindow::build_ui()
     auto* seg_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     seg_spacer->set_vexpand(true);
     seg_unit->append(*seg_spacer);
-    // "Octal Display" label at the top of the content area
+    // "Octal Display" label (will be placed with the 7-seg bar below)
     auto* octal_lbl = Gtk::manage(new Gtk::Label());
     octal_lbl->set_markup("<span size='small' weight='bold'>Octal Display</span>");
     octal_lbl->set_halign(Gtk::Align::CENTER);
     octal_lbl->set_margin_bottom(2);
-    seg_unit->append(*octal_lbl);
-    // Bottom row: reset buttons on the left, 7-seg bar on the right
+    // Bottom row: reset buttons on the left, 7-seg bar and title on the right
     auto* seg_bottom = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 8));
     seg_bottom->set_margin_start(4);
     seg_bottom->set_margin_bottom(4);
@@ -157,7 +156,20 @@ void ComputerWindow::build_ui()
     rst_col->append(*reset_ram_btn_);
     rst_col->append(*reset_all_btn_);
     seg_bottom->append(*rst_col);
-    seg_bottom->append(*build_seven_seg_bar());
+    // Put the octal title and seven-seg bar in the same vertical box so
+    // the title shares the same vertical alignment as the reset buttons.
+    // Add invisible top/bottom spacers to center the content vertically.
+    auto* segs_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    segs_col->set_halign(Gtk::Align::CENTER);
+    auto* top_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    top_spacer->set_vexpand(true);
+    segs_col->append(*top_spacer);
+    segs_col->append(*octal_lbl);
+    segs_col->append(*build_seven_seg_bar());
+    auto* bottom_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    bottom_spacer->set_vexpand(true);
+    segs_col->append(*bottom_spacer);
+    seg_bottom->append(*segs_col);
     seg_unit->append(*seg_bottom);
     top_row->append(*seg_unit);
 
