@@ -48,6 +48,8 @@ ComputerWindow::~ComputerWindow()
 void ComputerWindow::build_ui()
 {
     set_default_size(1340, 550);
+    // Make the main window fixed-size: disable user resizing.
+    set_resizable(false);
 
     // ── Global CSS ─────────────────────────────────────────────────────
     auto css = Gtk::CssProvider::create();
@@ -834,7 +836,12 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
     
     // Left column: displays
     auto* disp_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 4));
-    
+
+    // Spacer pushes the display content downward so it's vertically centered
+    auto* top_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    top_spacer->set_vexpand(true);
+    disp_col->append(*top_spacer);
+
     // Title
     auto* title = Gtk::manage(new Gtk::Label());
     title->set_markup("<span size='small' weight='bold'>Decimal Display</span>");
@@ -928,6 +935,11 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
 
     disp_col->append(*addr_and_op_row);
     
+    // Spacer pushes the display content upward/downward to center it
+    auto* bottom_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    bottom_spacer->set_vexpand(true);
+    disp_col->append(*bottom_spacer);
+
     panel->append(*disp_col);
     
     // Right column: switches

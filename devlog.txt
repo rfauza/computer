@@ -53,10 +53,6 @@ V2
 - make snake
 
 Todo next:
-- center 8-segs in octal and decimal areas
-- double spacing between A,B,C in decimal area
-- center opcode 8-seg over label and fix spacing 
-- decrease the height of these so 8x8 fits just right (it's too tall rn)
 - update gui at 144Hz, break it off into a separate thread
 - view menu to show/remove addons
 - pong ball program
@@ -69,7 +65,11 @@ Todo next:
 - MS paint
 - tag main -
 
-Mar 9 2026 : 
+Mar 10 2026 : 
+5.45p center decimal display, stopped screen resize
+    vew menu with show/hide add-ons
+
+Mar 9 2026 : .5h total 105h
 .5h removed the light reflection on the pulse button, gui spacing
 
 Mar 8 2026 : 6h total 104.5h
