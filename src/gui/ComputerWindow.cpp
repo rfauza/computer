@@ -297,7 +297,8 @@ void ComputerWindow::open_about_dialog()
 
 Gtk::Box* ComputerWindow::build_seven_seg_bar()
 {
-    auto* bar = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 20));
+    // Use explicit margins between sections so we can control per-gap spacing
+    auto* bar = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 0));
     bar->set_margin_start(6);
     bar->set_margin_end(6);
     bar->set_margin_top(4);
@@ -320,6 +321,8 @@ Gtk::Box* ComputerWindow::build_seven_seg_bar()
     pm_lbl->set_halign(Gtk::Align::CENTER);
     pm_box->append(*pm_lbl);
     bar->append(*pm_box);
+        // Increase spacing after PM Addr slightly (approx 18px)
+        pm_box->set_margin_end(18);
 
     // ── OP Code ───────────────────────────────────────────────────────
     // Single 7-seg, same size as the others
@@ -327,6 +330,10 @@ Gtk::Box* ComputerWindow::build_seven_seg_bar()
     auto* op_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 2));
 
     opcode_seg_ = Gtk::manage(new SevenSegDisplay());
+    // Center the opcode segment above its label
+    opcode_seg_->set_halign(Gtk::Align::CENTER);
+    op_row->set_halign(Gtk::Align::CENTER);
+    op_box->set_halign(Gtk::Align::CENTER);
     op_row->append(*opcode_seg_);
 
     op_box->append(*op_row);
@@ -335,6 +342,8 @@ Gtk::Box* ComputerWindow::build_seven_seg_bar()
     op_lbl->set_halign(Gtk::Align::CENTER);
     op_box->append(*op_lbl);
     bar->append(*op_box);
+        // Make spacing after OP Code match the spacing after PM Addr
+        op_box->set_margin_end(18);
 
     // ── A ─────────────────────────────────────────────────────────────
     auto* a_box = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
@@ -355,6 +364,9 @@ Gtk::Box* ComputerWindow::build_seven_seg_bar()
     b_lbl->set_halign(Gtk::Align::CENTER);
     b_box->append(*b_lbl);
     bar->append(*b_box);
+        // Restore gap between A/B/C displays (reduced 10%)
+        a_box->set_margin_end(15);
+        b_box->set_margin_end(15);
 
     // ── C ─────────────────────────────────────────────────────────────
     auto* c_box = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
@@ -848,7 +860,7 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
     name_lbl->set_halign(Gtk::Align::CENTER);
 
     // Arrange PM address and opcode side-by-side
-    auto* addr_and_op_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 16));
+    auto* addr_and_op_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 23));
 
     auto* addr_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     addr_col->set_halign(Gtk::Align::CENTER);
@@ -860,24 +872,43 @@ Gtk::Box* ComputerWindow::build_decimal_display_panel()
     op_col->append(*name_row);
     op_col->append(*name_lbl);
 
-    // ABC displays to the right of opcode
-    auto* abc_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
+    // ABC displays to the right of opcode: create three vertical boxes
+    // (segment above, centered single-letter label below) and space them
+    auto* abc_col = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 0));
     abc_col->set_halign(Gtk::Align::CENTER);
-    auto* abc_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 4));
+
+    auto* a_vbox = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     dec_a_seg_ = Gtk::manage(new SevenSegDisplay());
     dec_a_seg_->set_color(0.2, 0.6, 1.0);
-    abc_row->append(*dec_a_seg_);
+    a_vbox->append(*dec_a_seg_);
+    auto* a_lbl = Gtk::manage(new Gtk::Label("A"));
+    a_lbl->set_halign(Gtk::Align::CENTER);
+    a_vbox->append(*a_lbl);
+    a_vbox->set_halign(Gtk::Align::CENTER);
+    a_vbox->set_margin_end(15);
+
+    auto* b_vbox = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     dec_b_seg_ = Gtk::manage(new SevenSegDisplay());
     dec_b_seg_->set_color(0.2, 0.6, 1.0);
-    abc_row->append(*dec_b_seg_);
+    b_vbox->append(*dec_b_seg_);
+    auto* b_lbl = Gtk::manage(new Gtk::Label("B"));
+    b_lbl->set_halign(Gtk::Align::CENTER);
+    b_vbox->append(*b_lbl);
+    b_vbox->set_halign(Gtk::Align::CENTER);
+    b_vbox->set_margin_end(15);
+
+    auto* c_vbox = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 2));
     dec_c_seg_ = Gtk::manage(new SevenSegDisplay());
     dec_c_seg_->set_color(0.2, 0.6, 1.0);
-    abc_row->append(*dec_c_seg_);
-    abc_col->append(*abc_row);
-    auto* abc_lbl = Gtk::manage(new Gtk::Label());
-    abc_lbl->set_markup("<span size='x-small'>A   B   C</span>");
-    abc_lbl->set_halign(Gtk::Align::CENTER);
-    abc_col->append(*abc_lbl);
+    c_vbox->append(*dec_c_seg_);
+    auto* c_lbl = Gtk::manage(new Gtk::Label("C"));
+    c_lbl->set_halign(Gtk::Align::CENTER);
+    c_vbox->append(*c_lbl);
+    c_vbox->set_halign(Gtk::Align::CENTER);
+
+    abc_col->append(*a_vbox);
+    abc_col->append(*b_vbox);
+    abc_col->append(*c_vbox);
 
     addr_and_op_row->append(*addr_col);
     addr_and_op_row->append(*op_col);
