@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 #include <giomm.h>
 #include <filesystem>
 
@@ -34,6 +35,22 @@ ComputerWindow::ComputerWindow(Computer* computer, uint16_t num_bits)
     if (mode_switch_) mode_switch_->set_on(false);
     if (sub_switch_)  sub_switch_->set_on(true);
     update_all_displays();
+    
+    // Defer sim thread startup to idle handler after window is fully constructed
+    Glib::signal_idle().connect_once(sigc::mem_fun(*this, &ComputerWindow::on_window_ready));
+}
+
+void ComputerWindow::on_window_ready()
+{
+    // Now that the window is ready, initialize the snapshot and start the sim
+    // thread after a short delay to avoid races with Glib/GObject initialization.
+    snap_ = take_snapshot();
+    // Start the sim thread on a short one-shot timeout so all GObjects finish
+    // their internal initialization on the main loop first.
+    Glib::signal_timeout().connect_once([this]() {
+        sim_thread_active_.store(true);
+        sim_thread_ = std::thread(&ComputerWindow::sim_loop, this);
+    }, 50);
 }
 
 // Rebuild only the View submenu (preserving the PopoverMenuBar widget).
@@ -88,7 +105,13 @@ void ComputerWindow::rebuild_view_menu()
 
 ComputerWindow::~ComputerWindow()
 {
-    stop_auto_timer();
+    stop_sim();
+    sim_thread_active_.store(false);
+    sim_cv_.notify_one();
+    if (sim_thread_.joinable())
+    {
+        sim_thread_.join();
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -357,6 +380,7 @@ void ComputerWindow::open_load_dialog()
                 else
                 {
                     computer_->prepare_run();
+                    snap_ = take_snapshot();
                     update_all_displays();
                 }
             }
@@ -1169,8 +1193,10 @@ bool ComputerWindow::on_key_pressed(guint keyval, guint /*keycode*/,
         }
         
         case GDK_KEY_space:
-            computer_->write_ram((4 << num_bits_) | 0, 1);
-            update_all_displays();
+            {
+                std::lock_guard<std::mutex> lock(sim_mutex_);
+                computer_->write_ram((4 << num_bits_) | 0, 1);
+            }
             return true;
             
         case GDK_KEY_Return:
@@ -1180,23 +1206,31 @@ bool ComputerWindow::on_key_pressed(guint keyval, guint /*keycode*/,
             return true;
             
         case GDK_KEY_w:
-            computer_->write_ram((4 << num_bits_) | 1, 1);
-            update_all_displays();
+            {
+                std::lock_guard<std::mutex> lock(sim_mutex_);
+                computer_->write_ram((4 << num_bits_) | 1, 1);
+            }
             return true;
             
         case GDK_KEY_a:
-            computer_->write_ram((4 << num_bits_) | 2, 1);
-            update_all_displays();
+            {
+                std::lock_guard<std::mutex> lock(sim_mutex_);
+                computer_->write_ram((4 << num_bits_) | 2, 1);
+            }
             return true;
             
         case GDK_KEY_s:
-            computer_->write_ram((4 << num_bits_) | 3, 1);
-            update_all_displays();
+            {
+                std::lock_guard<std::mutex> lock(sim_mutex_);
+                computer_->write_ram((4 << num_bits_) | 3, 1);
+            }
             return true;
             
         case GDK_KEY_d:
-            computer_->write_ram((4 << num_bits_) | 4, 1);
-            update_all_displays();
+            {
+                std::lock_guard<std::mutex> lock(sim_mutex_);
+                computer_->write_ram((4 << num_bits_) | 4, 1);
+            }
             return true;
             
         case GDK_KEY_Escape:
@@ -1238,18 +1272,18 @@ void ComputerWindow::on_mode_switch_toggled()
             if (sub_on)
             {
                 run_sub_ = RunSub::PULSE;
-                stop_auto_timer();
+                stop_sim();
             }
             else
             {
                 run_sub_ = RunSub::AUTO;
-                start_auto_timer();
+                start_sim();
             }
         }
         else
         {
             mode_ = Mode::PROGRAM;
-            stop_auto_timer();
+            stop_sim();
             // sub_switch_: down(on)=Write, up(off)=Read
             if (sub_on)
             {
@@ -1261,6 +1295,7 @@ void ComputerWindow::on_mode_switch_toggled()
             }
         }
         
+        snap_ = take_snapshot();
         update_all_displays();
     });
 }
@@ -1304,6 +1339,7 @@ void ComputerWindow::on_pulse_pressed()
             // Single clock tick
             computer_->clock_tick();
             computer_->sync_pc();
+            snap_ = take_snapshot();
             update_all_displays();
         }
         // In auto mode the timer handles ticks
@@ -1313,26 +1349,22 @@ void ComputerWindow::on_pulse_pressed()
 void ComputerWindow::on_goto_pc_pressed()
 {
     Glib::signal_idle().connect_once([this]() {
+        stop_sim();
         computer_->prepare_run();
         uint16_t target_addr = read_switch_value(pm_addr_switches_);
         computer_->set_pc(target_addr);
-        stop_auto_timer();
+        snap_ = take_snapshot();
         update_all_displays();
         if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
         {
-            start_auto_timer();
+            start_sim();
         }
     });
 }
 
 void ComputerWindow::on_knob_changed(double freq)
 {
-    if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
-    {
-        // Restart timer with new frequency
-        stop_auto_timer();
-        start_auto_timer();
-    }
+    sim_freq_.store(freq);
 }
 
 void ComputerWindow::on_ram_page_changed()
@@ -1435,56 +1467,185 @@ void ComputerWindow::on_global_led_color_changed(int pos)
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// Auto-run timer
+// Simulation thread
 // ═══════════════════════════════════════════════════════════════════════
 
-void ComputerWindow::start_auto_timer()
+SimSnapshot ComputerWindow::take_snapshot() const
 {
-    stop_auto_timer();
-    double freq = knob_->get_frequency_hz();
-    // For frequencies up to 1kHz, use a 1-tick-per-callback timer.
-    // For higher frequencies, batch multiple ticks per callback to keep up.
-    // GTK timers can't fire faster than ~1ms, so we batch at 1ms intervals.
-    int interval_ms = std::max(1, static_cast<int>(1000.0 / freq));
-    auto_timer_ = Glib::signal_timeout().connect(
-        sigc::mem_fun(*this, &ComputerWindow::on_auto_tick), interval_ms);
-}
-
-void ComputerWindow::stop_auto_timer()
-{
-    if (auto_timer_.connected())
-    {
-        auto_timer_.disconnect();
-    }
-}
-
-bool ComputerWindow::on_auto_tick()
-{
-    if (mode_ != Mode::RUN || run_sub_ != RunSub::AUTO)
-    {
-        return false; // stop the timer
-    }
+    SimSnapshot s;
+    s.pc = computer_->get_pc();
+    computer_->get_current_instruction(s.opcode, s.a_val, s.b_val, s.c_val);
+    s.is_running = computer_->get_is_running();
+    s.opcode_name = computer_->opcode_name(s.opcode);
     
-    if (!computer_->get_is_running())
+    uint16_t total_ram = computer_->get_num_ram_addresses();
+    s.ram.resize(total_ram);
+    for (uint16_t i = 0; i < total_ram; ++i)
     {
-        stop_auto_timer();
-        update_all_displays();
+        s.ram[i] = computer_->read_ram(i);
+    }
+    return s;
+}
+
+void ComputerWindow::sim_loop()
+{
+    using clock = std::chrono::steady_clock;
+    
+    while (sim_thread_active_.load())
+    {
+        // Wait until simulation should be running
+        {
+            std::unique_lock<std::mutex> lock(sim_mutex_);
+            sim_cv_.wait(lock, [this]
+            {
+                return sim_running_.load() || !sim_thread_active_.load();
+            });
+        }
+        if (!sim_thread_active_.load()) break;
+        auto next_tick = clock::now();
+
+        // Target a short scheduling interval (seconds) so we can batch ticks
+        // but still yield often to the GUI. The interval is chosen smaller
+        // than the display refresh so the sim remains smooth while keeping
+        // the GUI responsive.
+        const double target_interval_s = 0.005; // 5 ms
+        const int MAX_SUB_BATCH = 64; // cap sub-batch size to avoid long locks
+
+        // Display update timing (approx 144Hz)
+        const double display_interval_s = 1.0 / 144.0;
+        auto next_display_time = clock::now();
+
+        double tick_accum = 0.0; // fractional tick accumulator for smooth freq
+        while (sim_running_.load() && sim_thread_active_.load())
+        {
+            double freq = sim_freq_.load();
+            // accumulate fractional ticks so small frequency changes take effect
+            tick_accum += freq * target_interval_s;
+            int total_ticks = static_cast<int>(std::floor(tick_accum));
+            if (total_ticks > 0) tick_accum -= static_cast<double>(total_ticks);
+
+            bool halted = false;
+            // Perform ticks without holding sim_mutex_ (sim thread owns `computer_`),
+            // only lock briefly to publish the snapshot so GUI work is never blocked
+            // by long-held locks.
+            while (total_ticks > 0 && sim_running_.load() && sim_thread_active_.load())
+            {
+                int sub = std::min(total_ticks, MAX_SUB_BATCH);
+                for (int i = 0; i < sub; ++i)
+                {
+                    if (!computer_->get_is_running())
+                    {
+                        halted = true;
+                        break;
+                    }
+                    computer_->clock_tick();
+                    sim_tick_count_.fetch_add(1, std::memory_order_relaxed);
+                }
+
+                // After performing the sub-batch, sync PC. Only take and
+                // publish a display snapshot at the desired display_rate
+                // (approx 144Hz) to avoid excessive snapshot cost.
+                computer_->sync_pc();
+                auto now = clock::now();
+                if (now >= next_display_time)
+                {
+                    SimSnapshot local_snap = take_snapshot();
+                    // Publish snapshot under lock very briefly
+                    {
+                        std::lock_guard<std::mutex> lock(sim_mutex_);
+                        sim_snap_ = std::move(local_snap);
+                    }
+                    next_display_time += std::chrono::duration_cast<clock::duration>(
+                        std::chrono::duration<double>(display_interval_s));
+                    // If we've fallen behind, catch up to avoid tight loops
+                    if (next_display_time < now)
+                        next_display_time = now + std::chrono::duration_cast<clock::duration>(
+                            std::chrono::duration<double>(display_interval_s));
+                }
+
+                if (halted)
+                {
+                    sim_running_.store(false);
+                    break;
+                }
+
+                total_ticks -= sub;
+
+                // Yield so GUI and other threads can make progress
+                std::this_thread::yield();
+            }
+
+            // Sleep until the next cycle
+            next_tick += std::chrono::duration_cast<clock::duration>(
+                std::chrono::duration<double>(target_interval_s));
+            auto now = clock::now();
+            if (next_tick > now)
+            {
+                std::this_thread::sleep_until(next_tick);
+            }
+            else
+            {
+                next_tick = now;
+            }
+        }
+    }
+}
+
+void ComputerWindow::start_sim()
+{
+    stop_sim();
+    sim_freq_.store(knob_->get_frequency_hz());
+    sim_running_.store(true);
+    sim_cv_.notify_one();
+    
+    // Start 144Hz display refresh timer (~7ms interval)
+    display_timer_ = Glib::signal_timeout().connect(
+        sigc::mem_fun(*this, &ComputerWindow::on_display_tick), 7);
+
+    // Start simple monitor to print achieved tick rate for debugging
+    sim_tick_count_.store(0);
+    sim_monitor_timer_ = Glib::signal_timeout().connect([this]() {
+        uint64_t ticks = sim_tick_count_.exchange(0);
+        double requested = sim_freq_.load();
+        std::cout << "[sim-monitor] requested_hz=" << requested
+                  << " achieved_hz=" << ticks << std::endl;
+        return true; // keep timer running
+    }, 1000);
+}
+
+void ComputerWindow::stop_sim()
+{
+    sim_running_.store(false);
+    if (display_timer_.connected())
+    {
+        display_timer_.disconnect();
+    }
+    if (sim_monitor_timer_.connected())
+    {
+        sim_monitor_timer_.disconnect();
+    }
+    // Wait for the sim thread to finish its current batch
+    {
+        std::lock_guard<std::mutex> lock(sim_mutex_);
+    }
+}
+
+bool ComputerWindow::on_display_tick()
+{
+    // Copy latest snapshot from sim thread
+    {
+        std::lock_guard<std::mutex> lock(sim_mutex_);
+        snap_ = sim_snap_;
+    }
+    update_all_displays();
+    
+    // If the computer halted, stop the display timer
+    if (!snap_.is_running || !sim_running_.load())
+    {
         return false;
     }
     
-    // For frequencies above 1kHz, execute multiple ticks per callback
-    // since the GTK timer can't fire faster than ~1ms.
-    double freq = knob_->get_frequency_hz();
-    int ticks_per_call = std::max(1, static_cast<int>(freq / 1000.0));
-    
-    for (int i = 0; i < ticks_per_call && computer_->get_is_running(); ++i)
-    {
-        computer_->clock_tick();
-    }
-    computer_->sync_pc();
-    update_all_displays();
-    
-    return true; // keep ticking
+    return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1552,16 +1713,12 @@ void ComputerWindow::update_main_leds()
     }
     else // RUN
     {
-        // LEDs reflect current PC and instruction
-        uint16_t pc = computer_->get_pc();
-        set_leds_from_value(pm_addr_leds_, pc);
-        
-        uint16_t opcode, a_val, b_val, c_val;
-        computer_->get_current_instruction(opcode, a_val, b_val, c_val);
-        set_leds_from_value(opcode_leds_, opcode);
-        set_leds_from_value(a_leds_,      a_val);
-        set_leds_from_value(b_leds_,      b_val);
-        set_leds_from_value(c_leds_,      c_val);
+        // LEDs reflect current PC and instruction from snapshot
+        set_leds_from_value(pm_addr_leds_, snap_.pc);
+        set_leds_from_value(opcode_leds_, snap_.opcode);
+        set_leds_from_value(a_leds_,      snap_.a_val);
+        set_leds_from_value(b_leds_,      snap_.b_val);
+        set_leds_from_value(c_leds_,      snap_.c_val);
     }
 }
 
@@ -1581,7 +1738,7 @@ void ComputerWindow::update_seven_segs()
     }
     else
     {
-        addr = computer_->get_pc();
+        addr = snap_.pc;
     }
     
     // Fill 7-seg digits (stored MSD-first in pm_addr_segs_)
@@ -1608,7 +1765,10 @@ void ComputerWindow::update_seven_segs()
     }
     else
     {
-        computer_->get_current_instruction(opcode, a_val, b_val, c_val);
+        opcode = snap_.opcode;
+        a_val  = snap_.a_val;
+        b_val  = snap_.b_val;
+        c_val  = snap_.c_val;
     }
 
     opcode_seg_->set_value(static_cast<uint8_t>(opcode & 0x0F));
@@ -1633,9 +1793,9 @@ void ComputerWindow::update_ram_led_display()
     {
         uint16_t full_addr = static_cast<uint16_t>((page << num_bits_) | addr);
         uint16_t val = 0;
-        if (full_addr < computer_->get_num_ram_addresses())
+        if (full_addr < static_cast<uint16_t>(snap_.ram.size()))
         {
-            val = computer_->read_ram(full_addr);
+            val = snap_.ram[full_addr];
         }
         
         for (int bit = 0; bit < num_bits_; ++bit)
@@ -1670,9 +1830,9 @@ void ComputerWindow::update_ram_seg_display()
     {
         uint16_t full_addr = static_cast<uint16_t>((page << num_bits_) | addr);
         uint16_t val = 0;
-        if (full_addr < computer_->get_num_ram_addresses())
+        if (full_addr < static_cast<uint16_t>(snap_.ram.size()))
         {
-            val = computer_->read_ram(full_addr);
+            val = snap_.ram[full_addr];
         }
         ram_segs_[addr]->set_value(static_cast<uint8_t>(val & 0x0F));
     }
@@ -1706,9 +1866,9 @@ void ComputerWindow::update_led_matrix_display()
             
             uint16_t full_addr = static_cast<uint16_t>((page << num_bits_) | row);
             uint16_t val = 0;
-            if (full_addr < computer_->get_num_ram_addresses())
+            if (full_addr < static_cast<uint16_t>(snap_.ram.size()))
             {
-                val = computer_->read_ram(full_addr);
+                val = snap_.ram[full_addr];
             }
             
             bool led_on = ((val >> bit) & 1) != 0;
@@ -1746,9 +1906,8 @@ void ComputerWindow::update_decimal_display()
     }
     else
     {
-        addr = computer_->get_pc();
-        uint16_t a_val, b_val, c_val;
-        computer_->get_current_instruction(opcode, a_val, b_val, c_val);
+        addr = snap_.pc;
+        opcode = snap_.opcode;
     }
     
     // PM address in decimal (3 digits, MSD first)
@@ -1760,7 +1919,15 @@ void ComputerWindow::update_decimal_display()
     }
     
     // Opcode name (first 4 letters, padded with spaces)
-    std::string name = computer_->opcode_name(opcode);
+    std::string name;
+    if (mode_ == Mode::RUN)
+    {
+        name = snap_.opcode_name;
+    }
+    else
+    {
+        name = computer_->opcode_name(opcode);
+    }
     for (int i = 0; i < 4; ++i)
     {
         char ch = (i < static_cast<int>(name.size())) ? name[i] : ' ';
@@ -1775,18 +1942,14 @@ void ComputerWindow::update_decimal_display()
 void ComputerWindow::on_reset_pc()
 {
     Glib::signal_idle().connect_once([this]() {
-        // Ensure PM and other optional inputs are connected to safe defaults
-        // to avoid "unconnected" evaluation errors when manipulating
-        // components that may evaluate immediately.
+        stop_sim();
         computer_->prepare_run();
-
-        stop_auto_timer();
         computer_->reset_pc();
+        snap_ = take_snapshot();
         update_all_displays();
-        // If in auto-run mode, restart the timer
         if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
         {
-            start_auto_timer();
+            start_sim();
         }
     });
 }
@@ -1794,20 +1957,25 @@ void ComputerWindow::on_reset_pc()
 void ComputerWindow::on_reset_ram()
 {
     Glib::signal_idle().connect_once([this]() {
-        // Ensure PM default inputs are connected before any evaluations
+        stop_sim();
         computer_->prepare_run();
         computer_->reset_ram();
+        snap_ = take_snapshot();
         update_all_displays();
+        if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
+        {
+            start_sim();
+        }
     });
 }
 
 void ComputerWindow::on_reset_all()
 {
     Glib::signal_idle().connect_once([this]() {
-        // Prepare PM to avoid unconnected-input errors during bulk PM writes
+        stop_sim();
         computer_->prepare_run();
-        stop_auto_timer();
         computer_->reset_all();
+        snap_ = take_snapshot();
         update_all_displays();
     });
 }

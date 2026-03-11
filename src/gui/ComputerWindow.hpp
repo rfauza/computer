@@ -2,6 +2,10 @@
 #include <gtkmm.h>
 #include <vector>
 #include <cstdint>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
 #include <sigc++/connection.h>
 
 #include "LED.hpp"
@@ -17,6 +21,19 @@
 // Forward-declare the simulator base class so we only need the header
 // in the .cpp file.
 class Computer;
+
+// Consistent snapshot of computer state for thread-safe GUI display.
+struct SimSnapshot
+{
+    uint16_t pc = 0;
+    uint16_t opcode = 0;
+    uint16_t a_val = 0;
+    uint16_t b_val = 0;
+    uint16_t c_val = 0;
+    bool is_running = true;
+    std::vector<uint16_t> ram;
+    std::string opcode_name;
+};
 
 /**
  * @brief Main GUI window for the 3-bit (or N-bit) computer front panel.
@@ -61,6 +78,7 @@ private:
     
     // ── Event handlers ─────────────────────────────────────────────────
     bool on_key_pressed(guint keyval, guint keycode, Gdk::ModifierType state);
+    void on_window_ready();
     void on_switch_toggled();
     void on_mode_switch_toggled();
     void on_pulse_pressed();
@@ -76,10 +94,12 @@ private:
     void on_reset_ram();
     void on_reset_all();
     
-    // ── Periodic auto-run timer ────────────────────────────────────────
-    bool on_auto_tick();
-    void start_auto_timer();
-    void stop_auto_timer();
+    // ── Simulation thread ──────────────────────────────────────────────
+    void sim_loop();
+    SimSnapshot take_snapshot() const;
+    void start_sim();
+    void stop_sim();
+    bool on_display_tick();
     
     // ── Display update helpers ─────────────────────────────────────────
     void update_all_displays();
@@ -186,8 +206,18 @@ private:
     // ── Keyboard selection ─────────────────────────────────────────────
     int selected_index_ = -1;
     
-    // ── Timer ──────────────────────────────────────────────────────────
-    sigc::connection auto_timer_;
+    // ── Simulation thread ──────────────────────────────────────────────
+    std::thread sim_thread_;
+    std::mutex sim_mutex_;
+    std::condition_variable sim_cv_;
+    std::atomic<bool> sim_thread_active_{false};
+    std::atomic<bool> sim_running_{false};
+    std::atomic<double> sim_freq_{1.0};
+    std::atomic<uint64_t> sim_tick_count_{0};
+    sigc::connection sim_monitor_timer_; // prints achieved rate for debugging
+    SimSnapshot sim_snap_;        // written by sim thread under sim_mutex_
+    SimSnapshot snap_;            // GUI-thread-only copy for display
+    sigc::connection display_timer_;
     
     // ── Labels that update ─────────────────────────────────────────────
     Gtk::Label* mode_label_  = nullptr;

@@ -53,9 +53,8 @@ V2
 - make snake
 
 Todo next:
-- run multiple programs in same session
-- update gui at 144Hz, break it off into a separate thread
-- pong ball program
+- explain the mulththreading code
+- pong ball program (fix, make work with speeds 0-2 (change dir by sub 7, lose vertical by hitting center, gain both by corner))
 - 1 player pong
 - display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
 - display all letters, one at a time
@@ -64,11 +63,14 @@ Todo next:
 - snake (max size 8, pages 3 and 4 keep body x and y locations, pop/push queue)
 - MS paint
 - tag main -
+- break computer window into extensible reusable code for different versions
+- break computer.cpp into reusable code (maybe Computer.cpp becomes Motherboard.cpp, and reusable becomes Computer)
 
-Mar 10 2026 : 
+Mar 10 2026 : 3h total 108h
 .5h center decimal display, stopped screen resize
 1h vew menu with show/hide add-ons
 .5h fixed clear buttons to work again
+1h update gui at 144Hz, break it off into a separate thread
 
 Mar 9 2026 : .5h total 105h
 .5h removed the light reflection on the pulse button, gui spacing
