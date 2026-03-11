@@ -159,6 +159,20 @@ private:
     // ── Widgets: LED matrix ────────────────────────────────────────────
     LEDMatrix* led_matrix_ = nullptr;
     
+    // ── Addon units (for View menu toggling) ────────────────────────────
+    Gtk::Box* seg_unit_ = nullptr;      // Octal Display
+    Gtk::Box* mat_unit_ = nullptr;      // 8x8 Matrix
+    Gtk::Box* dec_unit_ = nullptr;      // Decimal Display
+    Gtk::Box* ram_seg_unit_ = nullptr;  // Decimal RAM
+    
+    // ── Menu bar for reopening after toggle ────────────────────────────
+    Gtk::PopoverMenuBar* popbar_ = nullptr;
+    // Root container reference so we can replace the menu bar at runtime
+    Gtk::Box* root_ = nullptr;
+
+    // Rebuild the View submenu only (called to refresh View labels/checks)
+    void rebuild_view_menu();
+    
     // ── Widgets: Decimal Display panel ─────────────────────────────────
     std::vector<SevenSegDisplay*>  dec_pm_segs_;    // 3 digits for decimal PM addr
     std::vector<MultiSegDisplay*> opcode_name_segs_; // 4 chars for opcode name

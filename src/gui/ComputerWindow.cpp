@@ -36,6 +36,56 @@ ComputerWindow::ComputerWindow(Computer* computer, uint16_t num_bits)
     update_all_displays();
 }
 
+// Rebuild only the View submenu (preserving the PopoverMenuBar widget).
+void ComputerWindow::rebuild_view_menu()
+{
+    // Create a fresh Gio::Menu model (file/edit/view/help) but set it on
+    // the existing PopoverMenuBar so the widget itself is not destroyed.
+    auto menu_model = Gio::Menu::create();
+
+    // File submenu
+    auto file_menu = Gio::Menu::create();
+    file_menu->append("Load Program...", "app.load");
+    menu_model->append_submenu("File", file_menu);
+
+    // Edit submenu
+    auto edit_menu = Gio::Menu::create();
+    edit_menu->append("Reset PC",  "app.reset_pc");
+    edit_menu->append("Reset RAM", "app.reset_ram");
+    edit_menu->append("Reset All", "app.reset_all");
+    menu_model->append_submenu("Edit", edit_menu);
+
+    // View submenu: use spaces in place of the checkmark when hidden so
+    // label alignment doesn't shift when toggling.
+    auto view_menu = Gio::Menu::create();
+    const char* check = "\u2713"; // checkmark char ✓
+    const std::string octal_label = (seg_unit_ && !seg_unit_->get_visible()) ? std::string("  ") + "Octal Display" : std::string(check) + " Octal Display";
+    const std::string decimal_label = (dec_unit_ && !dec_unit_->get_visible()) ? std::string("  ") + "Decimal Display" : std::string(check) + " Decimal Display";
+    const std::string ram_label = (ram_seg_unit_ && !ram_seg_unit_->get_visible()) ? std::string("  ") + "Decimal RAM" : std::string(check) + " Decimal RAM";
+    const std::string matrix_label = (mat_unit_ && !mat_unit_->get_visible()) ? std::string("  ") + "8x8 Matrix" : std::string(check) + " 8x8 Matrix";
+    view_menu->append(octal_label,   "app.toggle-octal");
+    view_menu->append(decimal_label, "app.toggle-decimal");
+    view_menu->append(ram_label,     "app.toggle-decimal-ram");
+    view_menu->append(matrix_label,  "app.toggle-matrix");
+    menu_model->append_submenu("View", view_menu);
+
+    // Help submenu
+    auto help_menu = Gio::Menu::create();
+    help_menu->append("About", "app.about");
+    menu_model->append_submenu("Help", help_menu);
+
+    if (popbar_) {
+        // Set the new menu model on the existing popbar; this avoids
+        // destroying/replacing the widget and should refresh the menu.
+        popbar_->set_menu_model(menu_model);
+    } else {
+        // If popbar_ doesn't exist yet, create and prepend it.
+        auto* new_pop = Gtk::manage(new Gtk::PopoverMenuBar(menu_model));
+        if (root_) root_->prepend(*new_pop);
+        popbar_ = new_pop;
+    }
+}
+
 ComputerWindow::~ComputerWindow()
 {
     stop_auto_timer();
@@ -93,41 +143,27 @@ void ComputerWindow::build_ui()
     // Top menu bar: File / Edit / Help using Gtk::MenuBar
     // nothing here; dialogs moved to public methods open_load_dialog/open_about_dialog
 
-    // Top menu using PopoverMenuBar (Gio::Menu model)
-    auto menu_model = Gio::Menu::create();
-
-    // File submenu
-    auto file_menu = Gio::Menu::create();
-    file_menu->append("Load Program...", "app.load");
-    menu_model->append_submenu("File", file_menu);
-
-    // Edit submenu
-    auto edit_menu = Gio::Menu::create();
-    edit_menu->append("Reset PC",  "app.reset_pc");
-    edit_menu->append("Reset RAM", "app.reset_ram");
-    edit_menu->append("Reset All", "app.reset_all");
-    menu_model->append_submenu("Edit", edit_menu);
-
-    // Help submenu
-    auto help_menu = Gio::Menu::create();
-    help_menu->append("About", "app.about");
-    menu_model->append_submenu("Help", help_menu);
-
-    auto* popbar = Gtk::manage(new Gtk::PopoverMenuBar(menu_model));
-
-    // Application-level actions handled in main.cpp (app.add_action)
-
-    root->append(*popbar);
+    // Top menu using PopoverMenuBar (Gio::Menu model). Use a helper so
+    // we can rebuild it on demand when toggling View items.
+    root_ = root;
+    // Ensure a popbar exists initially; rebuild_view_menu will create model.
+    if (!popbar_) {
+        auto menu_model = Gio::Menu::create();
+        auto* pop = Gtk::manage(new Gtk::PopoverMenuBar(menu_model));
+        popbar_ = pop;
+        root->prepend(*popbar_);
+    }
+    rebuild_view_menu();
 
     // ── Top row: seven-seg unit + LED-matrix unit ──────────────────────
     auto* top_row = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL, 6));
 
-    auto* seg_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    seg_unit->add_css_class("panel-unit");
+    seg_unit_ = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    seg_unit_->add_css_class("panel-unit");
     // Spacer pushes the content to the bottom of the panel
     auto* seg_spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
     seg_spacer->set_vexpand(true);
-    seg_unit->append(*seg_spacer);
+    seg_unit_->append(*seg_spacer);
     // "Octal Display" label (will be placed with the 7-seg bar below)
     auto* octal_lbl = Gtk::manage(new Gtk::Label());
     octal_lbl->set_markup("<span size='small' weight='bold'>Octal Display</span>");
@@ -172,18 +208,18 @@ void ComputerWindow::build_ui()
     bottom_spacer->set_vexpand(true);
     segs_col->append(*bottom_spacer);
     seg_bottom->append(*segs_col);
-    seg_unit->append(*seg_bottom);
-    top_row->append(*seg_unit);
+    seg_unit_->append(*seg_bottom);
+    top_row->append(*seg_unit_);
 
-    auto* mat_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    mat_unit->add_css_class("panel-unit");
-    mat_unit->append(*build_led_matrix_panel());
-    top_row->append(*mat_unit);
+    mat_unit_ = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    mat_unit_->add_css_class("panel-unit");
+    mat_unit_->append(*build_led_matrix_panel());
+    top_row->append(*mat_unit_);
     
-    auto* dec_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    dec_unit->add_css_class("panel-unit");
-    dec_unit->append(*build_decimal_display_panel());
-    top_row->append(*dec_unit);
+    dec_unit_ = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    dec_unit_->add_css_class("panel-unit");
+    dec_unit_->append(*build_decimal_display_panel());
+    top_row->append(*dec_unit_);
 
     root->append(*top_row);
 
@@ -200,10 +236,10 @@ void ComputerWindow::build_ui()
     ram_led_unit->append(*build_ram_led_panel());
     bot_row->append(*ram_led_unit);
 
-    auto* ram_seg_unit = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
-    ram_seg_unit->add_css_class("panel-unit");
-    ram_seg_unit->append(*build_ram_seg_panel());
-    bot_row->append(*ram_seg_unit);
+    ram_seg_unit_ = Gtk::manage(new Gtk::Box(Gtk::Orientation::VERTICAL, 0));
+    ram_seg_unit_->add_css_class("panel-unit");
+    ram_seg_unit_->append(*build_ram_seg_panel());
+    bot_row->append(*ram_seg_unit_);
 
     root->append(*bot_row);
 
@@ -217,6 +253,20 @@ void ComputerWindow::build_ui()
             app->add_action("reset_pc",  [this]() { on_reset_pc(); });
             app->add_action("reset_ram", [this]() { on_reset_ram(); });
             app->add_action("reset_all", [this]() { on_reset_all(); });
+            
+            // Simple toggle actions for View menu—just flip widget visibility
+            app->add_action("toggle-octal", [this]() {
+                if (seg_unit_) seg_unit_->set_visible(!seg_unit_->get_visible());
+            });
+            app->add_action("toggle-decimal", [this]() {
+                if (dec_unit_) dec_unit_->set_visible(!dec_unit_->get_visible());
+            });
+            app->add_action("toggle-decimal-ram", [this]() {
+                if (ram_seg_unit_) ram_seg_unit_->set_visible(!ram_seg_unit_->get_visible());
+            });
+            app->add_action("toggle-matrix", [this]() {
+                if (mat_unit_) mat_unit_->set_visible(!mat_unit_->get_visible());
+            });
         }
     };
     if (get_application())
@@ -231,6 +281,25 @@ void ComputerWindow::build_ui()
                 app->add_action("reset_pc",  [this]() { on_reset_pc(); });
                 app->add_action("reset_ram", [this]() { on_reset_ram(); });
                 app->add_action("reset_all", [this]() { on_reset_all(); });
+                
+                // Toggle actions for View menu
+                app->add_action("toggle-octal", [this]() {
+                    if (seg_unit_) seg_unit_->set_visible(!seg_unit_->get_visible());
+                    rebuild_view_menu();
+                });
+                app->add_action("toggle-decimal", [this]() {
+                    if (dec_unit_) dec_unit_->set_visible(!dec_unit_->get_visible());
+                    rebuild_view_menu();
+                });
+                app->add_action("toggle-decimal-ram", [this]() {
+                    if (ram_seg_unit_) ram_seg_unit_->set_visible(!ram_seg_unit_->get_visible());
+                    rebuild_view_menu();
+                });
+                app->add_action("toggle-matrix", [this]() {
+                    if (mat_unit_) mat_unit_->set_visible(!mat_unit_->get_visible());
+                    rebuild_view_menu();
+                });
+                
                 if (conn.connected()) conn.disconnect();
             }
         });
@@ -1244,17 +1313,14 @@ void ComputerWindow::on_pulse_pressed()
 void ComputerWindow::on_goto_pc_pressed()
 {
     Glib::signal_idle().connect_once([this]() {
-        if (mode_ == Mode::RUN)
+        computer_->prepare_run();
+        uint16_t target_addr = read_switch_value(pm_addr_switches_);
+        computer_->set_pc(target_addr);
+        stop_auto_timer();
+        update_all_displays();
+        if (mode_ == Mode::RUN && run_sub_ == RunSub::AUTO)
         {
-            computer_->prepare_run();
-            uint16_t target_addr = read_switch_value(pm_addr_switches_);
-            computer_->set_pc(target_addr);
-            stop_auto_timer();
-            update_all_displays();
-            if (run_sub_ == RunSub::AUTO)
-            {
-                start_auto_timer();
-            }
+            start_auto_timer();
         }
     });
 }

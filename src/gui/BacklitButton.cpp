@@ -28,9 +28,19 @@ void BacklitButton::set_color(double r, double g, double b)
     queue_draw();
 }
 
-void BacklitButton::on_press(int /*n*/, double /*x*/, double /*y*/)
+void BacklitButton::on_press(int /*n*/, double x, double y)
 {
     pressed_ = true;
+    
+    // Check if press is inside button bounds
+    auto alloc = get_allocation();
+    double w = alloc.get_width();
+    double h = alloc.get_height();
+    if (x >= 0 && x <= w && y >= 0 && y <= h)
+    {
+        pressed_inside_ = true;
+    }
+    
     queue_draw();
 }
 

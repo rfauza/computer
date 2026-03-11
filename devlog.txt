@@ -53,8 +53,8 @@ V2
 - make snake
 
 Todo next:
+- run multiple programs in same session
 - update gui at 144Hz, break it off into a separate thread
-- view menu to show/remove addons
 - pong ball program
 - 1 player pong
 - display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
@@ -66,8 +66,9 @@ Todo next:
 - tag main -
 
 Mar 10 2026 : 
-5.45p center decimal display, stopped screen resize
-    vew menu with show/hide add-ons
+.5h center decimal display, stopped screen resize
+1h vew menu with show/hide add-ons
+.5h fixed clear buttons to work again
 
 Mar 9 2026 : .5h total 105h
 .5h removed the light reflection on the pulse button, gui spacing
