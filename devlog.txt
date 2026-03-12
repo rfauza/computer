@@ -57,10 +57,12 @@ V3
     which can also write. so graph_x, graph_y and graph_data/write, each 9 bits, A B and C encode the intensity of each color)
 
 Todo next:
+- code pong collisions
+- see if can make stay lit for longer and unlit for less
+- pong ball program (make work with speeds 0-2 (lose vertical by hitting center, gain both by corner))
+- on loose, pause and reastart with button press
 - explain the mulththreading code
 - darken the green leds slightly
-- pong ball program (fix, make work with speeds 0-2 (change dir by sub 7, lose vertical by hitting center, gain both by corner))
-- 1 player pong
 - display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
 - display all letters, one at a time
 - tunnel keeper (polybius)
@@ -72,6 +74,10 @@ Todo next:
 - break computer.cpp into reusable code (maybe Computer.cpp becomes Motherboard.cpp, and reusable becomes Computer)
 - tag main -
 - 3bit v2
+
+Mar 11 2026 : 
+.5h fixed pong_ball.ass. with copilot's help, movout moves data in mem addr, I was treating it as moving a literal
+1h made pong with no collisions yet
 
 Mar 10 2026 : 3h total 108h
 .5h center decimal display, stopped screen resize
