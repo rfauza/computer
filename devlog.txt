@@ -44,7 +44,7 @@ V2
 - address pointers: can wire ram contents to a,b,c of opcode (where to store func results)
     (or better: save arguments to new rampage, page, then call func. page back on ret, retrieve result from that page)
 - write programs for shift mult, shift div
-- graphics, keyboard inputs (encoder?), OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
+- graphics, keyboard inputs, OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
 - color 8x8 led display (maybe larger screen with driver? keep 4 position values for each thing X,x,Y,y)
 - make MS paint (user input arrows to move and space to toggle LED)
 - make pong
@@ -52,8 +52,13 @@ V2
 - galaga
 - make snake
 
+V3
+- improved graphics driver (first one is 3-bit colors, so 8 colors. second is 9-bit color with graph_data opcode, 
+    which can also write. so graph_x, graph_y and graph_data/write, each 9 bits, A B and C encode the intensity of each color)
+
 Todo next:
 - explain the mulththreading code
+- darken the green leds slightly
 - pong ball program (fix, make work with speeds 0-2 (change dir by sub 7, lose vertical by hitting center, gain both by corner))
 - 1 player pong
 - display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
@@ -65,6 +70,8 @@ Todo next:
 - tag main -
 - break computer window into extensible reusable code for different versions
 - break computer.cpp into reusable code (maybe Computer.cpp becomes Motherboard.cpp, and reusable becomes Computer)
+- tag main -
+- 3bit v2
 
 Mar 10 2026 : 3h total 108h
 .5h center decimal display, stopped screen resize
