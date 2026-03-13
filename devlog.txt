@@ -75,7 +75,10 @@ Todo next:
 - tag main -
 - 3bit v2
 
-Mar 11 2026 : 
+Mar 12 2026
+6.15p 1h pong
+
+Mar 11 2026 : 1.5h total 109.5h
 .5h fixed pong_ball.ass. with copilot's help, movout moves data in mem addr, I was treating it as moving a literal
 1h made pong with no collisions yet
 

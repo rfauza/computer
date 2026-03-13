@@ -20,8 +20,8 @@
 # movl 0 0 0 # &0 = 0 zero for clearing
 movl 1 0 1 # literal 1 for drawing bar and inc/decrementing
 movl 2 0 2 # literal 2 for drawing second pixel, temp 4 for drawing right pixel
-movl 0 0 3 # &3 ball position x
-movl 2 0 4 # &4 ball position y
+movl 1 0 3 # &3 ball position x
+movl 0 0 4 # &4 ball position y
 movl 1 0 5 # &5 ball velocity x
 movl 1 0 6 # &6 ball velocity y
 movl 0 0 7 # bar position top &7 bar position
@@ -592,9 +592,9 @@ movl 2 0 2 # restore 2 to &2 in case there was a 4 # move this to wait loop
 def check_right #if x pos == 7, x vel == 7 (-1)
 cmp 3 1 7 # if x == 7
 jeq ball_go_left
-def check_left
-cmp 3 1 0 # if x == 0
-jeq ball_go_right
+# def check_left # done in check_collision now
+# cmp 3 1 0 # if x == 0
+# jeq ball_go_right
 def inc_x
 add 3 5 3 # x pos += x vel
 # fallthrough
@@ -620,35 +620,117 @@ jeq move_up
 cmp 1 4 3 # compare 1 and 4.3: detect s input
 jeq move_down
 cmp 0 0 0 # if no inputs, repeat loop
-jeq wait
+jeq next_frame
 
 def move_up
 movout 0 4 1 # clear input
 cmp 7 1 0 # check if bar is at the top
-jeq wait # if it is, ignore
+jeq next_frame # if it is, ignore
 sub 7 1 7 # else decrement bar position
 cmp 0 0 0
-jeq wait # clear screen and redraw
+jeq next_frame # clear screen and redraw
 
 def move_down
 movout 0 4 3 # clear input
 cmp 7 1 5 # check if bar is at the bottom
-jeq wait # if it is, ignore
+jeq next_frame # if it is, ignore
 add 1 7 7 # increment bar position
 # cmp 0 0 0
-# jeq wait # fallthrought
+# jeq next_frame # fallthrought
 
-#############################
-### WAIT AND CLEAR SCREEN ###
-#############################
 
-def wait # wait 7 cycles so ball stays lit longer before clearing
+############################
+##### CHECK COLLISIONS #####
+############################
+
+# movl 0 0 0 # &0 = 0 zero for clearing
+# movl 1 0 1 # literal 1 for drawing bar and inc/decrementing
+# movl 2 0 2 # literal 2 for drawing second pixel, temp 4 for drawing right pixel
+# movl 0 0 3 # &3 ball position x
+# movl 2 0 4 # &4 ball position y
+# movl 1 0 5 # &5 ball velocity x
+# movl 1 0 6 # &6 ball velocity y
+# movl 0 0 7 # bar position top &7 bar position
+
+def check_collision
+cmp 3 1 0 # compare ball_x_pos to 0
+jgt ball_x_1 # if ball_x > 0, check if ==1
+def ball_x_0 # if ball_x == 0:
+cmp 7 0 4 # cmp bar_top to ball_y
+jgt game_over # if bar_top > ball_y (bar is lower), game over
+jeq hit_above # if ball_y==bar_top, hit_above
+add 2 7 0 # use &0 as temp bar_bottom pos
+cmp 4 0 0 # cmp ball_y_pos to bar_bottom
+movl 0 0 0 # restore 0 to &0
+jgt game_over
+# fallthrough to hit_below
+
+def hit_below
+movl 1 0 6 # set ball_y_vel to 1 (go down)
+movl 1 0 3 # set ball_x_pos to 1
+# ball_y_pos += 1
+cmp 0 0 0
+jeq hit
+
+def hit_above
+movl 7 0 6 # set ball_y_vel to 7 (go up)
+movl 1 0 3 # set ball_x_pos to 1
+# ball_y_pos -= 1
+cmp 0 0 0
+jeq hit
+
+def ball_x_1
+cmp 3 1 1 # compare ball_x_pos to literal 1
+jgt next_frame # if ball_x_pos>1, go to next frame
+movl 1 0 5 # set x_vel = 1
+# check for bar_bottom collision
+add 2 7 0 # use &0 as temp bar_bottom pos
+cmp 4 0 0 # cmp ball_y_pos to bar_bottom
+movl 0 0 0 # restore 0 to &0
+jgt next_frame # TODO repeated code
+# check bar_middle collision
+add 1 7 0 # use &0 as temp bar_bottom pos
+cmp 4 0 0 # cmp ball_y_pos to bar_middle
+movl 0 0 0 # restore 0 to &0
+jeq hit_mid
+# check bar_bottom miss
+cmp 7 0 4 # cmp bar_top to ball_y
+jgt next_frame
+# fallthrough to hit_top
+
+def hit_top
+movl 1 0 6 # ball velocity y = 1
+cmp 0 0 0
+jeq hit
+
+def hit_mid
+movl 1 0 6 # ball velocity y = 0
+cmp 0 0 0
+jeq hit
+
+def hit_bottom
+movl 1 0 6 # ball velocity y = 7
+cmp 0 0 0
+jeq hit
+
+def hit
+movl 1 0 5 # ball velocity x = 1
+# cmp 0 0 0 # already done before call tho jmp hit
+jeq next_frame
+
+def game_over
+halt 0 0 0
+
+#########################################
+### NEXT FRAME: WAIT AND CLEAR SCREEN ###
+#########################################
+
+def next_frame # wait 7 cycles so ball stays lit longer before clearing
 movl 7 0 0
 def wait1 
 sub 0 1 0
 cmp 0 1 0
 jgt wait1
-cmp 0 0 0
 # clear screen
 movout 0 5 0
 movout 0 6 0
@@ -674,6 +756,7 @@ movout 0 7 6
 movout 0 5 7
 movout 0 6 7
 movout 0 7 7
+cmp 0 0 0
 jeq draw_screen # jump back to beginning of program
 
 
@@ -686,10 +769,10 @@ movl 7 0 5 #if x pos == 7, x vel == 7 (-1)
 cmp 0 0 0
 jeq inc_x
 
-def ball_go_right
-movl 1 0 5 #if x pos == 0, x vel == 1
-cmp 0 0 0
-jeq inc_x
+# def ball_go_right
+# movl 1 0 5 #if x pos == 0, x vel == 1
+# cmp 0 0 0
+# jeq inc_x
 
 def ball_go_up
 movl 7 0 6 #if y pos == 7, y vel == 7 (-1)
