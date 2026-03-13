@@ -47,7 +47,7 @@ V2
 - graphics, keyboard inputs, OPcode paging, write to graphics OPs (clr, row_sel, col_sel, write(data(1or0)))
 - color 8x8 led display (maybe larger screen with driver? keep 4 position values for each thing X,x,Y,y)
 - make MS paint (user input arrows to move and space to toggle LED)
-- make pong
+- make pong (y speed 0-2 (or more), stay lit longer, corner hit gains y vel up to 7?)
 - make breakout
 - galaga
 - make snake
@@ -57,12 +57,8 @@ V3
     which can also write. so graph_x, graph_y and graph_data/write, each 9 bits, A B and C encode the intensity of each color)
 
 Todo next:
-- code pong collisions
-- see if can make stay lit for longer and unlit for less
-- pong ball program (make work with speeds 0-2 (lose vertical by hitting center, gain both by corner))
-- on loose, pause and reastart with button press
+- see if can make pong stay lit for longer and unlit for less
 - explain the mulththreading code
-- darken the green leds slightly
 - display sine wave, sawtooth wave, square wave. up/down inc/decreases amplitude, back/forward inc/dec frequency (space changes type)
 - display all letters, one at a time
 - tunnel keeper (polybius)
@@ -78,6 +74,7 @@ Todo next:
 Mar 12 2026 : 2h 
 1h pong
 1h debug, now it works!
+    darkened the green leds slightly
 
 Mar 11 2026 : 1.5h total 109.5h
 .5h fixed pong_ball.ass. with copilot's help, movout moves data in mem addr, I was treating it as moving a literal

@@ -73,8 +73,17 @@ void LED::on_draw(const Cairo::RefPtr<Cairo::Context>& cr,
         double max_c = std::max({r_, g_, b_});
         if (max_c < 1e-6) max_c = 1.0;
         double nr = r_ / max_c, ng = g_ / max_c, nb = b_ / max_c;
-        body->add_color_stop_rgb(0.0, nr * 0.32, ng * 0.32, nb * 0.32);
-        body->add_color_stop_rgb(1.0, nr * 0.13, ng * 0.13, nb * 0.13);
+        // Make green-dominant LEDs darker in the off state so the "off" green
+        // doesn't appear too bright compared to other colors.
+        double hi_mul = 0.32;
+        double lo_mul = 0.13;
+        if (g_ > r_ && g_ > b_)
+        {
+            hi_mul = 0.24;
+            lo_mul = 0.09;
+        }
+        body->add_color_stop_rgb(0.0, nr * hi_mul, ng * hi_mul, nb * hi_mul);
+        body->add_color_stop_rgb(1.0, nr * lo_mul, ng * lo_mul, nb * lo_mul);
         cr->arc(cx, cy, radius, 0, 2 * M_PI);
         cr->set_source(body);
         cr->fill();
