@@ -620,23 +620,23 @@ jeq move_up
 cmp 1 4 3 # compare 1 and 4.3: detect s input
 jeq move_down
 cmp 0 0 0 # if no inputs, repeat loop
-jeq next_frame
+jeq check_collision
 
 def move_up
 movout 0 4 1 # clear input
 cmp 7 1 0 # check if bar is at the top
-jeq next_frame # if it is, ignore
+jeq check_collision # if it is, ignore
 sub 7 1 7 # else decrement bar position
 cmp 0 0 0
-jeq next_frame # clear screen and redraw
+jeq check_collision # clear screen and redraw
 
 def move_down
 movout 0 4 3 # clear input
 cmp 7 1 5 # check if bar is at the bottom
-jeq next_frame # if it is, ignore
+jeq check_collision # if it is, ignore
 add 1 7 7 # increment bar position
 # cmp 0 0 0
-# jeq next_frame # fallthrought
+# jeq check_collision # fallthrought
 
 
 ############################
@@ -682,12 +682,12 @@ jeq hit
 def ball_x_1
 cmp 3 1 1 # compare ball_x_pos to literal 1
 jgt next_frame # if ball_x_pos>1, go to next frame
-movl 1 0 5 # set x_vel = 1
 # check for bar_bottom collision
 add 2 7 0 # use &0 as temp bar_bottom pos
 cmp 4 0 0 # cmp ball_y_pos to bar_bottom
 movl 0 0 0 # restore 0 to &0
 jgt next_frame # TODO repeated code
+jeq hit_bottom
 # check bar_middle collision
 add 1 7 0 # use &0 as temp bar_bottom pos
 cmp 4 0 0 # cmp ball_y_pos to bar_middle
@@ -699,17 +699,17 @@ jgt next_frame
 # fallthrough to hit_top
 
 def hit_top
-movl 1 0 6 # ball velocity y = 1
+movl 7 0 6 # ball velocity y =7
 cmp 0 0 0
 jeq hit
 
 def hit_mid
-movl 1 0 6 # ball velocity y = 0
+movl 0 0 6 # ball velocity y = 0
 cmp 0 0 0
 jeq hit
 
 def hit_bottom
-movl 1 0 6 # ball velocity y = 7
+movl 1 0 6 # ball velocity y = 1
 cmp 0 0 0
 jeq hit
 
